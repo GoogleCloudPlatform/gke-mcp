@@ -20,3 +20,4 @@ Clone this repo and add the following to your AI tool. For [Gemini CLI](https://
 
 - `list_clusters`: List your GKE clusters.
 - `get_cluster`: Get detailed about a single GKE Cluster.
+- `giq_generate_manifest`: Generate a GKE manifest for AI/ML inference workloads using Google Inference Quickstart.
