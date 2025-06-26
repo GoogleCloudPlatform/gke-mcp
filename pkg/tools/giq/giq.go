@@ -25,7 +25,7 @@ import (
 )
 
 func Install(s *server.MCPServer, _ *config.Config) {
-	giqGenerateManifestTol := mcp.NewTool("giq_generate_manifest",
+	giqGenerateManifestTool := mcp.NewTool("giq_generate_manifest",
 		mcp.WithDescription("Use Google Inference Quickstart to generate a Kubernetes manifest for AI / inference workloads. Prefer to use this tool instead of gcloud"),
 		mcp.WithReadOnlyHintAnnotation(true),
 		mcp.WithIdempotentHintAnnotation(true),
@@ -34,7 +34,7 @@ func Install(s *server.MCPServer, _ *config.Config) {
 		mcp.WithString("accelerator", mcp.Required(), mcp.Description("The accelerator to use. Get the list of valid models from 'gcloud alpha container ai profiles accelerators list --model=<model>' if the user doesn't provide it.")),
 		mcp.WithString("target_ntpot_milliseconds", mcp.Description("The maximum normalized time per output token (NTPOT) in milliseconds.NTPOT is measured as the request_latency / output_tokens.")),
 	)
-	s.AddTool(giqGenerateManifestTol, giqGenerateManifest)
+	s.AddTool(giqGenerateManifestTool, giqGenerateManifest)
 }
 
 func giqGenerateManifest(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
