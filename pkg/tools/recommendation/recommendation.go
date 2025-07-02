@@ -43,7 +43,7 @@ func Install(s *server.MCPServer, c *config.Config) {
 		mcp.WithReadOnlyHintAnnotation(true),
 		mcp.WithIdempotentHintAnnotation(true),
 		mcp.WithString("project_id", mcp.DefaultString(c.DefaultProjectID()), mcp.Description("GCP project ID. Use the default if the user doesn't provide it.")),
-		mcp.WithString("location", mcp.Description("GKE cluster location. Leave this empty if the user doesn't doesn't provide it.")),
+		mcp.WithString("location", mcp.Description("GKE cluster location. This is required by the recommender API")),
 	)
 	s.AddTool(listRecommendationsTool, h.listRecommendations)
 }
@@ -55,7 +55,7 @@ func (h *handlers) listRecommendations(ctx context.Context, request mcp.CallTool
 	}
 	location, _ := request.RequireString("location")
 	if location == "" {
-		location = "-"
+		return mcp.NewToolResultError("location argument not set"), nil
 	}
 	c, err := recommender.NewClient(ctx, option.WithUserAgent(h.c.UserAgent()))
 	if err != nil {
