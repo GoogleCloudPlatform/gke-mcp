@@ -23,6 +23,7 @@ import (
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -66,7 +67,6 @@ func (h *handlers) listRecommendations(ctx context.Context, request mcp.CallTool
 	req :=  &recommenderpb.ListRecommendationsRequest{
 		Parent: fmt.Sprintf("projects/%s/locations/%s/recommender/google.container.DiagnosisRecommender", projectID, location),
 	}
-	resp := c.ListRecommendations(ctx, req)
 	it := c.ListRecommendations(ctx, req)
 	result := ""
 	for {
@@ -78,7 +78,7 @@ func (h *handlers) listRecommendations(ctx context.Context, request mcp.CallTool
 			return mcp.NewToolResultError(err.Error()), nil
 		}
 		// TODO: Use resp.
-		result += protojson.Format(resp) + '\n'
+		result += protojson.Format(resp)
 	}
 	return mcp.NewToolResultText(result), nil
 }
