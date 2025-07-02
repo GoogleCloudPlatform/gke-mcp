@@ -38,17 +38,17 @@ func Install(s *server.MCPServer, c *config.Config) {
 		c: c,
 	}
 
-	listRecommendationsTool := mcp.NewTool("list_recommendation",
+	listRecommendationsTool := mcp.NewTool("list_recommendations",
 		mcp.WithDescription("List recommendations for GKE. Prefer to use this tool instead of gcloud"),
 		mcp.WithReadOnlyHintAnnotation(true),
 		mcp.WithIdempotentHintAnnotation(true),
-		mcp.WithString("project_id", mcp.DefaultString(c.DefaultProjectID()), mcp.Description("GCP project ID. Use the default if the user doesn't provide it.")),
-		mcp.WithString("location", mcp.Description("GKE cluster location. This is required by the recommender API")),
+		mcp.WithString("project_id", mcp.DefaultString(c.DefaultProjectID()), mcp.Description("GCP project ID. If not provided, defaults to the GCP project configured in gcloud, if any")),
+		mcp.WithString("location", mcp.Required(), mcp.Description("GKE cluster location. This is required by the recommender API")),
 	)
-	s.AddTool(listRecommendationsTool, h.listRecommendations)
+	s.AddTool(listRecommendationsTool, h.listProjectRecommendations)
 }
 
-func (h *handlers) listRecommendations(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (h *handlers) listProjectRecommendations(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	projectID := request.GetString("project_id", h.c.DefaultProjectID())
 	if projectID == "" {
 		return mcp.NewToolResultError("project_id argument not set"), nil
@@ -67,7 +67,7 @@ func (h *handlers) listRecommendations(ctx context.Context, request mcp.CallTool
 		Parent: fmt.Sprintf("projects/%s/locations/%s/recommenders/google.container.DiagnosisRecommender", projectID, location),
 	}
 	it := c.ListRecommendations(ctx, req)
-	result := ""
+	builder := new(strings.Builder)
 	for {
 		resp, err := it.Next()
 		if err == iterator.Done {
@@ -76,8 +76,7 @@ func (h *handlers) listRecommendations(ctx context.Context, request mcp.CallTool
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
-		// TODO: Use resp.
-		result += protojson.Format(resp)
+		builder.writeString(protojson.Format(resp))
 	}
-	return mcp.NewToolResultText(result), nil
+	return mcp.NewToolResultText(builder.String()), nil
 }
