@@ -64,7 +64,7 @@ func (h *handlers) listRecommendations(ctx context.Context, request mcp.CallTool
 	defer c.Close()
 
 	req := &recommenderpb.ListRecommendationsRequest{
-		Parent: fmt.Sprintf("projects/%s/locations/%s/recommender/google.container.DiagnosisRecommender", projectID, location),
+		Parent: fmt.Sprintf("projects/%s/locations/%s/recommenders/google.container.DiagnosisRecommender", projectID, location),
 	}
 	it := c.ListRecommendations(ctx, req)
 	result := ""
