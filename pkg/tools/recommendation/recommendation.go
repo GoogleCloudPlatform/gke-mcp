@@ -67,5 +67,18 @@ func (h *handlers) listRecommendations(ctx context.Context, request mcp.CallTool
 		Parent: fmt.Sprintf("projects/%s/locations/%s/recommender/google.container.DiagnosisRecommender", projectID, location),
 	}
 	resp := c.ListRecommendations(ctx, req)
-	return mcp.NewToolResultText(protojson.Format(resp)), nil
+	it := c.ListRecommendations(ctx, req)
+	result := ""
+	for {
+		resp, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		// TODO: Use resp.
+		result += protojson.Format(resp) + '\n'
+	}
+	return mcp.NewToolResultText(result), nil
 }
