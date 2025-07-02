@@ -17,6 +17,7 @@ package recommendation
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	recommender "cloud.google.com/go/recommender/apiv1"
 	recommenderpb "cloud.google.com/go/recommender/apiv1/recommenderpb"
@@ -76,7 +77,7 @@ func (h *handlers) listProjectRecommendations(ctx context.Context, request mcp.C
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
-		builder.writeString(protojson.Format(resp))
+		builder.WriteString(protojson.Format(resp))
 	}
 	return mcp.NewToolResultText(builder.String()), nil
 }
