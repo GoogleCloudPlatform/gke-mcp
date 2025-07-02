@@ -57,14 +57,13 @@ func (h *handlers) listRecommendations(ctx context.Context, request mcp.CallTool
 	if location == "" {
 		location = "-"
 	}
-  
 	c, err := recommender.NewClient(ctx, option.WithUserAgent(h.c.UserAgent()))
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
 	defer c.Close()
 
-	req :=  &recommenderpb.ListRecommendationsRequest{
+	req := &recommenderpb.ListRecommendationsRequest{
 		Parent: fmt.Sprintf("projects/%s/locations/%s/recommender/google.container.DiagnosisRecommender", projectID, location),
 	}
 	it := c.ListRecommendations(ctx, req)
