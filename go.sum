@@ -8,6 +8,8 @@ cloud.google.com/go/compute/metadata v0.6.0 h1:A6hENjEsCDtC1k8byVsgwvVcioamEHvZ4
 cloud.google.com/go/compute/metadata v0.6.0/go.mod h1:FjyFAW1MW0C203CEOMDTu3Dk1FlqW3Rga40jzHL4hfg=
 cloud.google.com/go/container v1.43.0 h1:A6J92FJPfxTvyX7MHF+w4t2W9WCqvHOi9UB5SAeSy3w=
 cloud.google.com/go/container v1.43.0/go.mod h1:ETU9WZ1KM9ikEKLzrhRVao7KHtalDQu6aPqM34zDr/U=
+cloud.google.com/go/recommender v1.13.5 h1:cIsyRKGNw4LpCfY5c8CCQadhlp54jP4fHtP+d5Sy2xE=
+cloud.google.com/go/recommender v1.13.5/go.mod h1:v7x/fzk38oC62TsN5Qkdpn0eoMBh610UgArJtDIgH/E=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2Wg=
