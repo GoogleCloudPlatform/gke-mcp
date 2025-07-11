@@ -7,7 +7,7 @@ Enable MCP-compatible AI agents to interact with Google Kubernetes Engine.
 1.  Install the tool:
 
     ```sh
-    go install github.com/juli4n/gke-mcp@latest
+    go install github.com/GoogleCloudPlatform/gke-mcp@latest
     ```
 
     The `gke-mcp` binary will be installed in the directory specified by the `GOBIN` environment variable. If `GOBIN` is not set, it defaults to `$GOPATH/bin` and, if `GOPATH` is also not set, it falls back to `$HOME/go/bin`.
