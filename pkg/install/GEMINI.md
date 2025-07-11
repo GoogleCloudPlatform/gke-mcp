@@ -1,4 +1,4 @@
-# GKE Multi-Cluster Platform (MCP) Extension for Gemini
+# GKE MCP Extension for Gemini CLI
 
 This document provides instructions for an AI agent on how to use the available tools to manage Google Kubernetes Engine (GKE) resources.
 

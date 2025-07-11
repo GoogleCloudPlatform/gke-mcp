@@ -30,7 +30,7 @@ func GeminiCLIExtension(baseDir, version, exePath string) error {
 		return fmt.Errorf("could not create extension directory: %w", err)
 	}
 
-	// Create the manifest file
+	// Create the manifest file as described in https://github.com/google-gemini/gemini-cli/blob/main/docs/extension.md.
 	manifest := map[string]interface{}{
 		"name":            "gke-mcp",
 		"version":         version,
