@@ -43,7 +43,6 @@ func Install(s *server.MCPServer, c *config.Config) {
 	listLogsTool := mcp.NewTool("list_logs",
 		mcp.WithDescription("List all cloud loggings logs for one given GKE cluster in a location in past 24 hours. Prefer to use this tool instead of gcloud"),
 		mcp.WithReadOnlyHintAnnotation(true),
-		mcp.WithIdempotentHintAnnotation(true),
 		mcp.WithString("project_id", mcp.DefaultString(c.DefaultProjectID()), mcp.Description("GCP project ID. If not provided, defaults to the GCP project configured in gcloud, if any")),
 		mcp.WithString("location", mcp.Required(), mcp.Description("GKE cluster location. This is required for filtering on cluster")),
 		mcp.WithString("cluster_name", mcp.Required(), mcp.Description("GKE cluster name. This is required for filtering on cluster")),
