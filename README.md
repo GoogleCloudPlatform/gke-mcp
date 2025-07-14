@@ -29,6 +29,8 @@ Enable MCP-compatible AI agents to interact with Google Kubernetes Engine.
 - `get_cluster`: Get detailed about a single GKE Cluster.
 - `giq_generate_manifest`: Generate a GKE manifest for AI/ML inference workloads using Google Inference Quickstart.
 - `list_recommendations`: List recommendations for your GKE clusters.
+- `cluster_cost`: Get the cost of a GKE Cluster.
+- `cluser_cost_by_namespace`: Get the cost of a GKE Cluster, broken down by namespace.
 
 ## Development
 
@@ -47,3 +49,4 @@ To compile the binary and update the `gemini-cli` extension with your local chan
     ```
 
     This will make `gemini-cli` use your locally compiled binary.
+
