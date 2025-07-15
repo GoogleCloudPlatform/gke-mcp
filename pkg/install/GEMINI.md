@@ -10,7 +10,7 @@ This document provides instructions for an AI agent on how to use the available 
 
 ## [GKE Cost]
 
-GKE costs are available from **[GCP Billing Detailed BigQuery Export](https://cloud.google.com/billing/docs/how-to/export-data-bigquery#setup):**. The user will have to provide the full path to their BigQuery table, which inludes their BigQuery dataset name and the table name which containers their Billing Account ID.
+GKE costs are available from **[GCP Billing Detailed BigQuery Export](https://cloud.google.com/billing/docs/how-to/export-data-bigquery#setup):**. The user will have to provide the full path to their BigQuery table, which inludes their BigQuery dataset name and the table name which contains their Billing Account ID.
 
 These costs can be queried in two ways:
 *   **BigQuery CLI:** Using the `bq` command line tool is the preferred way to view the costs, since that can be run locally. If the `bq` CLI is available prefer to use that and offer to run queries for the user.
@@ -21,15 +21,15 @@ Some parameters that may be required based on the query:
 - GCP project ID
 - GKE cluster location
 - GKE cluster name
-- Kubernetes namespace (requires GKE Cost Allocation enabled on the cluster)
-- Kubernetes workload type (requires GKE Cost Allocation enabled on the cluster)
-- Kubernetes workload name (requires GKE Cost Allocation enabled on the cluster)
+- Kubernetes namespace (requires [GKE Cost Allocation enabled on the cluster](https://cloud.google.com/kubernetes-engine/docs/how-to/cost-allocations#enable_breakdown))
+- Kubernetes workload type (requires [GKE Cost Allocation enabled on the cluster](https://cloud.google.com/kubernetes-engine/docs/how-to/cost-allocations#enable_breakdown))
+- Kubernetes workload name (requires [GKE Cost Allocation enabled on the cluster](https://cloud.google.com/kubernetes-engine/docs/how-to/cost-allocations#enable_breakdown))
 - Row limit: Assume 10 unless indicated otherwise
 - Ordering: Assume ordering by cost descending unless indicated otherwise
 
 When a user asks about a "cluster", a GKE cluster can be uniquely identified with the GCP project ID, the GKE cluster location, and the GKE cluster name.
 
-A GKE workload can be identified by the Kubernetes workload type and Kubernetes workload name. Depending on the scenario, they may want workload costs specific cluster and Kubernetes namespace or across all clusters and/or Kubernetes namespaces.
+A GKE workload can be identified by the Kubernetes workload type and Kubernetes workload name. Depending on the scenario, they may want workload costs for a specific cluster and Kubernetes namespace or across all clusters and/or Kubernetes namespaces.
 
 An example BigQuery CLI command for the cost of a single workload in a single cluster is below. All of the above parameters need to be replaced to make it useful.
 
