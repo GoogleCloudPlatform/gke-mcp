@@ -8,7 +8,7 @@ This document provides instructions for an AI agent on how to use the available 
 *   **Clarify Ambiguity:** Do not guess or assume values for required parameters like cluster names or locations. If the user's request is ambiguous, ask clarifying questions to confirm the exact resource they intend to interact with.
 *   **Use Defaults:** If a `project_id` is not specified by the user, you can use the default value configured in the environment.
 
-## [GKE Cost]
+## GKE Cost
 
 GKE costs are available from **[GCP Billing Detailed BigQuery Export](https://cloud.google.com/billing/docs/how-to/export-data-bigquery#setup):**. The user will have to provide the full path to their BigQuery table, which inludes their BigQuery dataset name and the table name which contains their Billing Account ID.
 
@@ -21,9 +21,9 @@ Some parameters that may be required based on the query:
 - GCP project ID
 - GKE cluster location
 - GKE cluster name
-- Kubernetes namespace (requires [GKE Cost Allocation enabled on the cluster](https://cloud.google.com/kubernetes-engine/docs/how-to/cost-allocations#enable_breakdown))
-- Kubernetes workload type (requires [GKE Cost Allocation enabled on the cluster](https://cloud.google.com/kubernetes-engine/docs/how-to/cost-allocations#enable_breakdown))
-- Kubernetes workload name (requires [GKE Cost Allocation enabled on the cluster](https://cloud.google.com/kubernetes-engine/docs/how-to/cost-allocations#enable_breakdown))
+- Kubernetes namespace (requires [GKE Cost Allocation enabled on the cluster](https://cloud.google.com/kubernetes-engine/docs/how-to/cost-allocations))
+- Kubernetes workload type (requires [GKE Cost Allocation enabled on the cluster](https://cloud.google.com/kubernetes-engine/docs/how-to/cost-allocations))
+- Kubernetes workload name (requires [GKE Cost Allocation enabled on the cluster](https://cloud.google.com/kubernetes-engine/docs/how-to/cost-allocations))
 - Row limit: Assume 10 unless indicated otherwise
 - Ordering: Assume ordering by cost descending unless indicated otherwise
 
