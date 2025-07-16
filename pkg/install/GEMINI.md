@@ -33,7 +33,7 @@ A GKE workload can be identified by the Kubernetes workload type and Kubernetes 
 
 An example BigQuery CLI command for the cost of a single workload in a single cluster is below. All of the above parameters need to be replaced to make it useful.
 
-```bash
+```sql
 bq query --nouse_legacy_sql '
 SELECT
   SUM(cost) + SUM(IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0)) AS cost,
@@ -53,7 +53,7 @@ LIMIT 10
 ```
 
 An example BigQuery CLI command for the cost each workload in each cluster is below. All of the above parameters need to be replaced to make it useful.
-```bash
+```sql
 bq query --nouse_legacy_sql '
 SELECT
   SELECT project.id AS project_id,
