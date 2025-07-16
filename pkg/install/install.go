@@ -24,7 +24,17 @@ import (
 //go:embed GEMINI.md
 var GeminiMarkdown []byte
 
-func GeminiCLIExtension(baseDir, version, exePath string) error {
+func GeminiCLIExtension(baseDir, version, exePath string, developerMode bool) error {
+
+	contextFilename := "GEMINI.md"
+	// In developer mode, we use the GEMINI.md file directly from the repo.
+	if developerMode {
+		contextFilename = filepath.Join(baseDir, "pkg", "install", "GEMINI.md")
+		if _, err := os.ReadFile(contextFilename); err != nil {
+			return fmt.Errorf("could not read context file from %s: %w", contextFilename, err)
+		}
+	}
+
 	extensionDir := filepath.Join(baseDir, ".gemini", "extensions", "gke-mcp")
 	if err := os.MkdirAll(extensionDir, 0755); err != nil {
 		return fmt.Errorf("could not create extension directory: %w", err)
@@ -35,7 +45,7 @@ func GeminiCLIExtension(baseDir, version, exePath string) error {
 		"name":            "gke-mcp",
 		"version":         version,
 		"description":     "Enable MCP-compatible AI agents to interact with Google Kubernetes Engine.",
-		"contextFileName": "GEMINI.md",
+		"contextFileName": contextFilename,
 		"mcpServers": map[string]interface{}{
 			"gke": map[string]interface{}{
 				"command": exePath,
@@ -53,9 +63,12 @@ func GeminiCLIExtension(baseDir, version, exePath string) error {
 		return fmt.Errorf("could not write manifest.json: %w", err)
 	}
 
-	geminiMdPath := filepath.Join(extensionDir, "GEMINI.md")
-	if err := os.WriteFile(geminiMdPath, GeminiMarkdown, 0644); err != nil {
-		return fmt.Errorf("could not write GEMINI.md: %w", err)
+	// In developer mode we don't need to create the GEMINI.md file.
+	if !developerMode {
+		geminiMdPath := filepath.Join(extensionDir, "GEMINI.md")
+		if err := os.WriteFile(geminiMdPath, GeminiMarkdown, 0644); err != nil {
+			return fmt.Errorf("could not write GEMINI.md: %w", err)
+		}
 	}
 
 	return nil

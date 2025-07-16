@@ -8,6 +8,7 @@ require (
 	cloud.google.com/go/container v1.43.0
 	cloud.google.com/go/logging v1.13.0
 	cloud.google.com/go/recommender v1.13.5
+	github.com/google/go-cmp v0.7.0
 	github.com/mark3labs/mcp-go v0.32.0
 	github.com/spf13/cobra v1.9.1
 	google.golang.org/api v0.233.0

@@ -49,7 +49,7 @@ To compile the binary and update the `gemini-cli` extension with your local chan
 2.  Run the installation command to update the extension manifest:
 
     ```sh
-    ./gke-mcp install gemini-cli
+    ./gke-mcp install gemini-cli --developer
     ```
 
     This will make `gemini-cli` use your locally compiled binary.

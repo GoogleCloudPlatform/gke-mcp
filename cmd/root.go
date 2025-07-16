@@ -48,6 +48,8 @@ var (
 		Short: "Install the GKE MCP Server into your Gemini CLI settings.",
 		Run:   runInstallGeminiCLICmd,
 	}
+
+	installDeveloper bool
 )
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -62,6 +64,7 @@ func Execute() {
 func init() {
 	rootCmd.AddCommand(installCmd)
 	installCmd.AddCommand(installGeminiCLICmd)
+	installCmd.PersistentFlags().BoolVarP(&installDeveloper, "developer", "d", false, "Install the MCP Server in developer mode")
 }
 
 func runRootCmd(cmd *cobra.Command, args []string) {
@@ -78,7 +81,7 @@ func startMCPServer() {
 	c := config.New(version)
 	tools.Install(s, c)
 
-	log.Printf("Starting GKE MCP Server")
+	log.Printf("Starting GKE MCP Server (%s)", version)
 	if err := server.ServeStdio(s); err != nil {
 		log.Printf("Server error: %v\n", err)
 	}
@@ -95,7 +98,7 @@ func runInstallGeminiCLICmd(cmd *cobra.Command, args []string) {
 		log.Fatalf("Failed to get executable path: %v", err)
 	}
 
-	if err := install.GeminiCLIExtension(wd, version, exePath); err != nil {
+	if err := install.GeminiCLIExtension(wd, version, exePath, installDeveloper); err != nil {
 		log.Fatalf("Failed to install for gemini-cli: %v", err)
 	}
 	fmt.Println("Successfully installed GKE MCP server as a gemini-cli extension.")
