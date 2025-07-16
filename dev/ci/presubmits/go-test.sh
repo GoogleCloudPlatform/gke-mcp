@@ -21,12 +21,7 @@ set -o pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd ${REPO_ROOT}
 
-./dev/ci/presubmits/go-build.sh
-./dev/ci/presubmits/go-test.sh
-./dev/ci/presubmits/go-vet.sh
-
-./dev/tasks/format.sh
-./dev/tasks/gomod.sh
-
-echo "Local presubmit checks complete, commit any changed files."
-
+for f in $(find ${REPO_ROOT} -name go.mod); do
+  cd $(dirname ${f})
+  go test ./...
+done
