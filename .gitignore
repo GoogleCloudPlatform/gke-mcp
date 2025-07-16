@@ -1,3 +1,5 @@
 server
 gke-mcp
 .gemini/
+# Added by goreleaser init:
+dist/
