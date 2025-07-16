@@ -30,6 +30,6 @@ func Install(s *server.MCPServer, c *config.Config) {
 	cluster_toolkit.Install(s, c)
 	cost.Install(s, c)
 	giq.Install(s, c)
-	recommendation.Install(s, c)
 	logging.Install(s, c)
+	recommendation.Install(s, c)
 }
