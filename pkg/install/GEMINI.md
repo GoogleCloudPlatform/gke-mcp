@@ -87,4 +87,4 @@ Many questions the user has about the data produced can be answered by reading t
 
 It can check if any of those known issues exist in the cluster by loading https://cloud.google.com/kubernetes-engine/docs/troubleshooting/known-issues into memory.
 
-For example, if identified versions are "1.28, 1.29" Fixed versions are "1.28.7-gke.1026000" and "1.29.2-gke.1060000". It means 1.28 <= cluster version < 1.28.7-gke.1026000 or 1.29 <= cluster version < 1.29.2-gke.1060000 are affected.
+For example, if identified versions are "1.28, 1.29" and fixed versions are "1.28.7-gke.1026000" and "1.29.2-gke.1060000". It means 1.28 <= cluster version < 1.28.7-gke.1026000 or 1.29 <= cluster version < 1.29.2-gke.1060000 are affected.
