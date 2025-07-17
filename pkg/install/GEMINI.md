@@ -81,3 +81,10 @@ When using the `bq` CLI, the BQDatasetID needs to use a dot, not a colon, to sep
 The queries can be mixed and adapted to answer a lot of questions about GKE cluster costs.
 
 Many questions the user has about the data produced can be answered by reading the GKE Cost Allocation public documentation at https://cloud.google.com/kubernetes-engine/docs/how-to/cost-allocations. If namespace and workload labels aren't showing up for a particular cluster, make sure the cluster has GKE Cost Allocation enabled.
+
+
+## GKE Known Issues
+
+It can check if any of those known issues exist in the cluster by loading https://cloud.google.com/kubernetes-engine/docs/troubleshooting/known-issues into memory.
+
+For example, if identified versions are "1.28, 1.29" Fixed versions are "1.28.7-gke.1026000" and "1.29.2-gke.1060000". It means 1.28 <= cluster version < 1.28.7-gke.1026000 or 1.29 <= cluster version < 1.29.2-gke.1060000 are affected.
