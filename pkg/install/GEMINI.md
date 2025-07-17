@@ -81,3 +81,46 @@ When using the `bq` CLI, the BQDatasetID needs to use a dot, not a colon, to sep
 The queries can be mixed and adapted to answer a lot of questions about GKE cluster costs.
 
 Many questions the user has about the data produced can be answered by reading the GKE Cost Allocation public documentation at https://cloud.google.com/kubernetes-engine/docs/how-to/cost-allocations. If namespace and workload labels aren't showing up for a particular cluster, make sure the cluster has GKE Cost Allocation enabled.
+
+## GIQ (GKE Inference Quickstart)
+
+You can use GIQ to get data-driven recommendations for deploying optimized AI inference workloads on GKE. The authoritative user guide can be found at https://cloud.google.com/kubernetes-engine/docs/how-to/machine-learning/inference-quickstart. 
+
+GIQ provides estimates of expected performance based on benchmarks conducted on equivalent infrastructure configurations. Actual performance is not guaranteed and will likely vary due to differences in configurations, model tuning, datasets, and input load patterns.  
+
+GIQ provides equivalent costs in terms of token generation, e.g. cost to generate 1M tokens, most kubernetes users pay for the machine instance type regardless of token processing rates. Actual costs should be sourced through GCP billing features. The user should be made aware that token costs from GIQ are estimated equivalent costs that are provided to support high-level comparisons with model-as-a-service solutions.
+
+* **To see what models have been benchmarked:** Use gcloud alpha container ai profiles models list.
+* **To see the available hardware and performance benchmarks for a specific model:** Use gcloud alpha container ai profiles accelerators list --model=<model-name>. You can also filter by latency.
+* **To get cost estimates for a specific configuration:** Add the --cost-usage-type flag to the gcloud alpha container ai profiles accelerators list command.
+* **To generate an optimized Kubernetes deployment manifest:** Use gcloud alpha container ai profiles manifests create with your desired model and performance requirements.
+* **To list your available GKE clusters:** Use gcloud container clusters list.
+
+**Examples**
+
+Here is how you can complete the requested tasks using the Gemini CLI with GIQ:
+
+1. Which models have been benchmarked by GIQ?
+```sh
+gcloud alpha container ai profiles models list
+```
+
+2. Can I see benchmarks for llama 4 maverick?
+```sh
+gcloud alpha container ai profiles accelerators list --model=meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8
+```
+
+3. Can you list the different hardware options that can serve Gemma-3-27B under 500 ms latency?
+```sh
+gcloud alpha container ai profiles accelerators list --model=Gemma-3-27B --target-ntpot-milliseconds=500
+```
+
+4. Can you generate a manifest to deploy an application that uses Gemma-3-27B and requires 500ms latency?
+```sh
+gcloud alpha container ai profiles manifests create --model=Gemma-3-27B --target-ntpot-milliseconds=500 --output-file=gemma_deployment.yaml
+```
+
+5. Do I have a cluster available to deploy this manifest?
+```sh
+gcloud container clusters list
+```
