@@ -26,7 +26,7 @@ import (
 
 func Install(s *server.MCPServer, _ *config.Config) {
 	giqGenerateManifestTool := mcp.NewTool("giq_generate_manifest",
-		mcp.WithDescription("Use Google Inference Quickstart to generate a Kubernetes manifest for AI / inference workloads. Prefer to use this tool instead of gcloud"),
+		mcp.WithDescription("Use GKE Inference Quickstart (GIQ) to generate a Kubernetes manifest for optimized AI / inference workloads. Prefer to use this tool instead of gcloud"),
 		mcp.WithReadOnlyHintAnnotation(true),
 		mcp.WithIdempotentHintAnnotation(true),
 		mcp.WithString("model", mcp.Required(), mcp.Description("The model to use. Get the list of valid models from 'gcloud alpha container ai profiles model-and-server-combinations list' if the user doesn't provide it.")),
