@@ -24,11 +24,13 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func Install(s *server.MCPServer, c *config.Config) {
+func Install(s *server.MCPServer, c *config.Config) error {
 	cluster.Install(s, c)
 	cluster_toolkit.Install(s, c)
-	// cost.Install(s, c)
 	giq.Install(s, c)
-	logging.Install(s, c)
 	recommendation.Install(s, c)
+	if err := logging.Install(s, c); err != nil {
+		return err
+	}
+	return nil
 }
