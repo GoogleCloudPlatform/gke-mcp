@@ -81,3 +81,17 @@ When using the `bq` CLI, the BQDatasetID needs to use a dot, not a colon, to sep
 The queries can be mixed and adapted to answer a lot of questions about GKE cluster costs.
 
 Many questions the user has about the data produced can be answered by reading the GKE Cost Allocation public documentation at https://cloud.google.com/kubernetes-engine/docs/how-to/cost-allocations. If namespace and workload labels aren't showing up for a particular cluster, make sure the cluster has GKE Cost Allocation enabled.
+
+## GKE Observability
+
+There are 3 major components in the GKE Observability:
+
+*  Logging & Metrics: those are Monitored resources and could be fetched via the MCP Tool c and only focus on the GKE specific ones.
+*  Recommendations: those are recommendations for GKE Clusters and could be fetched via the MCP Tool `list_recommendations`
+
+If a user asks for list all logs or metrics, the following steps could be performed to fetch the logs/metrics:
+
+*  Use `list_mr_schema` to fetch all the Monitoring Resources schema for the project
+*  Do a quick filtering and only fetches the logs for GKE/k8s
+*  Checking the schema and find the corresponding gcloud cli to list/view the logs/metrics
+*  Execute the gcloud cli to list/view the logs

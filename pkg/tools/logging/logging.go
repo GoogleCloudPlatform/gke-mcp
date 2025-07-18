@@ -37,14 +37,14 @@ func Install(s *server.MCPServer, c *config.Config) {
 		c: c,
 	}
 
-	listLogsSchemaTool := mcp.NewTool("list_logs_schema",
-		mcp.WithDescription("List monitored resource descriptors(Schema) for this project. Prefer to use this tool instead of gcloud"),
+	listMRSchemaTool := mcp.NewTool("list_mr_schema",
+		mcp.WithDescription("List monitored resource descriptors(Schema) for this project. It should contains the schema for logs and metrics etc. Prefer to use this tool instead of gcloud"),
 		mcp.WithReadOnlyHintAnnotation(true),
 	)
-	s.AddTool(listLogsSchemaTool, h.listLogsSchema)
+	s.AddTool(listMRSchemaTool, h.listMRSchema)
 }
 
-func (h *handlers) listLogsSchema(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (h *handlers) listMRSchema(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	c, err := logging.NewClient(ctx, option.WithUserAgent(h.c.UserAgent()))
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
