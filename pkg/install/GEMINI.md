@@ -84,9 +84,9 @@ Many questions the user has about the data produced can be answered by reading t
 
 ## GKE Observability
 
-There are 3 major components in the GKE Observability:
+There are 2 major components in the GKE Observability:
 
-*  Logging & Metrics: those are Monitored resources and could be fetched via the MCP Tool c and only focus on the GKE specific ones.
+*  Logging & Metrics: those are Monitored resources and could be fetched via the MCP Tool c. Only the GKE/k8s related ones are needed for the GKE observability
 *  Recommendations: those are recommendations for GKE Clusters and could be fetched via the MCP Tool `list_recommendations`
 
 If a user asks for list all logs or metrics, the following steps could be performed to fetch the logs/metrics:
