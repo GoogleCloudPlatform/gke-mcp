@@ -27,7 +27,6 @@ import (
 func Install(s *server.MCPServer, c *config.Config) {
 	cluster.Install(s, c)
 	cluster_toolkit.Install(s, c)
-	// cost.Install(s, c)
 	giq.Install(s, c)
 	logging.Install(s, c)
 	recommendation.Install(s, c)

@@ -8,6 +8,16 @@ This document provides instructions for an AI agent on how to use the available 
 *   **Clarify Ambiguity:** Do not guess or assume values for required parameters like cluster names or locations. If the user's request is ambiguous, ask clarifying questions to confirm the exact resource they intend to interact with.
 *   **Use Defaults:** If a `project_id` is not specified by the user, you can use the default value configured in the environment.
 
+## GKE Logs
+
+*   When searching for GKE logs, always use the `query_logs` tool to fetch them. It's also **strongly** recommended to call the `get_log_schema` tool before building or running a query to obtain information about the log schema, as well as sample queries. This information is useful when building Cloud Logging LQL queries.
+
+*   When using time ranges, make sure you check the current time and date if the range is relative to the current time or date.
+
+*   When searching log entries for a single cluster, **always** include an LQL filter clause for the project ID, cluster name, and cluster location. Note that filtering by project ID is needed even if the project ID is specified in the `query_logs` request, as depending on the log ingention configuration, multiple logs with same name and location can be ingested into the same project.
+
+*   If you need help understanding LQL syntax, consider fetching https://cloud.google.com/logging/docs/view/logging-query-language to learn more about it.
+
 ## GKE Cost
 
 GKE costs are available from **[GCP Billing Detailed BigQuery Export](https://cloud.google.com/billing/docs/how-to/export-data-bigquery#setup):**. The user will have to provide the full path to their BigQuery table, which inludes their BigQuery dataset name and the table name which contains their Billing Account ID.

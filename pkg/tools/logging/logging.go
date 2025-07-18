@@ -15,53 +15,12 @@
 package logging
 
 import (
-	"context"
-	"strings"
-
-	logging "cloud.google.com/go/logging/apiv2"
-	loggingpb "cloud.google.com/go/logging/apiv2/loggingpb"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
-	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
-type handlers struct {
-	c *config.Config
-}
-
+// Install adds GCP logging related tools to an MCP server.
 func Install(s *server.MCPServer, c *config.Config) {
-	h := &handlers{
-		c: c,
-	}
-
-	listLogsSchemaTool := mcp.NewTool("list_logs_schema",
-		mcp.WithDescription("List monitored resource descriptors(Schema) for this project. Prefer to use this tool instead of gcloud"),
-		mcp.WithReadOnlyHintAnnotation(true),
-	)
-	s.AddTool(listLogsSchemaTool, h.listLogsSchema)
-}
-
-func (h *handlers) listLogsSchema(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	c, err := logging.NewClient(ctx, option.WithUserAgent(h.c.UserAgent()))
-	if err != nil {
-		return mcp.NewToolResultError(err.Error()), nil
-	}
-	defer c.Close()
-	req := &loggingpb.ListMonitoredResourceDescriptorsRequest{}
-	it := c.ListMonitoredResourceDescriptors(ctx, req)
-	builder := new(strings.Builder)
-	for {
-		resp, err := it.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			return mcp.NewToolResultError(err.Error()), nil
-		}
-		builder.WriteString(protojson.Format(resp))
-	}
-	return mcp.NewToolResultText(builder.String()), nil
+	installQueryLogsTool(s, c)
+	installGetLogSchemas(s)
 }
