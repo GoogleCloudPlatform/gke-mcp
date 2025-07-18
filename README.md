@@ -29,6 +29,7 @@ Enable MCP-compatible AI agents to interact with Google Kubernetes Engine.
 - `get_cluster`: Get detailed about a single GKE Cluster.
 - `giq_generate_manifest`: Generate a GKE manifest for AI/ML inference workloads using Google Inference Quickstart.
 - `list_recommendations`: List recommendations for your GKE clusters.
+- `list_mr_schema`: List all Monitoring Resources(including logging, metrics etc) for your project.
 
 ## Context 
 
