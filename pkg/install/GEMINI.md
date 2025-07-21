@@ -124,3 +124,32 @@ gcloud alpha container ai profiles manifests create --model=Gemma-3-27B --target
 ```sh
 gcloud container clusters list
 ```
+
+## GKE Cluster Known Issues
+
+### Objective
+To determine if a GKE cluster is impacted by any documented known issues.
+
+### Instructions
+
+1.  **Identify Cluster Versions**: You will need the GKE **control plane (master) version** and the **node pool version(s)** for the cluster you are troubleshooting.
+
+2.  **Consult the Source**: Load https://cloud.google.com/kubernetes-engine/docs/troubleshooting/known-issues into memory. Don't process URLs in this link.
+
+3.  **Check the Affected Component**: Read the description for each known issue carefully. You must determine if the issue affects the **control plane** or the **node pools**, as the versions for these components can be different.
+
+4.  **Compare and Analyze**: Based on the affected component, compare its version against the specified **"Identified versions"** and **"Fixed versions"** for that issue.
+
+### How to Interpret Version Ranges
+
+A cluster component (either control plane or node pool) is considered **affected** by a known issue if its version is greater than or equal to an **"Identified version"** and less than the corresponding **"Fixed version"**.
+
+* **Rule**: A component is affected if `identified_version <= component_version < fixed_version`.
+
+* **Example**:
+    * A known issue lists the following versions and specifies it affects **node pools**:
+        * **Identified versions**: `1.28`, `1.29`
+        * **Fixed versions**: `1.28.7-gke.1026000`, `1.29.2-gke.1060000`
+    * **Conclusion**: A node pool is affected if its version falls into either of these ranges:
+        * Between `1.28` (inclusive) and `1.28.7-gke.1026000` (exclusive).
+        * Between `1.29` (inclusive) and `1.29.2-gke.1060000` (exclusive).

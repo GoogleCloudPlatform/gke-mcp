@@ -4,25 +4,53 @@ Enable MCP-compatible AI agents to interact with Google Kubernetes Engine.
 
 # Installation
 
-1.  Install the tool:
+Choose a way to install the MCP Server and then connect your AI to it.
 
-    ```sh
-    go install github.com/GoogleCloudPlatform/gke-mcp@latest
-    ```
+## Install the MCP Server
 
-    The `gke-mcp` binary will be installed in the directory specified by the `GOBIN` environment variable. If `GOBIN` is not set, it defaults to `$GOPATH/bin` and, if `GOPATH` is also not set, it falls back to `$HOME/go/bin`.
+#### Quick Install (Linux & MacOS only)
 
-    You can find the exact location by running `go env GOBIN`. If the command returns an empty value, run `go env GOPATH` to find the installation directory.
+```sh
+curl -sSL https://raw.githubusercontent.com/GoogleCloudPlatform/gke-mcp/main/install.sh | bash
+```
 
-2.  Install it as a `gemini-cli` extension:
+#### Manual Install
 
-    ```sh
-    gke-mcp install gemini-cli
-    ```
+```sh
+go install github.com/GoogleCloudPlatform/gke-mcp@latest
+```
 
-    This will create a manifest file in `./.gemini/extensions/gke-mcp` that points to the installed `gke-mcp` binary.
+The `gke-mcp` binary will be installed in the directory specified by the `GOBIN` environment variable. If `GOBIN` is not set, it defaults to `$GOPATH/bin` and, if `GOPATH` is also not set, it falls back to `$HOME/go/bin`.
 
-## Tools
+You can find the exact location by running `go env GOBIN`. If the command returns an empty value, run `go env GOPATH` to find the installation directory.
+
+## Add the MCP Server to your AI
+
+#### Gemini CLI
+
+Install it as a `gemini-cli` extension:
+
+```sh
+gke-mcp install gemini-cli
+```
+
+This will create a manifest file in `./.gemini/extensions/gke-mcp` that points to the `gke-mcp` binary.
+
+#### Other AIs
+
+For AIs that support JSON configuration, usually you can add the MCP server to your existing config with the below JSON. Don't copy and paste it as-is, merge it into your existing JSON settings.
+
+```json
+{
+  "mcpServers": {
+    "gke-mcp": {
+      "command": "gke-mcp",
+    }
+  }
+}
+```
+
+## MCP Tools
 
 - `cluster_toolkit`: Creates AI optimized GKE Clusters.
 - `list_clusters`: List your GKE clusters.
@@ -30,7 +58,7 @@ Enable MCP-compatible AI agents to interact with Google Kubernetes Engine.
 - `giq_generate_manifest`: Generate a GKE manifest for AI/ML inference workloads using Google Inference Quickstart.
 - `list_recommendations`: List recommendations for your GKE clusters.
 
-## Context 
+## MCP Context 
 
 In addition to the tools above, a lot of value is provided through the bundled context instructions.
 
@@ -49,8 +77,7 @@ To compile the binary and update the `gemini-cli` extension with your local chan
 2.  Run the installation command to update the extension manifest:
 
     ```sh
-    ./gke-mcp install gemini-cli
+    ./gke-mcp install gemini-cli --developer
     ```
 
     This will make `gemini-cli` use your locally compiled binary.
-

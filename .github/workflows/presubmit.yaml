@@ -37,6 +37,21 @@ jobs:
           ./dev/ci/presubmits/go-build.sh
 
 
+  go-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: "read"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - name: "Run dev/ci/presubmits/go-test.sh"
+        run: |
+          ./dev/ci/presubmits/go-test.sh
+
+
   go-vet:
     runs-on: ubuntu-latest
     timeout-minutes: 60
