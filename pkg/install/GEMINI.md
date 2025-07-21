@@ -83,8 +83,31 @@ The queries can be mixed and adapted to answer a lot of questions about GKE clus
 Many questions the user has about the data produced can be answered by reading the GKE Cost Allocation public documentation at https://cloud.google.com/kubernetes-engine/docs/how-to/cost-allocations. If namespace and workload labels aren't showing up for a particular cluster, make sure the cluster has GKE Cost Allocation enabled.
 
 
-## GKE cluster known issues
+## GKE Cluster Known Issues
 
-Check whether your cluster is affected by known issues by loading https://cloud.google.com/kubernetes-engine/docs/troubleshooting/known-issues into memory. Don't processing URLs in this link.
+### Objective
+To determine if a GKE cluster is impacted by any documented known issues.
 
-For example, if identified versions are "1.28, 1.29" and fixed versions are "1.28.7-gke.1026000" and "1.29.2-gke.1060000". It means 1.28 <= cluster version < 1.28.7-gke.1026000 or 1.29 <= cluster version < 1.29.2-gke.1060000 are affected.
+### Instructions
+
+1.  **Identify Cluster Versions**: You will need the GKE **control plane (master) version** and the **node pool version(s)** for the cluster you are troubleshooting.
+
+2.  **Consult the Source**: Load https://cloud.google.com/kubernetes-engine/docs/troubleshooting/known-issues into memory. Don't processing URLs in this link.
+
+3.  **Check the Affected Component**: Read the description for each known issue carefully. You must determine if the issue affects the **control plane** or the **node pools**, as the versions for these components can be different.
+
+4.  **Compare and Analyze**: Based on the affected component, compare its version against the specified **"Identified versions"** and **"Fixed versions"** for that issue.
+
+### How to Interpret Version Ranges
+
+A cluster component (either control plane or node pool) is considered **affected** by a known issue if its version is greater than or equal to an **"Identified version"** and less than the corresponding **"Fixed version"**.
+
+* **Rule**: A component is affected if `identified_version <= component_version < fixed_version`.
+
+* **Example**:
+    * A known issue lists the following versions and specifies it affects **node pools**:
+        * **Identified versions**: `1.28`, `1.29`
+        * **Fixed versions**: `1.28.7-gke.1026000`, `1.29.2-gke.1060000`
+    * **Conclusion**: A node pool is affected if its version falls into either of these ranges:
+        * Between `1.28` (inclusive) and `1.28.7-gke.1026000` (exclusive).
+        * Between `1.29` (inclusive) and `1.29.2-gke.1060000` (exclusive).
