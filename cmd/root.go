@@ -15,6 +15,8 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -73,10 +75,10 @@ func init() {
 }
 
 func runRootCmd(cmd *cobra.Command, args []string) {
-	startMCPServer()
+	startMCPServer(cmd.Context())
 }
 
-func startMCPServer() {
+func startMCPServer(ctx context.Context) {
 	s := server.NewMCPServer(
 		"GKE MCP Server",
 		version,
@@ -84,11 +86,17 @@ func startMCPServer() {
 	)
 
 	c := config.New(version)
-	tools.Install(s, c)
+	if err := tools.Install(ctx, s, c); err != nil {
+		log.Fatalf("Failed to install tools: %v\n", err)
+	}
 
 	log.Printf("Starting GKE MCP Server (%s)", version)
 	if err := server.ServeStdio(s); err != nil {
-		log.Printf("Server error: %v\n", err)
+		if errors.Is(err, context.Canceled) {
+			log.Printf("Server shutting down.")
+		} else {
+			log.Printf("Server error: %v\n", err)
+		}
 	}
 }
 
