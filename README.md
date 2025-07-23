@@ -71,6 +71,8 @@ In addition to the tools above, a lot of value is provided through the bundled c
 
 - **Cost**: The provided instructions allows the AI to answer many questions related to GKE costs, including queries related to clusters, namespaces, and Kubernetes workloads.
 
+- **GKE Known Issues**: The provided instructions allows the AI to fetch the latest GKE Known issues and check whether the cluster is affected by one of these known issues.
+
 ## Development
 
 To compile the binary and update the `gemini-cli` extension with your local changes, follow these steps:
