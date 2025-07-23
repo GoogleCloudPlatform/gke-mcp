@@ -75,13 +75,19 @@ In addition to the tools above, a lot of value is provided through the bundled c
 
 To compile the binary and update the `gemini-cli` extension with your local changes, follow these steps:
 
-1.  Build the binary from the root of the project:
+1. Remove the global gke-mcp configuration
+
+    ```sh
+    rm -rf ~/.gemini/extensions/gke-mcp
+    ```
+
+2.  Build the binary from the root of the project:
 
     ```sh
     go build -o gke-mcp .
     ```
 
-2.  Run the installation command to update the extension manifest:
+3.  Run the installation command to update the extension manifest:
 
     ```sh
     ./gke-mcp install gemini-cli --developer
