@@ -17,8 +17,6 @@ package cluster
 import (
 	"context"
 	"fmt"
-	"log"
-	"strings"
 
 	container "cloud.google.com/go/container/apiv1"
 	containerpb "cloud.google.com/go/container/apiv1/containerpb"
@@ -64,10 +62,6 @@ func Install(ctx context.Context, s *server.MCPServer, c *config.Config) error {
 		mcp.WithString("name", mcp.Required(), mcp.Description("GKE cluster name. Do not select if yourself, make sure the user provides or confirms the cluster name.")),
 	)
 	s.AddTool(getClusterTool, h.getCluster)
-
-	if err := h.adcAuthCheck(ctx); err != nil {
-		return err
-	}
 
 	return nil
 }
@@ -116,29 +110,4 @@ func (h *handlers) getCluster(ctx context.Context, request mcp.CallToolRequest) 
 	}
 
 	return mcp.NewToolResultText(protojson.Format(resp)), nil
-}
-
-func (h *handlers) adcAuthCheck(ctx context.Context) error {
-	projectID := h.c.DefaultProjectID()
-	// Can't do a pre-flight check without a default project.
-	if projectID == "" {
-		return nil
-	}
-
-	location := h.c.DefaultLocation()
-	// Without a default location try checking us-central1.
-	if location == "" {
-		location = "us-central1"
-	}
-
-	_, err := h.cmClient.GetServerConfig(ctx, &containerpb.GetServerConfigRequest{
-		Name: fmt.Sprintf("projects/%s/locations/%s", projectID, location),
-	})
-	if err != nil {
-		if strings.Contains(err.Error(), "Unauthenticated") {
-			log.Fatalf("GKE MCP Server requires Application Default Credentials (https://cloud.google.com/docs/authentication/application-default-credentials). Run `gcloud auth application-default login` and restart.")
-		}
-	}
-
-	return nil
 }

@@ -21,12 +21,16 @@ import (
 	"log"
 	"os"
 	"runtime/debug"
+	"strings"
 
+	container "cloud.google.com/go/container/apiv1"
+	"cloud.google.com/go/container/apiv1/containerpb"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/install"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/cobra"
+	"google.golang.org/api/option"
 )
 
 var (
@@ -79,13 +83,23 @@ func runRootCmd(cmd *cobra.Command, args []string) {
 }
 
 func startMCPServer(ctx context.Context) {
+	c := config.New(version)
+
+	instructions := ""
+	if err := adcAuthCheck(ctx, c); err != nil {
+		if strings.Contains(err.Error(), "Unauthenticated") {
+			log.Printf("GKE API calls requires Application Default Credentials (https://cloud.google.com/docs/authentication/application-default-credentials). Get credentials with `gcloud auth application-default login` before calling MCP tools.")
+			instructions += "GKE API calls requires Application Default Credentials (https://cloud.google.com/docs/authentication/application-default-credentials). Get credentials with `gcloud auth application-default login` before calling MCP tools."
+		}
+	}
+
 	s := server.NewMCPServer(
 		"GKE MCP Server",
 		version,
 		server.WithToolCapabilities(true),
+		server.WithInstructions(instructions),
 	)
 
-	c := config.New(version)
 	if err := tools.Install(ctx, s, c); err != nil {
 		log.Fatalf("Failed to install tools: %v\n", err)
 	}
@@ -98,6 +112,31 @@ func startMCPServer(ctx context.Context) {
 			log.Printf("Server error: %v\n", err)
 		}
 	}
+}
+
+func adcAuthCheck(ctx context.Context, c *config.Config) error {
+	projectID := c.DefaultProjectID()
+	// Can't do a pre-flight check without a default project.
+	if projectID == "" {
+		return nil
+	}
+
+	location := c.DefaultLocation()
+	// Without a default location try checking us-central1.
+	if location == "" {
+		location = "us-central1"
+	}
+
+	cmClient, err := container.NewClusterManagerClient(ctx, option.WithUserAgent(c.UserAgent()))
+	if err != nil {
+		return fmt.Errorf("failed to create cluster manager client: %w", err)
+	}
+	defer cmClient.Close()
+
+	_, err = cmClient.GetServerConfig(ctx, &containerpb.GetServerConfigRequest{
+		Name: fmt.Sprintf("projects/%s/locations/%s", projectID, location),
+	})
+	return err
 }
 
 func runInstallGeminiCLICmd(cmd *cobra.Command, args []string) {
