@@ -71,9 +71,17 @@ In addition to the tools above, a lot of value is provided through the bundled c
 
 - **Cost**: The provided instructions allows the AI to answer many questions related to GKE costs, including queries related to clusters, namespaces, and Kubernetes workloads.
 
+- **GKE Known Issues**: The provided instructions allows the AI to fetch the latest GKE Known issues and check whether the cluster is affected by one of these known issues.
+
 ## Development
 
 To compile the binary and update the `gemini-cli` extension with your local changes, follow these steps:
+
+1. Remove the global gke-mcp configuration
+
+    ```sh
+    rm -rf ~/.gemini/extensions/gke-mcp
+    ```
 
 1.  Build the binary from the root of the project:
 
@@ -81,7 +89,7 @@ To compile the binary and update the `gemini-cli` extension with your local chan
     go build -o gke-mcp .
     ```
 
-2.  Run the installation command to update the extension manifest:
+1.  Run the installation command to update the extension manifest:
 
     ```sh
     ./gke-mcp install gemini-cli --developer
