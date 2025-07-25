@@ -33,7 +33,7 @@ type handlers struct {
 	c *config.Config
 }
 
-func Install(s *server.MCPServer, c *config.Config) {
+func Install(_ context.Context, s *server.MCPServer, c *config.Config) error {
 
 	h := &handlers{
 		c: c,
@@ -47,6 +47,8 @@ func Install(s *server.MCPServer, c *config.Config) {
 		mcp.WithString("location", mcp.Required(), mcp.Description("GKE cluster location. This is required by the recommender API")),
 	)
 	s.AddTool(listRecommendationsTool, h.listProjectRecommendations)
+
+	return nil
 }
 
 func (h *handlers) listProjectRecommendations(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
