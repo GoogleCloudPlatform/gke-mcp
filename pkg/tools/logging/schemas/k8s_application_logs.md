@@ -35,3 +35,7 @@ resource.labels.cluster_name="<cluster_name>"
 resource.labels.location="<location>"
 resource.labels.project_id="<project_id>"
 ```
+
+## Output Format
+
+The `jsonPayload.message` field in the log entry is empty so for application logs, please include the error details are present in other fields within the jsonPayload, specifically `jsonPayload.error` and `jsonPayload.msg`.
