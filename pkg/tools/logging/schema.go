@@ -42,15 +42,7 @@ func installGetLogSchemas(s *server.MCPServer) {
 
 func getLogSchema(_ context.Context, _ mcp.CallToolRequest, req GetLogSchemaRequest) (*mcp.CallToolResult, error) {
 	switch req.LogType {
-	case "k8s_audit_logs":
-		fileName := fmt.Sprintf("%s.md", req.LogType)
-		filePath := filepath.Join("schemas", fileName)
-		content, err := schemas.ReadFile(filePath)
-		if err != nil {
-			return nil, fmt.Errorf("could not find schema for log_type %s: %v", req.LogType, err)
-		}
-		return mcp.NewToolResultText(string(content)), nil
-	case "k8s_application_logs":
+	case "k8s_audit_logs", "k8s_application_logs":
 		fileName := fmt.Sprintf("%s.md", req.LogType)
 		filePath := filepath.Join("schemas", fileName)
 		content, err := schemas.ReadFile(filePath)
