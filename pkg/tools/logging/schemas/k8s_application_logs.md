@@ -10,11 +10,6 @@ The following are the most relevant fields in a Kubernetes Application log entry
 
 -   `insertId`: An unique, auto-generated ID for the log entry.
 -   `logName`: The name of the log entry. This value is always `projects/<project_id>/logs/stderr` (logs written to standard error) or `projects/<project_id>logs/stdout ` (logs written to standard out), where `<project_id>` is the ID of the project that owns the log entry.
--   `operation`: Information about an operation associated with the log entry, if applicable.
-    -   `id`: The ID of the long-running operation that this log entry is associated with. This field has the value of `insertId`, because Kubernetes does not support long-running operations.
-    -   `first`: Always set to `true`. Indicates whether this audit log entry is for the request that originated a long-running operation.
-    -   `last`: Always set to `true`. Indicates whether this audit log entry is for the request that completed a long-running operation.
-    -   `producer`: Always set to `k8s.io`.
 -   `receiveTimestamp`: The timestamp that the log entry was received by the logging system.
 -   `resource`: The monitored resource that the log entry is associated with.
     -   `type`: The type of the Monitored Resource. For Kubernetes Application logs, this is always `k8s_container`.
