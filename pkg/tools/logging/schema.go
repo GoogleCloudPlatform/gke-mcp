@@ -50,6 +50,14 @@ func getLogSchema(_ context.Context, _ mcp.CallToolRequest, req GetLogSchemaRequ
 			return nil, fmt.Errorf("could not find schema for log_type %s: %v", req.LogType, err)
 		}
 		return mcp.NewToolResultText(string(content)), nil
+	case "k8s_application_logs":
+		fileName := fmt.Sprintf("%s.md", req.LogType)
+		filePath := filepath.Join("schemas", fileName)
+		content, err := schemas.ReadFile(filePath)
+		if err != nil {
+			return nil, fmt.Errorf("could not find schema for log_type %s: %v", req.LogType, err)
+		}
+		return mcp.NewToolResultText(string(content)), nil
 	default:
 		return mcp.NewToolResultErrorf("unsupported log_type: %s", req.LogType), nil
 	}
