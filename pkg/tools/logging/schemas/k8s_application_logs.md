@@ -19,7 +19,7 @@ The following are the most relevant fields in a Kubernetes Application log entry
         -   `location`: The location of the GKE cluster (region or zone).
         -   `namespace_name`: The namespace of the GKE Workload
         -   `pod_name`: The name of the GKE Pod
--   `textPayload`: The text payload of the Application Logs
+-   `jsonPayload`: The text payload of the Application Logs
 -   `timestamp`: The timestamp of when the log entry was emitted.
 
 ## Sample Queries
@@ -35,7 +35,3 @@ resource.labels.cluster_name="<cluster_name>"
 resource.labels.location="<location>"
 resource.labels.project_id="<project_id>"
 ```
-
-## Output Format
-
-The `jsonPayload.message` field in the log entry is empty so for application logs, please include the error details are present in other fields within the jsonPayload, specifically `jsonPayload.error` and `jsonPayload.msg`.
