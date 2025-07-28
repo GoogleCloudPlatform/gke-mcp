@@ -64,6 +64,8 @@ For AIs that support JSON configuration, usually you can add the MCP server to y
 - `get_cluster`: Get detailed about a single GKE Cluster.
 - `giq_generate_manifest`: Generate a GKE manifest for AI/ML inference workloads using Google Inference Quickstart.
 - `list_recommendations`: List recommendations for your GKE clusters.
+- `query_logs`: Query Google Cloud Platform logs using Logging Query Language (LQL).
+- `get_log_schema`: Get the schema for a specific GKE log type.
 
 ## MCP Context 
 

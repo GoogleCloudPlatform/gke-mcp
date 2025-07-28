@@ -35,14 +35,14 @@ func installGetLogSchemas(s *server.MCPServer) {
 	getLogSchemaTool := mcp.NewTool("get_log_schema",
 		mcp.WithDescription("Get the schema for a specific log type."),
 		mcp.WithReadOnlyHintAnnotation(true),
-		mcp.WithString("log_type", mcp.Description("The type of log to get schema for. Supported values are: ['k8s_audit_logs']."), mcp.Required()),
+		mcp.WithString("log_type", mcp.Description("The type of log to get schema for. Supported values are: ['k8s_audit_logs', 'k8s_application_logs']."), mcp.Required()),
 	)
 	s.AddTool(getLogSchemaTool, mcp.NewTypedToolHandler(getLogSchema))
 }
 
 func getLogSchema(_ context.Context, _ mcp.CallToolRequest, req GetLogSchemaRequest) (*mcp.CallToolResult, error) {
 	switch req.LogType {
-	case "k8s_audit_logs":
+	case "k8s_audit_logs", "k8s_application_logs":
 		fileName := fmt.Sprintf("%s.md", req.LogType)
 		filePath := filepath.Join("schemas", fileName)
 		content, err := schemas.ReadFile(filePath)
