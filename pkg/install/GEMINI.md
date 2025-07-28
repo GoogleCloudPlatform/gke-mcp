@@ -7,6 +7,7 @@ This document provides instructions for an AI agent on how to use the available 
 *   **Prefer Native Tools:** Always prefer to use the tools provided by this extension (e.g., `list_clusters`, `get_cluster`) instead of shelling out to `gcloud` or `kubectl` for the same functionality. This ensures better-structured data and more reliable execution.
 *   **Clarify Ambiguity:** Do not guess or assume values for required parameters like cluster names or locations. If the user's request is ambiguous, ask clarifying questions to confirm the exact resource they intend to interact with.
 *   **Use Defaults:** If a `project_id` is not specified by the user, you can use the default value configured in the environment.
+*   **Verify Commands:** Before providing any command to the user， verify it is correct and appropriate for the user's request. You can search online or refer to https://cloud.google.com/sdk/gcloud for gcloud documentations.
 
 ## GKE Logs
 
