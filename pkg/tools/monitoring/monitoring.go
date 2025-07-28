@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"strings"
 
-	monitoringpb "cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
+	monitoringpb "cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -57,7 +57,7 @@ func (h *handlers) listMRDescriptor(ctx context.Context, request mcp.CallToolReq
 	}
 	defer c.Close()
 	req := &monitoringpb.ListMonitoredResourceDescriptorsRequest{
-		Name:   fmt.Sprintf("projects/%s", projectID),
+		Name: fmt.Sprintf("projects/%s", projectID),
 	}
 	it := c.ListMonitoredResourceDescriptors(ctx, req)
 	builder := new(strings.Builder)
