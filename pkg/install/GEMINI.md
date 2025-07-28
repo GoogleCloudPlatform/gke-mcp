@@ -18,6 +18,14 @@ This document provides instructions for an AI agent on how to use the available 
 
 *   If you need help understanding LQL syntax, consider fetching https://cloud.google.com/logging/docs/view/logging-query-language to learn more about it.
 
+## GKE Monitoring
+
+When users ask a question about the Monitoring or monitored resource types, the following instructions could be applied:
+
+*  Please use the tool `list_monitored_resource_descriptors` to get all monitored resource descriptors
+*  After getting all the monitored resource, if the user ask for GKE specific ones, please filter the output and only include the GKE related ones
+   ** Full GKE related monitored resources are the one contains `gke` or `k8s` or `container.googleapis.com`
+
 ## GKE Cost
 
 GKE costs are available from **[GCP Billing Detailed BigQuery Export](https://cloud.google.com/billing/docs/how-to/export-data-bigquery#setup):**. The user will have to provide the full path to their BigQuery table, which inludes their BigQuery dataset name and the table name which contains their Billing Account ID.

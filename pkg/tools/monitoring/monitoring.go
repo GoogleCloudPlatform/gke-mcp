@@ -16,10 +16,11 @@ package monitoring
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
-	monitoringpb "cloud.google.com/go/logging/apiv2/monitoringpb"
-	monitoring "cloud.google.com/go/monitoring/apiv2"
+	monitoringpb "cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
+	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -50,15 +51,13 @@ func (h *handlers) listMRDescriptor(ctx context.Context, request mcp.CallToolReq
 	if projectID == "" {
 		return mcp.NewToolResultError("project_id argument not set"), nil
 	}
-	c, err := monitoring.NewClient(ctx, option.WithUserAgent(h.c.UserAgent()))
+	c, err := monitoring.NewMetricClient(ctx, option.WithUserAgent(h.c.UserAgent()))
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
 	defer c.Close()
-	// Only fetch GKE MR types
 	req := &monitoringpb.ListMonitoredResourceDescriptorsRequest{
-		Name:   projectID,
-		Filter: "resource.type = starts_with('k8s_')",
+		Name:   fmt.Sprintf("projects/%s", projectID),
 	}
 	it := c.ListMonitoredResourceDescriptors(ctx, req)
 	builder := new(strings.Builder)
