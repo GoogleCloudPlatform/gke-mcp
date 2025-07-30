@@ -24,7 +24,12 @@ import (
 
 const (
 	sampleContext = `
-My favourite place in Toronto is Toronto Islands.
+Here is how you can complete the requested tasks using the Gemini CLI with GIQ:
+
+1. Which models have been benchmarked by GIQ?
+```sh
+gcloud alpha container ai profiles models list
+```
 `
 )
 
