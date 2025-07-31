@@ -36,6 +36,10 @@ import (
 var (
 	version = "(unknown)"
 
+	// command flags
+	serverMode string
+	serverPort int
+
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{
 		Use:   "gke-mcp",
@@ -73,16 +77,28 @@ func init() {
 		log.Printf("Failed to read build info to get version.")
 	}
 
+	rootCmd.Flags().StringVar(&serverMode, "server-mode", "stdio", "transport to use for the server: stdio (default) or http")
+	rootCmd.Flags().IntVar(&serverPort, "server-port", 8080, "server port to use when server-mode is http; defaults to 8080")
 	rootCmd.AddCommand(installCmd)
+
 	installCmd.AddCommand(installGeminiCLICmd)
 	installCmd.PersistentFlags().BoolVarP(&installDeveloper, "developer", "d", false, "Install the MCP Server in developer mode")
 }
 
-func runRootCmd(cmd *cobra.Command, args []string) {
-	startMCPServer(cmd.Context())
+type startOptions struct {
+	serverMode string
+	serverPort int
 }
 
-func startMCPServer(ctx context.Context) {
+func runRootCmd(cmd *cobra.Command, args []string) {
+	opts := startOptions{
+		serverMode: serverMode,
+		serverPort: serverPort,
+	}
+	startMCPServer(cmd.Context(), opts)
+}
+
+func startMCPServer(ctx context.Context, opts startOptions) {
 	c := config.New(version)
 
 	instructions := ""
@@ -104,8 +120,23 @@ func startMCPServer(ctx context.Context) {
 		log.Fatalf("Failed to install tools: %v\n", err)
 	}
 
-	log.Printf("Starting GKE MCP Server (%s)", version)
-	if err := server.ServeStdio(s); err != nil {
+	// start server in the right mode
+	log.Printf("Starting GKE MCP Server (%s) in mode '%s'", version, opts.serverMode)
+	var err error
+	endpoint := fmt.Sprintf(":%d", opts.serverPort)
+
+	switch opts.serverMode {
+	case "stdio":
+		err = server.ServeStdio(s)
+	case "http":
+		httpServer := server.NewStreamableHTTPServer(s)
+		log.Printf("Listening for HTTP connections on port: %d", opts.serverPort)
+		err = httpServer.Start(endpoint)
+	default:
+		log.Printf("Unknown mode '%s', defaulting to 'stdio'", opts.serverMode)
+		err = server.ServeStdio(s)
+	}
+	if err != nil {
 		if errors.Is(err, context.Canceled) {
 			log.Printf("Server shutting down.")
 		} else {

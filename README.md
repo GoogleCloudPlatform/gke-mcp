@@ -75,6 +75,20 @@ In addition to the tools above, a lot of value is provided through the bundled c
 
 - **GKE Known Issues**: The provided instructions allows the AI to fetch the latest GKE Known issues and check whether the cluster is affected by one of these known issues.
 
+## Supported MCP Transports
+
+By default, `gke-mcp` uses the [stdio]("https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#stdio") transport.  Additionally, the [Streamable HTTP](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#streamable-http) transport is supported as well. 
+
+You can set the transport mode using the following options:
+
+`--server-mode`: transport to use for the server: stdio (default) or http
+
+`--server-port`: server port to use when server-mode is http or sse; defaults to 8080
+
+```sh
+gkc-mcp --server-mode http --server-port 8080
+```
+
 ## Development
 
 To compile the binary and update the `gemini-cli` extension with your local changes, follow these steps:
