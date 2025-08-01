@@ -164,22 +164,6 @@ A cluster component (either control plane or node pool) is considered **affected
         * Between `1.28` (inclusive) and `1.28.7-gke.1026000` (exclusive).
         * Between `1.29` (inclusive) and `1.29.2-gke.1060000` (exclusive).
 
-## GKE Storage
-
- When a user asks about Persistent Disks, Hyperdisks and GKE Storage you have to check an official documentation at first.
-
- 
-This information for next topics is placed here:
-
-- Hyperdisk overview and available disk types across Compute Engine instances - [Hyperdisk overview](https://cloud.google.com/compute/docs/disks/hyperdisks).
-- Persistent disk overview and available disk types - [Persistent disk overview](https://cloud.google.com/compute/docs/disks/persistent-disks).
-- Regional persistent disks storage class - [Regional persistent disks](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/regional-pd).
-- Hyperdisk Performance limitations - [Hyperdisk Performance limitations](https://cloud.google.com/compute/docs/disks/hyperdisk-perf-limits#limits-by-hd-type).
-- Hyperdisk ML storage class - [Hyperdisk ML storage class](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/hyperdisk-ml).
-
-
-
-
 ## GCP Storage Pools
 
 When a user asks about Storage Pools you have to check an official documentation at first.
@@ -189,21 +173,39 @@ When a user asks about Storage Pools you have to check an official documentation
 - Create Storage Pool - [Create Storage Pool](https://cloud.google.com/compute/docs/disks/create-storage-pools).
 - Manage Storage Pool - [](https://cloud.google.com/compute/docs/disks/manage-storage-pools).
 
+## GKE Storage and Hyperdisks
 
-## PD and Hyperdisk cost comparison  
-When a user asks about Persistent Disks and Hyperdisks cost comparison.
+When a user asks about Hyperdisk or storage operations, you must first consult the official documentation from the list below to provide accurate and up-to-date information.
+Official Documentation:
 
-- Persistent disks and hyperdisks pricing - [Disk and image pricing](https://cloud.google.com/compute/disks-image-pricing).
-
-
-## Hyperdisk configuration and tooling
-
-
-- Create Hyperdisk - [Create Hyperdisk](https://cloud.google.com/compute/docs/disks/add-hyperdisk).
+- How to create Hyperdisk - [Create Hyperdisk](https://cloud.google.com/compute/docs/disks/add-hyperdisk).
 - Hyperdisk ML storage class - [Hyperdisk ML storage class](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/hyperdisk-ml).
 - Hyperdisk Balanced, Throughput, Extreme or Balanced High Availability storage class - [Hyperdisk storage class](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/hyperdisk).
+- Hyperdisk overview and available disk types across Compute Engine instances - [Hyperdisk overview](https://cloud.google.com/compute/docs/disks/hyperdisks).
+- Persistent disk overview and available disk types - [Persistent disk overview](https://cloud.google.com/compute/docs/disks/persistent-disks).
+- Regional persistent disks storage class - [Regional persistent disks](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/regional-pd).
+- Hyperdisk Performance limitations - [Hyperdisk Performance limitations](https://cloud.google.com/compute/docs/disks/hyperdisk-perf-limits#limits-by-hd-type).
+- Hyperdisk ML storage class - [Hyperdisk ML storage class](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/hyperdisk-ml).
+- Migration to Hyperdisks - [Hyperdisk migration](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/hyperdisk).
+- How to use existing disks in GKE - [Pre-existing PD](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/preexisting-pd).
+- How to create disk snapshots - [Disk snapshots creation](https://cloud.google.com/compute/docs/disks/create-snapshots).
+- Persistent disks and hyperdisks pricing - [Disk and image pricing](https://cloud.google.com/compute/disks-image-pricing).
 
+If you cannot find the required information in these documents, you may use Google Search and follow external links if necessary to complete the user request accurately.
 
+If the user requests any action or change involving disks, such as creating, deleting, attaching, detaching, migrating, resizing, or modifying Hyperdisks or persistent disks:
+* Do not perform any changes immediately.
+* First, present a concise, clearly structured plan that includes:
+    - The goals of the action.
+    - Short explanation of each step.
+    - A summary of steps you intend to take.
+    - Potential risks or consequences (e.g., service downtime, data loss).
+    - Any prerequisites that must be satisfied.
+
+Never execute actions against production infrastructure without explicit confirmation. The system operates in production, and data loss is unacceptable.
+Prefer using gcloud CLI commands for all actions.
+Use disk snapshots for backups or as part of any disk migration process.
+Always plan before acting. Always confirm before executing.
 
 ## Storage options
 When a user asks about the storage types to use for his particular workload. Use information from included links for  more detailed response
@@ -211,6 +213,5 @@ When a user asks about the storage types to use for his particular workload. Use
 - Storage types - [Storage types](https://cloud.google.com/blog/products/storage-data-transfer/pick-the-right-storage-option-on-google-cloud).
 - Machines family comparison - [Machines family comparison](https://cloud.google.com/compute/docs/machine-resource).
 
- 
 Use Google search if you can't find required information in these web pages.
 ## Terraform Cluster creation 
