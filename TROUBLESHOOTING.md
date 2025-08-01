@@ -50,4 +50,4 @@ For the changes to take effect in your current terminal session, you must reload
   source ~/.zshrc
   ```
 
-After completing these steps, you should be able to run the `gke-mcp` command successfully. 
+After completing these steps, you should be able to run the `gke-mcp` command successfully.
