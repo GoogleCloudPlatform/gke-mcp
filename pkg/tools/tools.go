@@ -15,19 +15,35 @@
 package tools
 
 import (
+	"context"
+
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/cluster"
 	cluster_toolkit "github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/cluster-toolkit"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/giq"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/logging"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/monitoring"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/recommendation"
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func Install(s *server.MCPServer, c *config.Config) {
-	cluster.Install(s, c)
-	cluster_toolkit.Install(s, c)
-	giq.Install(s, c)
-	logging.Install(s, c)
-	recommendation.Install(s, c)
+type installer func(ctx context.Context, s *server.MCPServer, c *config.Config) error
+
+func Install(ctx context.Context, s *server.MCPServer, c *config.Config) error {
+	installers := []installer{
+		cluster.Install,
+		cluster_toolkit.Install,
+		giq.Install,
+		logging.Install,
+		monitoring.Install,
+		recommendation.Install,
+	}
+
+	for _, installer := range installers {
+		if err := installer(ctx, s, c); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

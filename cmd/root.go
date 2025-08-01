@@ -15,20 +15,30 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"runtime/debug"
+	"strings"
 
+	container "cloud.google.com/go/container/apiv1"
+	"cloud.google.com/go/container/apiv1/containerpb"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/install"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/cobra"
+	"google.golang.org/api/option"
 )
 
 var (
 	version = "(unknown)"
+
+	// command flags
+	serverMode string
+	serverPort int
 
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{
@@ -67,29 +77,97 @@ func init() {
 		log.Printf("Failed to read build info to get version.")
 	}
 
+	rootCmd.Flags().StringVar(&serverMode, "server-mode", "stdio", "transport to use for the server: stdio (default) or http")
+	rootCmd.Flags().IntVar(&serverPort, "server-port", 8080, "server port to use when server-mode is http; defaults to 8080")
 	rootCmd.AddCommand(installCmd)
+
 	installCmd.AddCommand(installGeminiCLICmd)
 	installCmd.PersistentFlags().BoolVarP(&installDeveloper, "developer", "d", false, "Install the MCP Server in developer mode")
 }
 
-func runRootCmd(cmd *cobra.Command, args []string) {
-	startMCPServer()
+type startOptions struct {
+	serverMode string
+	serverPort int
 }
 
-func startMCPServer() {
+func runRootCmd(cmd *cobra.Command, args []string) {
+	opts := startOptions{
+		serverMode: serverMode,
+		serverPort: serverPort,
+	}
+	startMCPServer(cmd.Context(), opts)
+}
+
+func startMCPServer(ctx context.Context, opts startOptions) {
+	c := config.New(version)
+
+	instructions := ""
+	if err := adcAuthCheck(ctx, c); err != nil {
+		if strings.Contains(err.Error(), "Unauthenticated") {
+			log.Printf("GKE API calls requires Application Default Credentials (https://cloud.google.com/docs/authentication/application-default-credentials). Get credentials with `gcloud auth application-default login` before calling MCP tools.")
+			instructions += "GKE API calls requires Application Default Credentials (https://cloud.google.com/docs/authentication/application-default-credentials). Get credentials with `gcloud auth application-default login` before calling MCP tools."
+		}
+	}
+
 	s := server.NewMCPServer(
 		"GKE MCP Server",
 		version,
 		server.WithToolCapabilities(true),
+		server.WithInstructions(instructions),
 	)
 
-	c := config.New(version)
-	tools.Install(s, c)
-
-	log.Printf("Starting GKE MCP Server (%s)", version)
-	if err := server.ServeStdio(s); err != nil {
-		log.Printf("Server error: %v\n", err)
+	if err := tools.Install(ctx, s, c); err != nil {
+		log.Fatalf("Failed to install tools: %v\n", err)
 	}
+
+	// start server in the right mode
+	log.Printf("Starting GKE MCP Server (%s) in mode '%s'", version, opts.serverMode)
+	var err error
+	endpoint := fmt.Sprintf(":%d", opts.serverPort)
+
+	switch opts.serverMode {
+	case "stdio":
+		err = server.ServeStdio(s)
+	case "http":
+		httpServer := server.NewStreamableHTTPServer(s)
+		log.Printf("Listening for HTTP connections on port: %d", opts.serverPort)
+		err = httpServer.Start(endpoint)
+	default:
+		log.Printf("Unknown mode '%s', defaulting to 'stdio'", opts.serverMode)
+		err = server.ServeStdio(s)
+	}
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			log.Printf("Server shutting down.")
+		} else {
+			log.Printf("Server error: %v\n", err)
+		}
+	}
+}
+
+func adcAuthCheck(ctx context.Context, c *config.Config) error {
+	projectID := c.DefaultProjectID()
+	// Can't do a pre-flight check without a default project.
+	if projectID == "" {
+		return nil
+	}
+
+	location := c.DefaultLocation()
+	// Without a default location try checking us-central1.
+	if location == "" {
+		location = "us-central1"
+	}
+
+	cmClient, err := container.NewClusterManagerClient(ctx, option.WithUserAgent(c.UserAgent()))
+	if err != nil {
+		return fmt.Errorf("failed to create cluster manager client: %w", err)
+	}
+	defer cmClient.Close()
+
+	_, err = cmClient.GetServerConfig(ctx, &containerpb.GetServerConfigRequest{
+		Name: fmt.Sprintf("projects/%s/locations/%s", projectID, location),
+	})
+	return err
 }
 
 func runInstallGeminiCLICmd(cmd *cobra.Command, args []string) {

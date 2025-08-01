@@ -15,12 +15,16 @@
 package logging
 
 import (
+	"context"
+
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/mark3labs/mcp-go/server"
 )
 
 // Install adds GCP logging related tools to an MCP server.
-func Install(s *server.MCPServer, c *config.Config) {
+func Install(_ context.Context, s *server.MCPServer, c *config.Config) error {
 	installQueryLogsTool(s, c)
 	installGetLogSchemas(s)
+
+	return nil
 }

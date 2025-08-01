@@ -26,7 +26,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func Install(s *server.MCPServer, _ *config.Config) {
+func Install(_ context.Context, s *server.MCPServer, _ *config.Config) error {
 	clusterToolkitDownloadTool := mcp.NewTool("cluster_toolkit_download",
 		mcp.WithDescription("Cluster Toolkit, is open-source software offered by Google Cloud which simplifies the process for you to create Google Kubernetes Engine clusters and deploy high performance computing (HPC), artificial intelligence (AI), and machine learning (ML). It is designed to be highly customizable and extensible, and intends to address the deployment needs of a broad range of use cases. This tool will download the public git repository so that Cluster Toolkit can be used."),
 		mcp.WithReadOnlyHintAnnotation(true),
@@ -34,6 +34,8 @@ func Install(s *server.MCPServer, _ *config.Config) {
 		mcp.WithString("download_directory", mcp.Required(), mcp.Description("Download directory for the git repo. By default use the absolute path to the current working directory.")),
 	)
 	s.AddTool(clusterToolkitDownloadTool, clusterToolkitDownload)
+
+	return nil
 }
 
 func clusterToolkitDownload(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {

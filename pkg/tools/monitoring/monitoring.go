@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package recommendation
+package monitoring
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
-	recommender "cloud.google.com/go/recommender/apiv1"
-	recommenderpb "cloud.google.com/go/recommender/apiv1/recommenderpb"
+	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
+	monitoringpb "cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -34,42 +34,34 @@ type handlers struct {
 }
 
 func Install(_ context.Context, s *server.MCPServer, c *config.Config) error {
-
 	h := &handlers{
 		c: c,
 	}
 
-	listRecommendationsTool := mcp.NewTool("list_recommendations",
-		mcp.WithDescription("List recommendations for GKE. Prefer to use this tool instead of gcloud"),
-		mcp.WithReadOnlyHintAnnotation(true),
-		mcp.WithIdempotentHintAnnotation(true),
+	listMRDescriptorTool := mcp.NewTool("list_monitored_resource_descriptors",
+		mcp.WithDescription("List monitored resource descriptors(schema) related to GKE for this project. Prefer to use this tool instead of gcloud"),
 		mcp.WithString("project_id", mcp.DefaultString(c.DefaultProjectID()), mcp.Description("GCP project ID. If not provided, defaults to the GCP project configured in gcloud, if any")),
-		mcp.WithString("location", mcp.Required(), mcp.Description("GKE cluster location. This is required by the recommender API")),
+		mcp.WithReadOnlyHintAnnotation(true),
 	)
-	s.AddTool(listRecommendationsTool, h.listProjectRecommendations)
+	s.AddTool(listMRDescriptorTool, h.listMRDescriptor)
 
 	return nil
 }
 
-func (h *handlers) listProjectRecommendations(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (h *handlers) listMRDescriptor(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	projectID := request.GetString("project_id", h.c.DefaultProjectID())
 	if projectID == "" {
 		return mcp.NewToolResultError("project_id argument not set"), nil
 	}
-	location, _ := request.RequireString("location")
-	if location == "" {
-		return mcp.NewToolResultError("location argument not set"), nil
-	}
-	c, err := recommender.NewClient(ctx, option.WithUserAgent(h.c.UserAgent()))
+	c, err := monitoring.NewMetricClient(ctx, option.WithUserAgent(h.c.UserAgent()))
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
 	defer c.Close()
-
-	req := &recommenderpb.ListRecommendationsRequest{
-		Parent: fmt.Sprintf("projects/%s/locations/%s/recommenders/google.container.DiagnosisRecommender", projectID, location),
+	req := &monitoringpb.ListMonitoredResourceDescriptorsRequest{
+		Name: fmt.Sprintf("projects/%s", projectID),
 	}
-	it := c.ListRecommendations(ctx, req)
+	it := c.ListMonitoredResourceDescriptors(ctx, req)
 	builder := new(strings.Builder)
 	for {
 		resp, err := it.Next()

@@ -24,7 +24,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func Install(s *server.MCPServer, _ *config.Config) {
+func Install(_ context.Context, s *server.MCPServer, _ *config.Config) error {
 	giqGenerateManifestTool := mcp.NewTool("giq_generate_manifest",
 		mcp.WithDescription("Use GKE Inference Quickstart (GIQ) to generate a Kubernetes manifest for optimized AI / inference workloads. Prefer to use this tool instead of gcloud"),
 		mcp.WithReadOnlyHintAnnotation(true),
@@ -35,6 +35,8 @@ func Install(s *server.MCPServer, _ *config.Config) {
 		mcp.WithString("target_ntpot_milliseconds", mcp.Description("The maximum normalized time per output token (NTPOT) in milliseconds.NTPOT is measured as the request_latency / output_tokens.")),
 	)
 	s.AddTool(giqGenerateManifestTool, giqGenerateManifest)
+
+	return nil
 }
 
 func giqGenerateManifest(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {

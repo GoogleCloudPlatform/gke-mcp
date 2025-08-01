@@ -23,6 +23,7 @@ import (
 type Config struct {
 	userAgent        string
 	defaultProjectID string
+	defaultLocation  string
 }
 
 func (c *Config) UserAgent() string {
@@ -33,20 +34,43 @@ func (c *Config) DefaultProjectID() string {
 	return c.defaultProjectID
 }
 
+func (c *Config) DefaultLocation() string {
+	return c.defaultLocation
+}
+
 func New(version string) *Config {
 	return &Config{
 		userAgent:        "gke-mcp/" + version,
 		defaultProjectID: getDefaultProjectID(),
+		defaultLocation:  getDefaultLocation(),
 	}
 }
 
 func getDefaultProjectID() string {
-	out, err := exec.Command("gcloud", "config", "get", "core/project").Output()
+	projectID, err := getGcloudConfig("core/project")
 	if err != nil {
 		log.Printf("Failed to get default project: %v", err)
 		return ""
 	}
-	projectID := strings.TrimSpace(string(out))
-	log.Printf("Using default project ID: %s", projectID)
 	return projectID
+}
+
+func getDefaultLocation() string {
+	region, err := getGcloudConfig("compute/region")
+	if err == nil {
+		return region
+	}
+	zone, err := getGcloudConfig("compute/zone")
+	if err == nil {
+		return zone
+	}
+	return ""
+}
+
+func getGcloudConfig(key string) (string, error) {
+	out, err := exec.Command("gcloud", "config", "get", key).Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(out)), nil
 }

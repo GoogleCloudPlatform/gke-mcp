@@ -17,9 +17,8 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-
 REPO_ROOT="$(git rev-parse --show-toplevel)"
-cd ${REPO_ROOT}
+cd "${REPO_ROOT}"
 
 dev/tasks/gomod.sh
 
