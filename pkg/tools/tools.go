@@ -19,7 +19,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/cluster"
-	cluster_toolkit "github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/cluster-toolkit"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/clustertoolkit"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/giq"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/logging"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/monitoring"
@@ -32,7 +32,7 @@ type installer func(ctx context.Context, s *server.MCPServer, c *config.Config) 
 func Install(ctx context.Context, s *server.MCPServer, c *config.Config) error {
 	installers := []installer{
 		cluster.Install,
-		cluster_toolkit.Install,
+		clustertoolkit.Install,
 		giq.Install,
 		logging.Install,
 		monitoring.Install,
