@@ -7,6 +7,11 @@ This document provides instructions for an AI agent on how to use the available 
 *   **Prefer Native Tools:** Always prefer to use the tools provided by this extension (e.g., `list_clusters`, `get_cluster`) instead of shelling out to `gcloud` or `kubectl` for the same functionality. This ensures better-structured data and more reliable execution.
 *   **Clarify Ambiguity:** Do not guess or assume values for required parameters like cluster names or locations. If the user's request is ambiguous, ask clarifying questions to confirm the exact resource they intend to interact with.
 *   **Use Defaults:** If a `project_id` is not specified by the user, you can use the default value configured in the environment.
+*   **Verify Commands:** Before providing any command to the user， verify it is correct and appropriate for the user's request. You can search online or refer to https://cloud.google.com/sdk/gcloud for gcloud documentations.
+
+## Authentication
+
+Some MCP tools required [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials). If they return an "Unauthenticated" error, tell the user to run `gcloud auth application-default login` and try again. This is an interactive command and must be run manually outside the AI.
 
 ## GKE Logs
 
@@ -17,6 +22,14 @@ This document provides instructions for an AI agent on how to use the available 
 *   When searching log entries for a single cluster, **always** include an LQL filter clause for the project ID, cluster name, and cluster location. Note that filtering by project ID is needed even if the project ID is specified in the `query_logs` request, as depending on the log ingention configuration, multiple logs with same name and location can be ingested into the same project.
 
 *   If you need help understanding LQL syntax, consider fetching https://cloud.google.com/logging/docs/view/logging-query-language to learn more about it.
+
+## GKE Monitoring
+
+When users ask a question about the Monitoring or monitored resource types, the following instructions could be applied:
+
+*  Please use the tool `list_monitored_resource_descriptors` to get all monitored resource descriptors
+*  After getting all the monitored resource, if the user ask for GKE specific ones, please filter the output and only include the GKE related ones
+   ** Full GKE related monitored resources are the one contains `gke` or `k8s` or `container.googleapis.com`
 
 ## GKE Cost
 
