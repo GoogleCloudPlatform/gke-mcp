@@ -27,6 +27,7 @@ archives:
         formats: [zip]
 
 changelog:
+  use: github
   sort: asc
   filters:
     exclude:
