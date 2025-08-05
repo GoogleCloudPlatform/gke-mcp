@@ -2,6 +2,8 @@
 
 Enable MCP-compatible AI agents to interact with Google Kubernetes Engine.
 
+<img src="https://github.com/user-attachments/assets/45a43d0c-af0b-4ebf-9685-7e1dfb2dc618" width="600">
+
 # Installation
 
 Choose a way to install the MCP Server and then connect your AI to it.
