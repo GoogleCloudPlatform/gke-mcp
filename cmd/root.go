@@ -130,10 +130,6 @@ func startMCPServer(ctx context.Context, opts startOptions) {
 	)
 
 	s.AddResource(resource, func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
-		if request.Params.URI != geminiInstructionsURI {
-			return nil, fmt.Errorf("resource not found: %s", request.Params.URI)
-		}
-
 		return []mcp.ResourceContents{
 			mcp.TextResourceContents{
 				URI:      geminiInstructionsURI,
