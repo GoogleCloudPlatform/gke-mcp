@@ -118,14 +118,14 @@ func startMCPServer(ctx context.Context, opts startOptions) {
 		"GKE MCP Server",
 		version,
 		server.WithToolCapabilities(true),
-		server.WithResourceCapabilities(true, true),
+		server.WithResourceCapabilities(false, false),
 		server.WithInstructions(instructions),
 	)
 
 	resource := mcp.NewResource(
 		geminiInstructionsURI,
 		"GEMINI.md",
-		mcp.WithResourceDescription("Instructions for how to use the GKE MCP server with Gemini."),
+		mcp.WithResourceDescription("Instructions for how to use the GKE MCP server"),
 		mcp.WithMIMEType("text/markdown"),
 	)
 

@@ -67,10 +67,7 @@ func Install(ctx context.Context, s *server.MCPServer, c *config.Config) error {
 }
 
 func (h *handlers) listClusters(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	projectID, err := request.RequireString("project_id")
-	if err != nil {
-		return mcp.NewToolResultError(err.Error()), nil
-	}
+	projectID := request.GetString("project_id", h.c.DefaultProjectID())
 	location, _ := request.RequireString("location")
 	if location == "" {
 		location = "-"
