@@ -4,10 +4,10 @@ This document provides instructions for an AI agent on how to use the available 
 
 ## Guiding Principles
 
-*   **Prefer Native Tools:** Always prefer to use the tools provided by this extension (e.g., `list_clusters`, `get_cluster`) instead of shelling out to `gcloud` or `kubectl` for the same functionality. This ensures better-structured data and more reliable execution.
-*   **Clarify Ambiguity:** Do not guess or assume values for required parameters like cluster names or locations. If the user's request is ambiguous, ask clarifying questions to confirm the exact resource they intend to interact with.
-*   **Use Defaults:** If a `project_id` is not specified by the user, you can use the default value configured in the environment.
-*   **Verify Commands:** Before providing any command to the user， verify it is correct and appropriate for the user's request. You can search online or refer to https://cloud.google.com/sdk/gcloud for gcloud documentations.
+- **Prefer Native Tools:** Always prefer to use the tools provided by this extension (e.g., `list_clusters`, `get_cluster`) instead of shelling out to `gcloud` or `kubectl` for the same functionality. This ensures better-structured data and more reliable execution.
+- **Clarify Ambiguity:** Do not guess or assume values for required parameters like cluster names or locations. If the user's request is ambiguous, ask clarifying questions to confirm the exact resource they intend to interact with.
+- **Use Defaults:** If a `project_id` is not specified by the user, you can use the default value configured in the environment.
+- **Verify Commands:** Before providing any command to the user， verify it is correct and appropriate for the user's request. You can search online or refer to [gcloud documentation](https://cloud.google.com/sdk/gcloud).
 
 ## Authentication
 
@@ -15,31 +15,33 @@ Some MCP tools required [Application Default Credentials](https://cloud.google.c
 
 ## GKE Logs
 
-*   When searching for GKE logs, always use the `query_logs` tool to fetch them. It's also **strongly** recommended to call the `get_log_schema` tool before building or running a query to obtain information about the log schema, as well as sample queries. This information is useful when building Cloud Logging LQL queries.
+- When searching for GKE logs, always use the `query_logs` tool to fetch them. It's also **strongly** recommended to call the `get_log_schema` tool before building or running a query to obtain information about the log schema, as well as sample queries. This information is useful when building Cloud Logging LQL queries.
 
-*   When using time ranges, make sure you check the current time and date if the range is relative to the current time or date.
+- When using time ranges, make sure you check the current time and date if the range is relative to the current time or date.
 
-*   When searching log entries for a single cluster, **always** include an LQL filter clause for the project ID, cluster name, and cluster location. Note that filtering by project ID is needed even if the project ID is specified in the `query_logs` request, as depending on the log ingention configuration, multiple logs with same name and location can be ingested into the same project.
+- When searching log entries for a single cluster, **always** include an LQL filter clause for the project ID, cluster name, and cluster location. Note that filtering by project ID is needed even if the project ID is specified in the `query_logs` request, as depending on the log ingention configuration, multiple logs with same name and location can be ingested into the same project.
 
-*   If you need help understanding LQL syntax, consider fetching https://cloud.google.com/logging/docs/view/logging-query-language to learn more about it.
+- If you need help understanding LQL syntax, consider fetching [Logging query language](https://cloud.google.com/logging/docs/view/logging-query-language) to learn more about it.
 
 ## GKE Monitoring
 
 When users ask a question about the Monitoring or monitored resource types, the following instructions could be applied:
 
-*  Please use the tool `list_monitored_resource_descriptors` to get all monitored resource descriptors
-*  After getting all the monitored resource, if the user ask for GKE specific ones, please filter the output and only include the GKE related ones
-   ** Full GKE related monitored resources are the one contains `gke` or `k8s` or `container.googleapis.com`
+- Please use the tool `list_monitored_resource_descriptors` to get all monitored resource descriptors
+- After getting all the monitored resource, if the user ask for GKE specific ones, please filter the output and only include the GKE related ones
+  \*\* Full GKE related monitored resources are the one contains `gke` or `k8s` or `container.googleapis.com`
 
 ## GKE Cost
 
 GKE costs are available from **[GCP Billing Detailed BigQuery Export](https://cloud.google.com/billing/docs/how-to/export-data-bigquery#setup):**. The user will have to provide the full path to their BigQuery table, which inludes their BigQuery dataset name and the table name which contains their Billing Account ID.
 
 These costs can be queried in two ways:
-*   **BigQuery CLI:** Using the `bq` command line tool is the preferred way to view the costs, since that can be run locally. If the `bq` CLI is available prefer to use that and offer to run queries for the user.
-*   **BigQuery Studio:** If the `bq` CLI is not available, user's can run the query themselves in BigQuery Studio (https://console.cloud.google.com/bigquery).
+
+- **BigQuery CLI:** Using the `bq` command-line tool is the preferred way to view the costs, since that can be run locally. If the `bq` CLI is available prefer to use that and offer to run queries for the user.
+- **BigQuery Studio:** If the `bq` CLI is not available, user's can run the query themselves in [BigQuery Studio](https://console.cloud.google.com/bigquery).
 
 Some parameters that may be required based on the query:
+
 - Time frame: Assume the last 30 days unless indicated otherwise
 - GCP project ID
 - GKE cluster location
@@ -63,12 +65,12 @@ SELECT
   SUM(cost) AS cost_before_credits,
 FROM {{.BQDatasetProjectID}}.{{.BQDatasetName}}.gcp_billing_export_resource_v1_XXXXXX_XXXXXX_XXXXXX AS bqe
 WHERE _PARTITIONTIME >= "2025-06-01"
-	AND project.id = "sample-project-id"
-	AND EXISTS(SELECT * FROM bqe.labels AS l WHERE l.key = "goog-k8s-cluster-location" AND l.value = "us-central1")
-	AND EXISTS(SELECT * FROM bqe.labels AS l WHERE l.key = "goog-k8s-cluster-name" AND l.value = "sample-cluster-name")
-	AND EXISTS(SELECT * FROM bqe.labels AS l WHERE l.key = "k8s-namespace" AND l.value = "sample-namespace")
-	AND EXISTS(SELECT * FROM bqe.labels AS l WHERE l.key = "k8s-workload-type" AND l.value = "apps/v1-Deployment")
-	AND EXISTS(SELECT * FROM bqe.labels AS l WHERE l.key = "k8s-workload-name" AND l.value = "sample-workload-name")
+  AND project.id = "sample-project-id"
+  AND EXISTS(SELECT * FROM bqe.labels AS l WHERE l.key = "goog-k8s-cluster-location" AND l.value = "us-central1")
+  AND EXISTS(SELECT * FROM bqe.labels AS l WHERE l.key = "goog-k8s-cluster-name" AND l.value = "sample-cluster-name")
+  AND EXISTS(SELECT * FROM bqe.labels AS l WHERE l.key = "k8s-namespace" AND l.value = "sample-namespace")
+  AND EXISTS(SELECT * FROM bqe.labels AS l WHERE l.key = "k8s-workload-type" AND l.value = "apps/v1-Deployment")
+  AND EXISTS(SELECT * FROM bqe.labels AS l WHERE l.key = "k8s-workload-name" AND l.value = "sample-workload-name")
 ORDER BY 1 DESC
 LIMIT 10
 ;
@@ -76,6 +78,7 @@ LIMIT 10
 ```
 
 An example BigQuery CLI command for the cost each workload in each cluster is below. All of the above parameters need to be replaced to make it useful.
+
 ```sql
 bq query --nouse_legacy_sql '
 SELECT
@@ -89,7 +92,7 @@ SELECT
   SUM(cost) AS cost_before_credits,
 FROM {{.BQDatasetProjectID}}.{{.BQDatasetName}}.gcp_billing_export_resource_v1_XXXXXX_XXXXXX_XXXXXX AS bqe
 WHERE _PARTITIONTIME >= "2025-06-01"
-	AND EXISTS(SELECT * FROM bqe.labels AS l WHERE l.key = "goog-k8s-cluster-name")
+  AND EXISTS(SELECT * FROM bqe.labels AS l WHERE l.key = "goog-k8s-cluster-name")
 GROUP BY 1, 2, 3, 4, 5, 6
 ORDER BY 7 DESC
 LIMIT 10
@@ -103,47 +106,53 @@ When using the `bq` CLI, the BQDatasetID needs to use a dot, not a colon, to sep
 
 The queries can be mixed and adapted to answer a lot of questions about GKE cluster costs.
 
-Many questions the user has about the data produced can be answered by reading the GKE Cost Allocation public documentation at https://cloud.google.com/kubernetes-engine/docs/how-to/cost-allocations. If namespace and workload labels aren't showing up for a particular cluster, make sure the cluster has GKE Cost Allocation enabled.
+Many questions the user has about the data produced can be answered by reading the [GKE Cost Allocation public documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/cost-allocations). If namespace and workload labels aren't showing up for a particular cluster, make sure the cluster has GKE Cost Allocation enabled.
 
 ## GIQ (GKE Inference Quickstart)
 
-You can use GIQ to get data-driven recommendations for deploying optimized AI inference workloads on GKE. The authoritative user guide can be found at https://cloud.google.com/kubernetes-engine/docs/how-to/machine-learning/inference-quickstart. 
+You can use GIQ to get data-driven recommendations for deploying optimized AI inference workloads on GKE. The authoritative user guide can be found at [Inference Quickstart](https://cloud.google.com/kubernetes-engine/docs/how-to/machine-learning/inference-quickstart).
 
-GIQ provides estimates of expected performance based on benchmarks conducted on equivalent infrastructure configurations. Actual performance is not guaranteed and will likely vary due to differences in configurations, model tuning, datasets, and input load patterns.  
+GIQ provides estimates of expected performance based on benchmarks conducted on equivalent infrastructure configurations. Actual performance is not guaranteed and will likely vary due to differences in configurations, model tuning, datasets, and input load patterns.
 
-GIQ provides equivalent costs in terms of token generation, e.g. cost to generate 1M tokens, most kubernetes users pay for the machine instance type regardless of token processing rates. Actual costs should be sourced through GCP billing features. The user should be made aware that token costs from GIQ are estimated equivalent costs that are provided to support high-level comparisons with model-as-a-service solutions.
+GIQ provides equivalent costs in terms of token generation, e.g. cost to generate 1M tokens, most kubernetes users pay for the machine instance type regardless of token processing rates. Actual costs should be sourced through GCP billing features.
+The user should be made aware that token costs from GIQ are estimated equivalent costs that are provided to support high-level comparisons with model-as-a-service solutions.
 
-* **To see what models have been benchmarked:** Use gcloud alpha container ai profiles models list.
-* **To see the available hardware and performance benchmarks for a specific model:** Use gcloud alpha container ai profiles accelerators list --model=<model-name>. You can also filter by latency.
-* **To get cost estimates for a specific configuration:** Add the --cost-usage-type flag to the gcloud alpha container ai profiles accelerators list command.
-* **To generate an optimized Kubernetes deployment manifest:** Use gcloud alpha container ai profiles manifests create with your desired model and performance requirements.
-* **To list your available GKE clusters:** Use gcloud container clusters list.
+- **To see what models have been benchmarked:** Use gcloud alpha container ai profiles models list.
+- **To see the available hardware and performance benchmarks for a specific model:** Use gcloud alpha container ai profiles accelerators list --model=<model-name>. You can also filter by latency.
+- **To get cost estimates for a specific configuration:** Add the --cost-usage-type flag to the gcloud alpha container ai profiles accelerators list command.
+- **To generate an optimized Kubernetes deployment manifest:** Use gcloud alpha container ai profiles manifests create with your desired model and performance requirements.
+- **To list your available GKE clusters:** Use gcloud container clusters list.
 
 **Examples**
 
 Here is how you can complete the requested tasks using the Gemini CLI with GIQ:
 
 1. Which models have been benchmarked by GIQ?
+
 ```sh
 gcloud alpha container ai profiles models list
 ```
 
 2. Can I see benchmarks for llama 4 maverick?
+
 ```sh
 gcloud alpha container ai profiles accelerators list --model=meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8
 ```
 
 3. Can you list the different hardware options that can serve Gemma-3-27B under 500 ms latency?
+
 ```sh
 gcloud alpha container ai profiles accelerators list --model=Gemma-3-27B --target-ntpot-milliseconds=500
 ```
 
 4. Can you generate a manifest to deploy an application that uses Gemma-3-27B and requires 500ms latency?
+
 ```sh
 gcloud alpha container ai profiles manifests create --model=Gemma-3-27B --target-ntpot-milliseconds=500 --output-file=gemma_deployment.yaml
 ```
 
 5. Do I have a cluster available to deploy this manifest?
+
 ```sh
 gcloud container clusters list
 ```
@@ -151,28 +160,29 @@ gcloud container clusters list
 ## GKE Cluster Known Issues
 
 ### Objective
+
 To determine if a GKE cluster is impacted by any documented known issues.
 
 ### Instructions
 
-1.  **Identify Cluster Versions**: You will need the GKE **control plane (master) version** and the **node pool version(s)** for the cluster you are troubleshooting.
+1. **Identify Cluster Versions**: You will need the GKE **control plane (master) version** and the **node pool version(s)** for the cluster you are troubleshooting.
 
-2.  **Consult the Source**: Load https://cloud.google.com/kubernetes-engine/docs/troubleshooting/known-issues into memory. Don't process URLs in this link.
+2. **Consult the Source**: Load [GKE known issues](https://cloud.google.com/kubernetes-engine/docs/troubleshooting/known-issues) into memory. Don't process URLs in this link.
 
-3.  **Check the Affected Component**: Read the description for each known issue carefully. You must determine if the issue affects the **control plane** or the **node pools**, as the versions for these components can be different.
+3. **Check the Affected Component**: Read the description for each known issue carefully. You must determine if the issue affects the **control plane** or the **node pools**, as the versions for these components can be different.
 
-4.  **Compare and Analyze**: Based on the affected component, compare its version against the specified **"Identified versions"** and **"Fixed versions"** for that issue.
+4. **Compare and Analyze**: Based on the affected component, compare its version against the specified **"Identified versions"** and **"Fixed versions"** for that issue.
 
 ### How to Interpret Version Ranges
 
 A cluster component (either control plane or node pool) is considered **affected** by a known issue if its version is greater than or equal to an **"Identified version"** and less than the corresponding **"Fixed version"**.
 
-* **Rule**: A component is affected if `identified_version <= component_version < fixed_version`.
+- **Rule**: A component is affected if `identified_version <= component_version < fixed_version`.
 
-* **Example**:
-    * A known issue lists the following versions and specifies it affects **node pools**:
-        * **Identified versions**: `1.28`, `1.29`
-        * **Fixed versions**: `1.28.7-gke.1026000`, `1.29.2-gke.1060000`
-    * **Conclusion**: A node pool is affected if its version falls into either of these ranges:
-        * Between `1.28` (inclusive) and `1.28.7-gke.1026000` (exclusive).
-        * Between `1.29` (inclusive) and `1.29.2-gke.1060000` (exclusive).
+- **Example**:
+  - A known issue lists the following versions and specifies it affects **node pools**:
+    - **Identified versions**: `1.28`, `1.29`
+    - **Fixed versions**: `1.28.7-gke.1026000`, `1.29.2-gke.1060000`
+  - **Conclusion**: A node pool is affected if its version falls into either of these ranges:
+    - Between `1.28` (inclusive) and `1.28.7-gke.1026000` (exclusive).
+    - Between `1.29` (inclusive) and `1.29.2-gke.1060000` (exclusive).

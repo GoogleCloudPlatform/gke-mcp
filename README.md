@@ -8,9 +8,9 @@ Enable MCP-compatible AI agents to interact with Google Kubernetes Engine.
 
 Choose a way to install the MCP Server and then connect your AI to it.
 
-## Install the MCP Server
+### Install the MCP Server
 
-#### Quick Install (Linux & MacOS only)
+#### Quick Install (Linux & macOS only)
 
 ```sh
 curl -sSL https://raw.githubusercontent.com/GoogleCloudPlatform/gke-mcp/main/install.sh | bash
@@ -18,10 +18,9 @@ curl -sSL https://raw.githubusercontent.com/GoogleCloudPlatform/gke-mcp/main/ins
 
 #### Manual Install
 
-If you haven't already installed Go, follow the instructions [here](https://go.dev/doc/install).
+If you haven't already installed Go, follow [these instructions](https://go.dev/doc/install).
 
 Once Go is installed, run the following command to install gke-mcp:
-
 
 ```sh
 go install github.com/GoogleCloudPlatform/gke-mcp@latest
@@ -33,7 +32,7 @@ You can find the exact location by running `go env GOBIN`. If the command return
 
 For additional help, refer to the troubleshoot section: [gke-mcp: command not found](TROUBLESHOOTING.md#gke-mcp-command-not-found-on-macos-or-linux).
 
-## Add the MCP Server to your AI
+### Add the MCP Server to your AI
 
 #### Gemini CLI
 
@@ -53,7 +52,7 @@ For AIs that support JSON configuration, usually you can add the MCP server to y
 {
   "mcpServers": {
     "gke-mcp": {
-      "command": "gke-mcp",
+      "command": "gke-mcp"
     }
   }
 }
@@ -69,7 +68,7 @@ For AIs that support JSON configuration, usually you can add the MCP server to y
 - `query_logs`: Query Google Cloud Platform logs using Logging Query Language (LQL).
 - `get_log_schema`: Get the schema for a specific GKE log type.
 
-## MCP Context 
+## MCP Context
 
 In addition to the tools above, a lot of value is provided through the bundled context instructions.
 
@@ -79,7 +78,7 @@ In addition to the tools above, a lot of value is provided through the bundled c
 
 ## Supported MCP Transports
 
-By default, `gke-mcp` uses the [stdio]("https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#stdio") transport.  Additionally, the [Streamable HTTP](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#streamable-http) transport is supported as well. 
+By default, `gke-mcp` uses the [stdio]("https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#stdio") transport. Additionally, the [Streamable HTTP](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#streamable-http) transport is supported as well.
 
 You can set the transport mode using the following options:
 
@@ -88,8 +87,24 @@ You can set the transport mode using the following options:
 `--server-port`: server port to use when server-mode is http or sse; defaults to 8080
 
 ```sh
-gkc-mcp --server-mode http --server-port 8080
+gke-mcp --server-mode http --server-port 8080
 ```
+
+#### Connecting Gemini CLI to the HTTP Server
+
+To connect Gemini CLI to the `gke-mcp` HTTP server, you need to configure the CLI to point to the correct endpoint. You can do this by updating your `~/.gemini/settings.json` file. For a basic setup without authentication, the file should look like this:
+
+```json
+{
+  "mcpServers": {
+    "gke": {
+      "httpUrl": "http://127.0.0.1:8080/mcp"
+    }
+  }
+}
+```
+
+This configuration tells Gemini CLI how to reach the gke-mcp server running on your local machine at port 8080.
 
 ## Development
 
@@ -97,21 +112,20 @@ To compile the binary and update the `gemini-cli` extension with your local chan
 
 1. Remove the global gke-mcp configuration
 
-    ```sh
-    rm -rf ~/.gemini/extensions/gke-mcp
-    ```
+   ```sh
+   rm -rf ~/.gemini/extensions/gke-mcp
+   ```
 
-1.  Build the binary from the root of the project:
+1. Build the binary from the root of the project:
 
-    ```sh
-    go build -o gke-mcp .
-    ```
+   ```sh
+   go build -o gke-mcp .
+   ```
 
-1.  Run the installation command to update the extension manifest:
+1. Run the installation command to update the extension manifest:
 
-    ```sh
-    ./gke-mcp install gemini-cli --developer
-    ```
+   ```sh
+   ./gke-mcp install gemini-cli --developer
+   ```
 
-    This will make `gemini-cli` use your locally compiled binary.
-
+   This will make `gemini-cli` use your locally compiled binary.
