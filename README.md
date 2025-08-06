@@ -88,7 +88,11 @@ You can set the transport mode using the following options:
 gke-mcp --server-mode http --server-port 8080
 ```
 
-#### Connecting Gemini CLI to the HTTP Server
+> [!WARNING]
+> When using the `Streamable HTTP` transport, the server listens on all network interfaces (e.g., `0.0.0.0`), which can expose it to any network your machine is connected to.
+> Please ensure you have a firewall ad/or other security measures in place to restrict access if the server is not intended to be public.
+
+### Connecting Gemini CLI to the HTTP Server
 
 To connect Gemini CLI to the `gke-mcp` HTTP server, you need to configure the CLI to point to the correct endpoint. You can do this by updating your `~/.gemini/settings.json` file. For a basic setup without authentication, the file should look like this:
 
