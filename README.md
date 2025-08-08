@@ -4,7 +4,7 @@ Enable MCP-compatible AI agents to interact with Google Kubernetes Engine.
 
 <img src="./assets/gke-mcp-gemini-cli-demo.gif" alt="A demonstration of using the GKE MCP server with the Gemini CLI" width="600">
 
-# Installation
+## Installation
 
 Choose a way to install the MCP Server and then connect your AI to it.
 
