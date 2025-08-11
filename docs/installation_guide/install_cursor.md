@@ -61,10 +61,5 @@ This rule will be configured to be **Agent Requested** by default, allowing the 
 
 Once connected, you can use natural language prompts in the Cursor chat to interact with your GKE environment. For example:
 
-<<<<<<< HEAD
 - **Prompt:** "List all the GKE clusters I have in the `us-central1` region."
 - **Expected Behavior:** Cursor's AI will propose using the `list_clusters` tool. After your approval, it will execute the command and display the results in a readable format.
-=======
-  * **Prompt:** "List all the GKE clusters I have in the `us-central1` region."
-  * **Expected Behavior:** Cursor's AI will propose using the `list_clusters` tool. After your approval, it will execute the command and display the results in a readable format.
->>>>>>> 8a648eb (Update docs/installation_guide/install_cursor.md)
