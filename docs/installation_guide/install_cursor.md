@@ -2,9 +2,7 @@
 
 This guide provides detailed steps on how to install and configure the GKE MCP Server for use with the Cursor IDE. This allows you to leverage Cursor's AI agent to interact with your GKE clusters using natural language prompts.
 
-## 1\. Prerequisites and Installation of the `gke-mcp` Binary
-
------
+## Prerequisites and Installation of the `gke-mcp` Binary
 
 The GKE MCP Server is a command-line tool. You must have the binary installed on your system before configuring it in Cursor.
 
@@ -14,8 +12,8 @@ Please follow the [installation instructions in the main README](../../README.md
 
 Cursor uses a JSON configuration file to manage its MCP servers. You must define your server in this file.
 
-  * **For global use:** Edit the global configuration file at `~/.cursor/mcp.json`.
-  * **For project-specific use:** Create a `.cursor/mcp.json` file in your project's root directory.
+- **For global use:** Edit the global configuration file at `~/.cursor/mcp.json`.
+- **For project-specific use:** Create a `.cursor/mcp.json` file in your project's root directory.
 
 Add the following configuration snippet to your `mcp.json` file. If the file already exists, merge this into the `mcpServers` object.
 
@@ -63,5 +61,5 @@ This rule will be configured to be **Agent Requested** by default, allowing the 
 
 Once connected, you can use natural language prompts in the Cursor chat to interact with your GKE environment. For example:
 
-  * **Prompt:** "List all the GKE clusters I have in the `us-central1` region."
-  * **Expected Behavior:** Cursor's AI will propose using the `list_clusters` tool. After your approval, it will execute the command and display the results in a readable format.
+- **Prompt:** "List all the GKE clusters I have in the `us-central1` region."
+- **Expected Behavior:** Cursor's AI will propose using the `list_clusters` tool. After your approval, it will execute the command and display the results in a readable format.
