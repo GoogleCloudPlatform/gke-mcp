@@ -8,23 +8,7 @@ This guide provides detailed steps on how to install and configure the GKE MCP S
 
 The GKE MCP Server is a command-line tool. You must have the binary installed on your system before configuring it in Cursor.
 
-### Quick Install (Linux & macOS only)
-
-```sh
-curl -sSL https://raw.githubusercontent.com/GoogleCloudPlatform/gke-mcp/main/install.sh | bash
-```
-
-### Manual Install
-
-If you haven't already installed Go, follow [these instructions](https://go.dev/doc/install).
-
-Once Go is installed, run the following command to install `gke-mcp`:
-
-```sh
-go install github.com/GoogleCloudPlatform/gke-mcp@latest
-```
-
-The `gke-mcp` binary will be installed in the directory specified by your `GOBIN` environment variable.
+Please follow the [installation instructions in the main README](../../README.md#install-the-mcp-server) to install the `gke-mcp` binary.
 
 ## Configure `gke-mcp` as a Cursor MCP
 
