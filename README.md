@@ -46,17 +46,7 @@ This will create a manifest file in `./.gemini/extensions/gke-mcp` that points t
 
 #### Other AIs
 
-For AIs that support JSON configuration, usually you can add the MCP server to your existing config with the below JSON. Don't copy and paste it as-is, merge it into your existing JSON settings.
-
-```json
-{
-  "mcpServers": {
-    "gke-mcp": {
-      "command": "gke-mcp"
-    }
-  }
-}
-```
+For detailed instructions on how to connect the GKE MCP Server to various AI clients, including cursor and claude desktop, please refer to our dedicated [installation guide](docs/installation_guide/).
 
 ## MCP Tools
 
