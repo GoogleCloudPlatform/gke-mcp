@@ -6,7 +6,7 @@ This directory contains detailed instructions on how to install and configure th
 - **[Cursor](install_cursor.md)**
 - **Claude Desktop**: instructions coming soon
 
-#### Other AIs
+## Other AIs
 
 For AIs that support JSON configuration, usually you can add the MCP server to your existing config with the below JSON. Don't copy and paste it as-is, merge it into your existing JSON settings.
 

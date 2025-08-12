@@ -6,7 +6,7 @@ This guide provides detailed steps on how to install and configure the GKE MCP S
 
 The GKE MCP Server is a command-line tool. You must have the binary installed on your system before configuring it in Cursor.
 
-Please follow the [installation instructions in the main README](../../README.md#install-the-mcp-server) to install the `gke-mcp` binary.
+Please follow the [installation instructions in the main readme](../../README.md#install-the-mcp-server) to install the `gke-mcp` binary.
 
 ## Configure `gke-mcp` as a Cursor MCP
 
@@ -34,18 +34,18 @@ A key challenge in this integration is that the `gke-mcp` tool relies on a `gemi
 
 ### Steps to Implement the Rule
 
-1.  **Create the Rule File**: Create a new file named `gke-mcp.mdc` in your project's `.cursor/rules/` directory.
+1. **Create the Rule File**: Create a new file named `gke-mcp.mdc` in your project's `.cursor/rules/` directory.
 
-2.  **Add Metadata**: Add the following metadata block to the top of the `gke-mcp.mdc` file.
+2. **Add Metadata**: Add the following metadata block to the top of the `gke-mcp.mdc` file.
 
-    ```markdown
-    ---
-    name: GKE MCP Instructions
-    description: Provides guidance for using the gke-mcp tool.
-    ---
-    ```
+   ```markdown
+   ---
+   name: GKE MCP Instructions
+   description: Provides guidance for using the gke-mcp tool.
+   ---
+   ```
 
-3.  **Copy Content**: Copy the entire content of the [`gke-mcp`'s `GEMINI.md`](../../pkg/install/GEMINI.md) file into your `gke-mcp.mdc` file, placing it directly below the metadata block.
+3. **Copy Content**: Copy the entire content of the [`gke-mcp`'s `GEMINI.md`](../../pkg/install/GEMINI.md) file into your `gke-mcp.mdc` file, placing it directly below the metadata block.
 
 This rule will be configured to be **Agent Requested** by default, allowing the AI to dynamically include the GKE context in its prompts only when it's relevant to your conversation.
 
@@ -53,9 +53,9 @@ This rule will be configured to be **Agent Requested** by default, allowing the 
 
 ### How to Verify the Connection
 
-1.  Restart Cursor after modifying the configuration.
-2.  Open **Settings** (`Ctrl + ,` or `Cmd + ,`).
-3.  Navigate to **Features \> MCP**. A green dot next to the "gke-mcp" entry indicates a successful connection.
+1. Restart Cursor after modifying the configuration.
+2. Open **Settings** (`Ctrl + ,` or `Cmd + ,`).
+3. Navigate to **Features \> MCP**. A green dot next to the "gke-mcp" entry indicates a successful connection.
 
 ### Sample Usage in Cursor
 
