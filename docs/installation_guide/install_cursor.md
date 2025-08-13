@@ -8,7 +8,58 @@ The GKE MCP Server is a command-line tool. You must have the binary installed on
 
 Please follow the [installation instructions in the main readme](../../README.md#install-the-mcp-server) to install the `gke-mcp` binary.
 
-## Configure `gke-mcp` as a Cursor MCP
+## Installing `gke-mcp` for Cursor via Command Line
+
+The `gke-mcp` tool provides a convenient command-line interface to automatically configure Cursor with the GKE MCP Server. This method handles the configuration files and rule creation automatically.
+
+### Basic Installation
+
+```bash
+# Install gke-mcp globally for Cursor (creates ~/.cursor/mcp.json)
+gke-mcp install cursor
+```
+
+Or
+
+```bash
+# Install gke-mcp project-only for Cursor (creates ./.cursor/mcp.json)
+# Please run this in the root directory of your project
+gke-mcp install cursor --project-only
+# or use the short form
+gke-mcp install cursor -p
+```
+
+### Installation Options
+
+#### Global vs Project-Specific Installation
+
+- **Global installation** (default): Creates configuration in your home directory (`~/.cursor/`)
+  - Available across all projects
+  - Configuration persists across system restarts
+  - Use when you want the GKE MCP Server available everywhere
+
+- **Project-only installation**: Creates configuration in the current project directory (`./.cursor/`)
+  - Only available in the current project
+  - Configuration is version-controlled with your project
+  - Use when you want project-specific GKE MCP Server configuration
+
+#### Command Line Flags
+
+| Flag | Short | Description | Example |
+|------|-------|-------------|---------|
+| `--project-only` | `-p` | Install only for the current project | `gke-mcp install cursor -p` |
+| (no flag) | - | Install globally (default) | `gke-mcp install cursor` |
+
+### What the Installation Command Does
+
+When you run `gke-mcp install cursor`, it automatically:
+
+1. **Creates the MCP configuration**: Generates the appropriate `mcp.json` file with the GKE MCP Server configuration
+2. **Sets up the rules directory**: Creates the `.cursor/rules/` directory structure
+3. **Creates the GKE rule**: Generates `gke-mcp.mdc` with the necessary context and instructions
+4. **Handles file paths**: Automatically determines the correct paths for global vs project-specific installation
+
+## Install `gke-mcp` for Cursor Manually
 
 Cursor uses a JSON configuration file to manage its MCP servers. You must define your server in this file.
 
