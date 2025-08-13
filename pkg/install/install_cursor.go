@@ -48,7 +48,7 @@ func CursorMCPExtension(baseDir, exePath string, projectOnlyMode bool) error {
 		mcpDir = filepath.Join(baseDir, ".cursor")
 	}
 	if err := os.MkdirAll(mcpDir, 0755); err != nil {
-		return fmt.Errorf("could not create project Cursor directory: %w", err)
+		return fmt.Errorf("could not create Cursor directory at %s: %w", mcpDir, err)
 	}
 	mcpPath := filepath.Join(mcpDir, "mcp.json")
 
