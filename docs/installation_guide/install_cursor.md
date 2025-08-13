@@ -45,10 +45,10 @@ gke-mcp install cursor -p
 
 #### Command Line Flags
 
-| Flag | Short | Description | Example |
-|------|-------|-------------|---------|
-| `--project-only` | `-p` | Install only for the current project | `gke-mcp install cursor -p` |
-| (no flag) | - | Install globally (default) | `gke-mcp install cursor` |
+| Flag             | Short | Description                          | Example                     |
+| ---------------- | ----- | ------------------------------------ | --------------------------- |
+| `--project-only` | `-p`  | Install only for the current project | `gke-mcp install cursor -p` |
+| (no flag)        | -     | Install globally (default)           | `gke-mcp install cursor`    |
 
 ### What the Installation Command Does
 

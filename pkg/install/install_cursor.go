@@ -41,7 +41,7 @@ func CursorMCPExtension(baseDir, exePath string, projectOnlyMode bool) error {
 
 	mcpDir := ""
 	if !projectOnlyMode {
-	    // Create the global Cursor MCP configuration directory
+		// Create the global Cursor MCP configuration directory
 		mcpDir = filepath.Join(homeDir, ".cursor")
 	} else {
 		// Create project-specific configuration if projectOnlyMode set to true
@@ -116,4 +116,4 @@ This rule provides context for using the gke-mcp tool within Cursor.
 	}
 
 	return nil
-} 
+}
