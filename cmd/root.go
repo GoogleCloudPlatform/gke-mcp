@@ -69,7 +69,8 @@ var (
 		Run:   runInstallCursorCmd,
 	}
 
-	installDeveloper bool
+	installDeveloper   bool
+	installProjectOnly bool
 )
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -94,7 +95,8 @@ func init() {
 
 	installCmd.AddCommand(installGeminiCLICmd)
 	installCmd.AddCommand(installCursorCmd)
-	installCmd.PersistentFlags().BoolVarP(&installDeveloper, "developer", "d", false, "Install the MCP Server in developer mode")
+	installCmd.PersistentFlags().BoolVarP(&installDeveloper, "developer", "d", false, "Install the MCP Server in developer mode (for Gemini CLI)")
+	installCmd.PersistentFlags().BoolVarP(&installProjectOnly, "project-only", "p", false, "Install the MCP Server only for the current project (for Cursor)")
 }
 
 type startOptions struct {
@@ -228,7 +230,7 @@ func runInstallCursorCmd(cmd *cobra.Command, args []string) {
 		log.Fatalf("Failed to get executable path: %v", err)
 	}
 
-	if err := install.CursorMCPExtension(wd, exePath, installDeveloper); err != nil {
+	if err := install.CursorMCPExtension(wd, exePath, installProjectOnly); err != nil {
 		log.Fatalf("Failed to install for cursor: %v", err)
 	}
 	fmt.Println("Successfully installed GKE MCP server as a cursor MCP server.")
