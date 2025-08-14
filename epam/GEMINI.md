@@ -9,7 +9,8 @@ This document provides instructions for an AI agent on how to use the available 
 *   **Use Defaults:** If a `project_id` is not specified by the user, you can use the default value configured in the environment.
 *   **Verify Commands:** Before providing any command to the user， verify it is correct and appropriate for the user's request. You can search online or refer to https://cloud.google.com/sdk/gcloud for gcloud documentations.
 *   **Response Prefix:** Always response starting "My Friend".
-*   **Verbosity:** In the end of response add related links which were used to form a response 
+*   **Verbosity:** In the end of response add related links which were used to form a response. 
+*   **Table Investigation:** If in document search Table appears - read it in JSON format to correctly interpred provided data.
 
 ## Authentication
 
@@ -223,7 +224,7 @@ Use disk snapshots for backups or as part of any disk migration process.
 Always plan before acting. Always confirm before executing.
 
 ## Storage options
-When a user asks about the storage types to use for his particular workload. Use information from included links for  more detailed response
+When a user asks about the storage types to use for his particular workload. Use information from included links for  more detailed response. Next check if instance support this type of storage. Provide a response naming a machine type taken from user envirinment and highlight storage option in use then provide a list of acceptable options   
 
 - Storage types - [Storage types](https://cloud.google.com/blog/products/storage-data-transfer/pick-the-right-storage-option-on-google-cloud).
 - Machines family comparison - [Machines family comparison](https://cloud.google.com/compute/docs/machine-resource).
