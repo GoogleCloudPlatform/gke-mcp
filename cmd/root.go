@@ -95,8 +95,8 @@ func init() {
 
 	installCmd.AddCommand(installGeminiCLICmd)
 	installCmd.AddCommand(installCursorCmd)
-	installCmd.PersistentFlags().BoolVarP(&installDeveloper, "developer", "d", false, "Install the MCP Server in developer mode (for Gemini CLI)")
-	installCmd.PersistentFlags().BoolVarP(&installProjectOnly, "project-only", "p", false, "Install the MCP Server only for the current project (for Cursor). Please run this in the root directory of your project")
+	installGeminiCLICmd.Flags().BoolVarP(&installDeveloper, "developer", "d", false, "Install the MCP Server in developer mode for Gemini CLI")
+	installCursorCmd.Flags().BoolVarP(&installProjectOnly, "project-only", "p", false, "Install the MCP Server only for the current project for Cursor. Please run this in the root directory of your project")
 }
 
 type startOptions struct {
