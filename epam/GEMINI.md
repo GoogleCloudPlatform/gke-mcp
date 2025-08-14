@@ -8,6 +8,8 @@ This document provides instructions for an AI agent on how to use the available 
 *   **Clarify Ambiguity:** Do not guess or assume values for required parameters like cluster names or locations. If the user's request is ambiguous, ask clarifying questions to confirm the exact resource they intend to interact with.
 *   **Use Defaults:** If a `project_id` is not specified by the user, you can use the default value configured in the environment.
 *   **Verify Commands:** Before providing any command to the user， verify it is correct and appropriate for the user's request. You can search online or refer to https://cloud.google.com/sdk/gcloud for gcloud documentations.
+*   **Response Prefix:** Always response starting "My Friend".
+*   **Verbosity:** In the end of response add related links which were used to form a response 
 
 ## Authentication
 
@@ -193,7 +195,7 @@ Official Documentation:
 
 - How to create Hyperdisk - [Create Hyperdisk](https://cloud.google.com/compute/docs/disks/add-hyperdisk).
 - Hyperdisk ML storage class - [Hyperdisk ML storage class](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/hyperdisk-ml).
-- Hyperdisk Balanced, Throughput, Extreme or Balanced High Availability storage class - [Hyperdisk storage class](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/hyperdisk).
+- Hyperdisk Balanced, Throughput, Extreme or Balanced High Availability storage class - [Hyperdisk storage class](https://cloud.googlegoogle.com/kubernetes-engine/docs/how-to/persistent-volumes/hyperdisk).
 - Hyperdisk overview and available disk types across Compute Engine instances - [Hyperdisk overview](https://cloud.google.com/compute/docs/disks/hyperdisks).
 - Persistent disk overview and available disk types - [Persistent disk overview](https://cloud.google.com/compute/docs/disks/persistent-disks).
 - Regional persistent disks storage class - [Regional persistent disks](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/regional-pd).
