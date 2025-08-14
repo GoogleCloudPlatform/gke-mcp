@@ -91,8 +91,22 @@ func CursorMCPExtension(baseDir, exePath string, projectOnlyMode bool) error {
 		return fmt.Errorf("could not create rules directory: %w", err)
 	}
 
+	// Get the directory where the executable is located
+	exeDir := filepath.Dir(exePath)
+
+	// Try to find GEMINI.md relative to executable
+	geminiPath := filepath.Join(exeDir, "pkg", "install", "GEMINI.md")
+	if _, err := os.Stat(geminiPath); os.IsNotExist(err) {
+		// Fallback: try to find it in the current working directory
+		geminiPath = filepath.Join(baseDir, "pkg", "install", "GEMINI.md")
+		if _, err := os.Stat(geminiPath); os.IsNotExist(err) {
+			// Try to find it in the gke-mcp directory as last resort
+			geminiPath = filepath.Join(homeDir, "gke-mcp", "pkg", "install", "GEMINI.md")
+		}
+	}
+
 	// Read the GEMINI.md content
-	geminiContent, err := os.ReadFile(filepath.Join(baseDir, "pkg", "install", "GEMINI.md"))
+	geminiContent, err := os.ReadFile(geminiPath)
 	if err != nil {
 		return fmt.Errorf("could not read GEMINI.md file: %w", err)
 	}
