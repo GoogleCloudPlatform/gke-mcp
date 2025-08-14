@@ -2,7 +2,7 @@
 
 This directory contains detailed instructions on how to install and configure the GKE MCP Server with different AI clients.
 
-- **[Gemini CLI](../../README.md#installation)**
+- **[Gemini CLI](../../README.md#add-the-mcp-server-to-your-ai)**
 - **[Cursor](install_cursor.md)**
 - **Claude Desktop**: instructions coming soon
 
