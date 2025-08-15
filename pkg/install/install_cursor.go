@@ -21,6 +21,19 @@ import (
 	"path/filepath"
 )
 
+// cursorRuleHeader is the header content for the Cursor rule file
+const cursorRuleHeader = `---
+name: GKE MCP Instructions
+description: Provides guidance for using the gke-mcp tool with Cursor.
+alwaysApply: true
+---
+
+# GKE MCP Tool Instructions
+
+This rule provides context for using the gke-mcp tool within Cursor.
+
+`
+
 // CursorMCPExtension installs the gke-mcp server as a Cursor MCP extension
 func CursorMCPExtension(baseDir, exePath string, projectOnlyMode bool) error {
 	// Determine the Cursor MCP configuration directory
@@ -96,17 +109,7 @@ func CursorMCPExtension(baseDir, exePath string, projectOnlyMode bool) error {
 	}
 
 	// Create the gke-mcp.mdc rule file with custom heading and GEMINI.md content
-	ruleContent := append([]byte(`---
-name: GKE MCP Instructions
-description: Provides guidance for using the gke-mcp tool with Cursor.
-alwaysApply: true
----
-
-# GKE MCP Tool Instructions
-
-This rule provides context for using the gke-mcp tool within Cursor.
-
-`), GeminiMarkdown...)
+	ruleContent := append([]byte(cursorRuleHeader), GeminiMarkdown...)
 
 	rulePath := filepath.Join(rulesDir, "gke-mcp.mdc")
 	if err := os.WriteFile(rulePath, ruleContent, 0644); err != nil {

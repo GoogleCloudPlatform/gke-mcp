@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -63,10 +64,8 @@ func verifyCursorInstallation(t *testing.T, baseDir string, projectOnly bool) {
 		t.Errorf("Expected MCP config file to be created at %s, but it was not", mcpPath)
 	}
 
-	// Verify rules file exists
-	if _, err := os.Stat(rulesPath); os.IsNotExist(err) {
-		t.Errorf("Expected rules file to be created at %s, but it was not", rulesPath)
-	}
+	// Verify rules file exists and has correct content
+	verifyRuleFile(t, rulesPath)
 }
 
 // verifyMCPConfig validates the MCP configuration file content
@@ -119,6 +118,32 @@ func createExistingConfig(t *testing.T, cursorDir string, config map[string]inte
 	}
 
 	return mcpPath
+}
+
+// verifyRuleFile checks that the rule file was created with the correct content
+func verifyRuleFile(t *testing.T, rulesPath string) {
+	if _, err := os.Stat(rulesPath); os.IsNotExist(err) {
+		t.Errorf("Expected rules file to be created at %s, but it was not", rulesPath)
+		return
+	}
+
+	// Read and verify the rule file content
+	ruleData, err := os.ReadFile(rulesPath)
+	if err != nil {
+		t.Fatalf("Failed to read rule file: %v", err)
+	}
+
+	ruleContent := string(ruleData)
+
+	// Check that the header is present using the constant from the package
+	if !strings.Contains(ruleContent, cursorRuleHeader) {
+		t.Errorf("Expected rule file to contain header, but it was not found")
+	}
+
+	// Check that GeminiMarkdown content is present
+	if !strings.Contains(ruleContent, string(GeminiMarkdown)) {
+		t.Errorf("Expected rule file to contain GeminiMarkdown content, but it was not found")
+	}
 }
 
 func TestGeminiCLIExtension(t *testing.T) {
