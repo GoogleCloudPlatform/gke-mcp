@@ -22,6 +22,105 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+// testSetup creates a temporary directory and optionally mocks the HOME environment
+func testSetup(t *testing.T, mockHome bool) (string, func()) {
+	tmpDir, err := os.MkdirTemp("", "cursor-test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+
+	cleanup := func() {
+		os.RemoveAll(tmpDir)
+	}
+
+	if mockHome {
+		originalHome := os.Getenv("HOME")
+		os.Setenv("HOME", tmpDir)
+		cleanup = func() {
+			os.RemoveAll(tmpDir)
+			os.Setenv("HOME", originalHome)
+		}
+	}
+
+	return tmpDir, cleanup
+}
+
+// verifyCursorInstallation checks that the Cursor installation created the expected files and structure
+func verifyCursorInstallation(t *testing.T, baseDir string, projectOnly bool) {
+	// Determine expected paths
+	var mcpPath, rulesPath string
+	if projectOnly {
+		mcpPath = filepath.Join(baseDir, ".cursor", "mcp.json")
+		rulesPath = filepath.Join(baseDir, ".cursor", "rules", "gke-mcp.mdc")
+	} else {
+		// For global installation, we need to check the mocked home directory
+		mcpPath = filepath.Join(baseDir, ".cursor", "mcp.json")
+		rulesPath = filepath.Join(baseDir, ".cursor", "rules", "gke-mcp.mdc")
+	}
+
+	// Verify MCP configuration file exists
+	if _, err := os.Stat(mcpPath); os.IsNotExist(err) {
+		t.Errorf("Expected MCP config file to be created at %s, but it was not", mcpPath)
+	}
+
+	// Verify rules file exists
+	if _, err := os.Stat(rulesPath); os.IsNotExist(err) {
+		t.Errorf("Expected rules file to be created at %s, but it was not", rulesPath)
+	}
+}
+
+// verifyMCPConfig validates the MCP configuration file content
+func verifyMCPConfig(t *testing.T, mcpPath, expectedExePath string) {
+	mcpData, err := os.ReadFile(mcpPath)
+	if err != nil {
+		t.Fatalf("Failed to read MCP config file: %v", err)
+	}
+
+	var config map[string]interface{}
+	if err := json.Unmarshal(mcpData, &config); err != nil {
+		t.Fatalf("Failed to unmarshal MCP config: %v", err)
+	}
+
+	// Verify mcpServers exists and is a map
+	mcpServers, ok := config["mcpServers"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected mcpServers to be a map, got %T", config["mcpServers"])
+	}
+
+	// Verify gke-mcp server configuration
+	gkeMcp, ok := mcpServers["gke-mcp"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected gke-mcp to be a map, got %T", mcpServers["gke-mcp"])
+	}
+
+	if gkeMcp["command"] != expectedExePath {
+		t.Errorf("Expected command to be %s, got %v", expectedExePath, gkeMcp["command"])
+	}
+
+	if gkeMcp["type"] != "stdio" {
+		t.Errorf("Expected type to be 'stdio', got %v", gkeMcp["type"])
+	}
+}
+
+// createExistingConfig creates a pre-existing MCP configuration file for testing and returns the path to the file
+func createExistingConfig(t *testing.T, cursorDir string, config map[string]interface{}) string {
+	if err := os.MkdirAll(cursorDir, 0755); err != nil {
+		t.Fatalf("Failed to create cursor directory: %v", err)
+	}
+
+	configData, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		t.Fatalf("Failed to marshal config: %v", err)
+	}
+
+	mcpPath := filepath.Join(cursorDir, "mcp.json")
+	if err := os.WriteFile(mcpPath, configData, 0644); err != nil {
+		t.Fatalf("Failed to write config: %v", err)
+	}
+
+	return mcpPath
+}
+
 func TestGeminiCLIExtension(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "gemini-cli-test")
 	if err != nil {
@@ -121,5 +220,144 @@ func TestGeminiCLIExtensionDeveloperMode(t *testing.T) {
 
 	if diff := cmp.Diff(actual, expected); diff != "" {
 		t.Errorf("Manifest content mismatch. Diff:\n%v", diff)
+	}
+}
+
+func TestCursorMCPExtensionGlobal(t *testing.T) {
+	tmpDir, cleanup := testSetup(t, true)
+	defer cleanup()
+
+	testExePath := "/usr/local/bin/gke-mcp"
+	if err := CursorMCPExtension(tmpDir, testExePath, false); err != nil {
+		t.Fatalf("CursorMCPExtension() failed: %v", err)
+	}
+
+	verifyCursorInstallation(t, tmpDir, false)
+	verifyMCPConfig(t, filepath.Join(tmpDir, ".cursor", "mcp.json"), testExePath)
+}
+
+func TestCursorMCPExtensionProjectOnly(t *testing.T) {
+	tmpDir, cleanup := testSetup(t, false)
+	defer cleanup()
+
+	testExePath := "/usr/local/bin/gke-mcp"
+	if err := CursorMCPExtension(tmpDir, testExePath, true); err != nil {
+		t.Fatalf("CursorMCPExtension() failed: %v", err)
+	}
+
+	verifyCursorInstallation(t, tmpDir, true)
+	verifyMCPConfig(t, filepath.Join(tmpDir, ".cursor", "mcp.json"), testExePath)
+}
+
+func TestCursorMCPExtensionWithExistingConfig(t *testing.T) {
+	tmpDir, cleanup := testSetup(t, true)
+	defer cleanup()
+
+	// Create existing MCP configuration
+	cursorDir := filepath.Join(tmpDir, ".cursor")
+	existingConfig := map[string]interface{}{
+		"mcpServers": map[string]interface{}{
+			"existing-server": map[string]interface{}{
+				"command": "/usr/bin/existing",
+				"type":    "stdio",
+			},
+		},
+		"otherSetting": "value",
+	}
+
+	mcpPath := createExistingConfig(t, cursorDir, existingConfig)
+
+	// Install gke-mcp
+	testExePath := "/usr/local/bin/gke-mcp"
+	if err := CursorMCPExtension(tmpDir, testExePath, false); err != nil {
+		t.Fatalf("CursorMCPExtension() failed: %v", err)
+	}
+
+	// Verify that existing configuration is preserved
+	mcpData, err := os.ReadFile(mcpPath)
+	if err != nil {
+		t.Fatalf("Failed to read MCP config file: %v", err)
+	}
+
+	var config map[string]interface{}
+	if err := json.Unmarshal(mcpData, &config); err != nil {
+		t.Fatalf("Failed to unmarshal MCP config: %v", err)
+	}
+
+	// Check that existing server is preserved
+	mcpServers, ok := config["mcpServers"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected mcpServers to be a map, got %T", config["mcpServers"])
+	}
+
+	existingServer, ok := mcpServers["existing-server"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected existing-server to be preserved, got %T", mcpServers["existing-server"])
+	}
+
+	if existingServer["command"] != "/usr/bin/existing" {
+		t.Errorf("Expected existing server command to be preserved, got %v", existingServer["command"])
+	}
+
+	// Check that other settings are preserved
+	if config["otherSetting"] != "value" {
+		t.Errorf("Expected otherSetting to be preserved, got %v", config["otherSetting"])
+	}
+
+	// Check that gke-mcp was added
+	gkeMcp, ok := mcpServers["gke-mcp"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected gke-mcp to be added, got %T", mcpServers["gke-mcp"])
+	}
+
+	if gkeMcp["command"] != testExePath {
+		t.Errorf("Expected gke-mcp command to be %s, got %v", testExePath, gkeMcp["command"])
+	}
+}
+
+func TestCursorMCPExtensionWithMalformedConfig(t *testing.T) {
+	tmpDir, cleanup := testSetup(t, true)
+	defer cleanup()
+
+	// Create malformed MCP configuration (mcpServers as string instead of map)
+	cursorDir := filepath.Join(tmpDir, ".cursor")
+	malformedConfig := map[string]interface{}{
+		"mcpServers":   "this should be a map, not a string",
+		"otherSetting": "value",
+	}
+
+	mcpPath := createExistingConfig(t, cursorDir, malformedConfig)
+
+	// Install gke-mcp - this should handle the malformed config gracefully
+	testExePath := "/usr/local/bin/gke-mcp"
+	if err := CursorMCPExtension(tmpDir, testExePath, false); err != nil {
+		t.Fatalf("CursorMCPExtension() failed: %v", err)
+	}
+
+	// Verify that the malformed config was fixed
+	mcpData, err := os.ReadFile(mcpPath)
+	if err != nil {
+		t.Fatalf("Failed to read MCP config file: %v", err)
+	}
+
+	var config map[string]interface{}
+	if err := json.Unmarshal(mcpData, &config); err != nil {
+		t.Fatalf("Failed to unmarshal MCP config: %v", err)
+	}
+
+	// Check that mcpServers is now a proper map
+	mcpServers, ok := config["mcpServers"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected mcpServers to be fixed and become a map, got %T", config["mcpServers"])
+	}
+
+	// Check that gke-mcp was added successfully
+	gkeMcp, ok := mcpServers["gke-mcp"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected gke-mcp to be added, got %T", mcpServers["gke-mcp"])
+	}
+
+	if gkeMcp["command"] != testExePath {
+		t.Errorf("Expected gke-mcp command to be %s, got %v", testExePath, gkeMcp["command"])
 	}
 }
