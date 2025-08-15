@@ -16,20 +16,10 @@ package install
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 )
-
-// CursorMCPConfig represents the MCP configuration for Cursor
-type CursorMCPConfig struct {
-	MCPServers map[string]CursorMCPServer `json:"mcpServers"`
-}
-
-// CursorMCPServer represents an individual MCP server configuration
-type CursorMCPServer struct {
-	Command string `json:"command"`
-	Type    string `json:"type"`
-}
 
 // CursorMCPExtension installs the gke-mcp server as a Cursor MCP extension
 func CursorMCPExtension(baseDir, exePath string, projectOnlyMode bool) error {
@@ -52,10 +42,8 @@ func CursorMCPExtension(baseDir, exePath string, projectOnlyMode bool) error {
 	}
 	mcpPath := filepath.Join(mcpDir, "mcp.json")
 
-	// Read existing configuration if it exists
-	config := CursorMCPConfig{
-		MCPServers: make(map[string]CursorMCPServer),
-	}
+	// Read existing configuration if it exists, using unstructured approach to avoid data loss
+	var config map[string]interface{}
 
 	if _, err := os.Stat(mcpPath); err == nil {
 		// File exists, read and parse it
@@ -67,12 +55,28 @@ func CursorMCPExtension(baseDir, exePath string, projectOnlyMode bool) error {
 		if err := json.Unmarshal(data, &config); err != nil {
 			return fmt.Errorf("could not parse existing MCP configuration: %w", err)
 		}
+	} else {
+		// File doesn't exist, create new config
+		config = make(map[string]interface{})
+	}
+
+	// Ensure mcpServers exists
+	if _, exists := config["mcpServers"]; !exists {
+		config["mcpServers"] = make(map[string]interface{})
 	}
 
 	// Add or update the gke-mcp server configuration
-	config.MCPServers["gke-mcp"] = CursorMCPServer{
-		Command: exePath,
-		Type:    "stdio",
+	mcpServers, ok := config["mcpServers"].(map[string]interface{})
+	if !ok {
+		// Handle the case where mcpServers is not a map
+		log.Printf("Warning: mcpServers in Cursor MCP config is not a map, creating new one")
+		config["mcpServers"] = make(map[string]interface{})
+		mcpServers = config["mcpServers"].(map[string]interface{})
+	}
+
+	mcpServers["gke-mcp"] = map[string]interface{}{
+		"command": exePath,
+		"type":    "stdio",
 	}
 
 	// Write the updated configuration back to the file
@@ -91,28 +95,8 @@ func CursorMCPExtension(baseDir, exePath string, projectOnlyMode bool) error {
 		return fmt.Errorf("could not create rules directory: %w", err)
 	}
 
-	// Get the directory where the executable is located
-	exeDir := filepath.Dir(exePath)
-
-	// Try to find GEMINI.md relative to executable
-	geminiPath := filepath.Join(exeDir, "pkg", "install", "GEMINI.md")
-	if _, err := os.Stat(geminiPath); os.IsNotExist(err) {
-		// Fallback: try to find it in the current working directory
-		geminiPath = filepath.Join(baseDir, "pkg", "install", "GEMINI.md")
-		if _, err := os.Stat(geminiPath); os.IsNotExist(err) {
-			// Try to find it in the gke-mcp directory as last resort
-			geminiPath = filepath.Join(homeDir, "gke-mcp", "pkg", "install", "GEMINI.md")
-		}
-	}
-
-	// Read the GEMINI.md content
-	geminiContent, err := os.ReadFile(geminiPath)
-	if err != nil {
-		return fmt.Errorf("could not read GEMINI.md file: %w", err)
-	}
-
 	// Create the gke-mcp.mdc rule file with custom heading and GEMINI.md content
-	ruleContent := `---
+	ruleContent := append([]byte(`---
 name: GKE MCP Instructions
 description: Provides guidance for using the gke-mcp tool with Cursor.
 alwaysApply: true
@@ -122,10 +106,10 @@ alwaysApply: true
 
 This rule provides context for using the gke-mcp tool within Cursor.
 
-` + string(geminiContent)
+`), GeminiMarkdown...)
 
 	rulePath := filepath.Join(rulesDir, "gke-mcp.mdc")
-	if err := os.WriteFile(rulePath, []byte(ruleContent), 0644); err != nil {
+	if err := os.WriteFile(rulePath, ruleContent, 0644); err != nil {
 		return fmt.Errorf("could not write gke-mcp rule file: %w", err)
 	}
 
