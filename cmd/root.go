@@ -69,6 +69,12 @@ var (
 		Run:   runInstallCursorCmd,
 	}
 
+    installClaudeDesktopCmd = &cobra.Command{
+		Use:   "claude-desktop",
+		Short: "Install the GKE MCP Server into your Claude Desktop settings.",
+		Run:   runInstallClaudeDesktopCmd,
+	}
+
 	installDeveloper   bool
 	installProjectOnly bool
 )
@@ -95,6 +101,7 @@ func init() {
 
 	installCmd.AddCommand(installGeminiCLICmd)
 	installCmd.AddCommand(installCursorCmd)
+	installCmd.AddCommand(installClaudeDesktopCmd)
 	installGeminiCLICmd.Flags().BoolVarP(&installDeveloper, "developer", "d", false, "Install the MCP Server in developer mode for Gemini CLI")
 	installCursorCmd.Flags().BoolVarP(&installProjectOnly, "project-only", "p", false, "Install the MCP Server only for the current project for Cursor. Please run this in the root directory of your project")
 }
@@ -234,4 +241,17 @@ func runInstallCursorCmd(cmd *cobra.Command, args []string) {
 		log.Fatalf("Failed to install for cursor: %v", err)
 	}
 	fmt.Println("Successfully installed GKE MCP server as a cursor MCP server.")
+}
+
+// Add this function near the existing runInstallGeminiCLICmd function
+func runInstallClaudeDesktopCmd(cmd *cobra.Command, args []string) {
+	exePath, err := os.Executable()
+	if err != nil {
+		log.Fatalf("Failed to get executable path: %v", err)
+	}
+
+	if err := install.ClaudeDesktopExtension(version, exePath, installDeveloper); err != nil {
+		log.Fatalf("Failed to install for Claude Desktop: %v", err)
+	}
+	fmt.Println("Successfully installed GKE MCP server in Claude Desktop configuration.")
 }
