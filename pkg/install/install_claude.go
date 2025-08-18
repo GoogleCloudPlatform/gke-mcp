@@ -52,17 +52,18 @@ func ClaudeDesktopExtension(exePath string) error {
 		MCPServers: make(map[string]MCPServerConfig),
 	}
 
-	if _, err := os.Stat(configPath); err == nil {
-		// Config file exists, read it
-		data, err := os.ReadFile(configPath)
-		if err != nil {
-			return fmt.Errorf("could not read existing Claude Desktop config: %w", err)
-		}
-
-		if err := json.Unmarshal(data, config); err != nil {
-			return fmt.Errorf("could not parse existing Claude Desktop config: %w", err)
-		}
+data, err := os.ReadFile(configPath)
+if err != nil {
+	if !os.IsNotExist(err) {
+		return fmt.Errorf("could not read Claude Desktop config: %w", err)
 	}
+	// File doesn't exist, which is fine. We'll create it.
+} else if len(data) > 0 {
+	// File exists and is not empty, parse it.
+	if err := json.Unmarshal(data, config); err != nil {
+		return fmt.Errorf("could not parse existing Claude Desktop config: %w", err)
+	}
+}
 
 	// Add or update the gke-mcp server configuration
 	config.MCPServers["gke-mcp"] = MCPServerConfig{
