@@ -243,7 +243,6 @@ func runInstallCursorCmd(cmd *cobra.Command, args []string) {
 	fmt.Println("Successfully installed GKE MCP server as a cursor MCP server.")
 }
 
-// Add this function near the existing runInstallGeminiCLICmd function
 func runInstallClaudeDesktopCmd(cmd *cobra.Command, args []string) {
 	exePath, err := os.Executable()
 	if err != nil {
