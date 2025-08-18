@@ -14,14 +14,16 @@ Claude Desktop provides a graphical interface for interacting with the GKE MCP S
 ### Automatic Installation
 
 The easiest way to install the GKE MCP Server for Claude Desktop is using the built-in installation command:
+
 ```commandline
 gke-mcp install claude-desktop
 ```
+
 After running the command, restart Claude Desktop for the changes to take effect.
 
 ### Manual Installation
 
-If you prefer to configure Claude Desktop manually or the automatic installation failed, you can edit the 
+If you prefer to configure Claude Desktop manually or the automatic installation failed, you can edit the
 configuration file directly.
 
 #### Configuration File Location
