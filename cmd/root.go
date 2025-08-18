@@ -69,7 +69,7 @@ var (
 		Run:   runInstallCursorCmd,
 	}
 
-    installClaudeDesktopCmd = &cobra.Command{
+	installClaudeDesktopCmd = &cobra.Command{
 		Use:   "claude-desktop",
 		Short: "Install the GKE MCP Server into your Claude Desktop settings.",
 		Run:   runInstallClaudeDesktopCmd,
@@ -249,7 +249,7 @@ func runInstallClaudeDesktopCmd(cmd *cobra.Command, args []string) {
 		log.Fatalf("Failed to get executable path: %v", err)
 	}
 
-if err := install.ClaudeDesktopExtension(exePath); err != nil {
+	if err := install.ClaudeDesktopExtension(exePath); err != nil {
 		log.Fatalf("Failed to install for Claude Desktop: %v", err)
 	}
 	fmt.Println("Successfully installed GKE MCP server in Claude Desktop configuration.")
