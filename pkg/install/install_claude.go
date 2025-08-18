@@ -36,7 +36,7 @@ type MCPServerConfig struct {
 }
 
 // ClaudeDesktopExtension installs the GKE MCP Server into Claude Desktop settings
-func ClaudeDesktopExtension(version, exePath string, developerMode bool) error {
+func ClaudeDesktopExtension(exePath string) error {
 	configPath, err := getClaudeDesktopConfigPath()
 	if err != nil {
 		return fmt.Errorf("could not determine Claude Desktop config path: %w", err)
