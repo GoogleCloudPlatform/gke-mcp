@@ -28,7 +28,7 @@ The following are the most relevant fields in a Kubernetes event log entry:
 
 ### List event logs for one given cluster
 
-This query lists all data access audit logs for a given cluster, project, and location.
+This query lists all event logs for a given cluster, project, and location.
 
 ```lql
 resource.type="k8s_cluster"
@@ -40,7 +40,7 @@ resource.labels.project_id="<project_id>"
 
 ### List event logs for one given cluster + namespace
 
-This query lists all data access audit logs for a given cluster, project, location and namespace.
+This query lists all event logs for a given cluster, project, location and namespace.
 
 ```lql
 resource.type="k8s_cluster"
