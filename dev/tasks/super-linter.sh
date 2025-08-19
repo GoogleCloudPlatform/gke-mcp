@@ -25,6 +25,9 @@ docker run \
   -e DEFAULT_BRANCH=main \
   -e VALIDATE_BASH=true \
   -e VALIDATE_CHECKOV=true \
+  -e VALIDATE_MARKDOWN=true \
+  -e VALIDATE_MARKDOWN_PRETTIER=true \
+  -e VALIDATE_NATURAL_LANGUAGE=true \
   -e VALIDATE_YAML=true \
   -e VALIDATE_YAML_PRETTIER=true \
   -v "$(pwd)":/tmp/lint \

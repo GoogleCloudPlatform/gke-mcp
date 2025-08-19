@@ -28,9 +28,14 @@ import (
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/install"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools"
+	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/cobra"
 	"google.golang.org/api/option"
+)
+
+const (
+	geminiInstructionsURI = "mcp://gke/pkg/install/GEMINI.md"
 )
 
 var (
@@ -58,7 +63,14 @@ var (
 		Run:   runInstallGeminiCLICmd,
 	}
 
-	installDeveloper bool
+	installCursorCmd = &cobra.Command{
+		Use:   "cursor",
+		Short: "Install the GKE MCP Server into your Cursor settings.",
+		Run:   runInstallCursorCmd,
+	}
+
+	installDeveloper   bool
+	installProjectOnly bool
 )
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -82,7 +94,9 @@ func init() {
 	rootCmd.AddCommand(installCmd)
 
 	installCmd.AddCommand(installGeminiCLICmd)
-	installCmd.PersistentFlags().BoolVarP(&installDeveloper, "developer", "d", false, "Install the MCP Server in developer mode")
+	installCmd.AddCommand(installCursorCmd)
+	installGeminiCLICmd.Flags().BoolVarP(&installDeveloper, "developer", "d", false, "Install the MCP Server in developer mode for Gemini CLI")
+	installCursorCmd.Flags().BoolVarP(&installProjectOnly, "project-only", "p", false, "Install the MCP Server only for the current project for Cursor. Please run this in the root directory of your project")
 }
 
 type startOptions struct {
@@ -113,8 +127,26 @@ func startMCPServer(ctx context.Context, opts startOptions) {
 		"GKE MCP Server",
 		version,
 		server.WithToolCapabilities(true),
+		server.WithResourceCapabilities(false, false),
 		server.WithInstructions(instructions),
 	)
+
+	resource := mcp.NewResource(
+		geminiInstructionsURI,
+		"GEMINI.md",
+		mcp.WithResourceDescription("Instructions for how to use the GKE MCP server"),
+		mcp.WithMIMEType("text/markdown"),
+	)
+
+	s.AddResource(resource, func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
+		return []mcp.ResourceContents{
+			mcp.TextResourceContents{
+				URI:      geminiInstructionsURI,
+				MIMEType: "text/markdown",
+				Text:     string(install.GeminiMarkdown),
+			},
+		}, nil
+	})
 
 	if err := tools.Install(ctx, s, c); err != nil {
 		log.Fatalf("Failed to install tools: %v\n", err)
@@ -185,4 +217,21 @@ func runInstallGeminiCLICmd(cmd *cobra.Command, args []string) {
 		log.Fatalf("Failed to install for gemini-cli: %v", err)
 	}
 	fmt.Println("Successfully installed GKE MCP server as a gemini-cli extension.")
+}
+
+func runInstallCursorCmd(cmd *cobra.Command, args []string) {
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("Failed to get current working directory: %v", err)
+	}
+
+	exePath, err := os.Executable()
+	if err != nil {
+		log.Fatalf("Failed to get executable path: %v", err)
+	}
+
+	if err := install.CursorMCPExtension(wd, exePath, installProjectOnly); err != nil {
+		log.Fatalf("Failed to install for cursor: %v", err)
+	}
+	fmt.Println("Successfully installed GKE MCP server as a cursor MCP server.")
 }
