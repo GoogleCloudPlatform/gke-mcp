@@ -1,8 +1,8 @@
 # Kubernetes Event Logs Schema
 
-In Kubernetes, Events are objects that provide information about resources, such as state changes, node errors, Pod errors, or scheduling failures. 
-Various Kubernetes components, such as the kubelet or workload controllers, create Events to report changes in objects. 
-For example, the StatefulSet controller might create an Event when the number of replicas in a StatefulSet changes. 
+In Kubernetes, Events are objects that provide information about resources, such as state changes, node errors, Pod errors, or scheduling failures.
+Various Kubernetes components, such as the kubelet or workload controllers, create Events to report changes in objects.
+For example, the StatefulSet controller might create an Event when the number of replicas in a StatefulSet changes.
 For more information about Events, see the Event API reference page and the Kubernetes glossary entry for Event.
 
 See [GKE Event logging information](https://cloud.google.com/kubernetes-engine/docs/how-to/view-logs#k8s-event-logs) for details about event logs on GKE.
@@ -17,7 +17,7 @@ The following are the most relevant fields in a Kubernetes event log entry:
 - `logName`: The name of the log entry. This value is always `projects/<project_id>/logs/events` where `<project_id>` is the ID of the project that owns the log entry.
 - `receiveTimestamp`: The timestamp that the log entry was received by the logging system.
 - `resource`: The monitored resource that the log entry is associated with.
-  - `type`: The type of the Monitored Resource. 
+  - `type`: The type of the Monitored Resource.
   - `labels`:
     - `cluster_name`: The name of the Kubernetes cluster.
     - `project_id`: The ID of the GCP project where the GKE cluster is located.
