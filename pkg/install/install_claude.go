@@ -23,18 +23,6 @@ import (
 	"runtime"
 )
 
-// ClaudeDesktopConfig represents the structure of claude_desktop_config.json
-type ClaudeDesktopConfig struct {
-	MCPServers map[string]MCPServerConfig `json:"mcpServers"`
-}
-
-// MCPServerConfig represents a single MCP server configuration
-type MCPServerConfig struct {
-	Command string            `json:"command"`
-	Args    []string          `json:"args,omitempty"`
-	Env     map[string]string `json:"env,omitempty"`
-}
-
 // ClaudeDesktopExtension installs the GKE MCP Server into Claude Desktop settings
 func ClaudeDesktopExtension(exePath string) error {
 	configPath, err := getClaudeDesktopConfigPath()
@@ -47,10 +35,8 @@ func ClaudeDesktopExtension(exePath string) error {
 		return fmt.Errorf("could not create Claude Desktop config directory: %w", err)
 	}
 
-	// Read existing config or create new one
-	config := &ClaudeDesktopConfig{
-		MCPServers: make(map[string]MCPServerConfig),
-	}
+	// Read existing configuration if it exists
+	var config map[string]interface{}
 
 	if _, err := os.Stat(configPath); err == nil {
 		// Config file exists, read it
@@ -59,15 +45,29 @@ func ClaudeDesktopExtension(exePath string) error {
 			return fmt.Errorf("could not read existing Claude Desktop config: %w", err)
 		}
 
-		if err := json.Unmarshal(data, config); err != nil {
+		if err := json.Unmarshal(data, &config); err != nil {
 			return fmt.Errorf("could not parse existing Claude Desktop config: %w", err)
 		}
+	} else {
+		// File doesn't exist, create new config
+		config = make(map[string]interface{})
+	}
+
+	// Ensure mcpServers exists
+	if _, exists := config["mcpServers"]; !exists {
+		config["mcpServers"] = make(map[string]interface{})
 	}
 
 	// Add or update the gke-mcp server configuration
-	config.MCPServers["gke-mcp"] = MCPServerConfig{
-		Command: exePath,
-		Env:     make(map[string]string), // Initialize empty env map
+	mcpServers, ok := config["mcpServers"].(map[string]interface{})
+	if !ok {
+		// Handle the case where mcpServers is not a map
+		config["mcpServers"] = make(map[string]interface{})
+		mcpServers = config["mcpServers"].(map[string]interface{})
+	}
+
+	mcpServers["gke-mcp"] = map[string]interface{}{
+		"command": exePath,
 	}
 
 	// Write the updated config back
