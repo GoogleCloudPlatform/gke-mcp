@@ -4,7 +4,7 @@ Kubernetes containers collect logs for your workloads written to STDOUT and STDE
 
 ## Schema
 
-Note that k8s Application logs are encoded into `LogEntry` objects. The application information is encoded into a `jsonPayload` field.
+Note that k8s Application logs are encoded into `LogEntry` objects. The application information is encoded into a `protoPayload` field.
 
 The following are the most relevant fields in a Kubernetes Application log entry:
 
@@ -12,7 +12,7 @@ The following are the most relevant fields in a Kubernetes Application log entry
 - `logName`: The name of the log entry. This value is always `projects/<project_id>/logs/stderr` (logs written to standard error) or `projects/<project_id>logs/stdout` (logs written to standard out), where `<project_id>` is the ID of the project that owns the log entry.
 - `receiveTimestamp`: The timestamp that the log entry was received by the logging system.
 - `resource`: The monitored resource that the log entry is associated with.
-  - `type`: The type of the Monitored Resource.
+  - `type`: The type of the Monitored Resource. For Kubernetes Application logs, this is always `k8s_container`.
   - `labels`:
     - `cluster_name`: The name of the Kubernetes cluster.
     - `project_id`: The ID of the GCP project where the GKE cluster is located.
