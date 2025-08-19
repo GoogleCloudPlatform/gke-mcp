@@ -1,21 +1,28 @@
 # Kubernetes Event Logs Schema
 
-In Kubernetes, Events are objects that provide information about resources, such as state changes, node errors, Pod errors, or scheduling failures.
-Various Kubernetes components, such as the kubelet or workload controllers, create Events to report changes in objects.
-For example, the StatefulSet controller might create an Event when the number of replicas in a StatefulSet changes.
-For more information about Events, see the Event API reference page and the Kubernetes glossary entry for Event.
+In Kubernetes, Events are objects that provide information about resources,
+such as state changes, node errors, Pod errors, or scheduling failures.
+Various Kubernetes components,such as the kubelet or workload controllers,
+create Events to report changes in objects. For example, the StatefulSet
+controller might create an Event when the number of replicas in a StatefulSet
+changes. For more information about Events, see the Event API
+reference page and the Kubernetes glossary entry for Event.
 
-See [GKE Event logging information](https://cloud.google.com/kubernetes-engine/docs/how-to/view-logs#k8s-event-logs) for details about event logs on GKE.
+See [GKE Event logging information](https://cloud.google.com/kubernetes-engine/docs/how-to/view-logs#k8s-event-logs)
+for details about event logs on GKE.
 
 ## Schema
 
-Note that k8s event logs are encoded into `LogEntry` objects. The event information is encoded into a `jsonPayload` field.
+Note that k8s event logs are encoded into `LogEntry` objects.
+The event information is encoded into a `jsonPayload` field.
 
 The following are the most relevant fields in a Kubernetes event log entry:
 
 - `insertId`: An unique, auto-generated ID for the log entry.
-- `logName`: The name of the log entry. This value is always `projects/<project_id>/logs/events` where `<project_id>` is the ID of the project that owns the log entry.
-- `receiveTimestamp`: The timestamp that the log entry was received by the logging system.
+- `logName`: The name of the log entry. This value is always `projects/<project_id>/logs/events`
+  where `<project_id>` is the ID of the project that owns the log entry.
+- `receiveTimestamp`: The timestamp that the log entry was received by the
+  logging system.
 - `resource`: The monitored resource that the log entry is associated with.
   - `type`: The type of the Monitored Resource.
   - `labels`:
@@ -53,4 +60,3 @@ resource.labels.location="<location>"
 resource.labels.project_id="<project_id>"
 jsonPayload.involvedObject.kind="<namespace>"
 ```
-
