@@ -48,9 +48,9 @@ func ClaudeDesktopExtension(exePath string) error {
 	// Add or update the gke-mcp server configuration
 	mcpServers, ok := config["mcpServers"].(map[string]interface{})
 	if !ok {
-		// Handle the case where mcpServers is not a map
-		config["mcpServers"] = make(map[string]interface{})
-		mcpServers = config["mcpServers"].(map[string]interface{})
+		// Handle the case where mcpServers does not exist or is not a map
+		mcpServers = make(map[string]interface{})
+		config["mcpServers"] = mcpServers
 	}
 
 	mcpServers["gke-mcp"] = map[string]interface{}{
