@@ -19,6 +19,7 @@ import (
 	"embed"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -31,18 +32,27 @@ type GetLogSchemaRequest struct {
 	LogType string `json:"log_type"`
 }
 
+var supportedLogTypes = map[string]bool {
+	"k8s_audit_logs": true,
+	"k8s_application_logs": true,
+	"k8s_event_logs": true,
+}
+
 func installGetLogSchemas(s *server.MCPServer) {
+	var logTypeArr []string
+    for k := range supportedLogTypes {
+        logTypeArr = append(logTypeArr, k)
+    }
 	getLogSchemaTool := mcp.NewTool("get_log_schema",
 		mcp.WithDescription("Get the schema for a specific log type."),
 		mcp.WithReadOnlyHintAnnotation(true),
-		mcp.WithString("log_type", mcp.Description("The type of log to get schema for. Supported values are: ['k8s_audit_logs', 'k8s_application_logs', 'k8s_event_logs']."), mcp.Required()),
+		mcp.WithString("log_type", mcp.Description(fmt.Sprintf("The type of log to get schema for. Supported values are: ['%s'].", strings.Join(logTypeArr, "', '"))), mcp.Required()),
 	)
 	s.AddTool(getLogSchemaTool, mcp.NewTypedToolHandler(getLogSchema))
 }
 
 func getLogSchema(_ context.Context, _ mcp.CallToolRequest, req GetLogSchemaRequest) (*mcp.CallToolResult, error) {
-	switch req.LogType {
-	case "k8s_audit_logs", "k8s_application_logs", "k8s_event_logs":
+	if supportedLogTypes[req.LogType] {
 		fileName := fmt.Sprintf("%s.md", req.LogType)
 		filePath := filepath.Join("schemas", fileName)
 		content, err := schemas.ReadFile(filePath)
@@ -50,7 +60,7 @@ func getLogSchema(_ context.Context, _ mcp.CallToolRequest, req GetLogSchemaRequ
 			return nil, fmt.Errorf("could not find schema for log_type %s: %v", req.LogType, err)
 		}
 		return mcp.NewToolResultText(string(content)), nil
-	default:
+	} else {
 		return mcp.NewToolResultErrorf("unsupported log_type: %s", req.LogType), nil
 	}
 }

@@ -18,7 +18,7 @@ The event information is encoded into a `jsonPayload` field.
 
 The following are the most relevant fields in a Kubernetes event log entry:
 
-- `insertId`: An unique, auto-generated ID for the log entry.
+- `insertId`: A unique, auto-generated ID for the log entry.
 - `logName`: The name of the log entry. This value is always `projects/<project_id>/logs/events`
   where `<project_id>` is the ID of the project that owns the log entry.
 - `receiveTimestamp`: The timestamp that the log entry was received by the
@@ -31,7 +31,8 @@ The following are the most relevant fields in a Kubernetes event log entry:
     - `location`: The location of the GKE cluster (region or zone).
     - `namespace_name`: The namespace of the GKE Workload
     - `pod_name`: The name of the GKE Pod
-- `jsonPayload`: The text payload of the Event Logs
+- `jsonPayload`: The payload of the log entry, containing the Kubernetes 
+  Event object in JSON format.
 - `timestamp`: The timestamp of when the log entry was emitted.
 
 ## Sample Queries
