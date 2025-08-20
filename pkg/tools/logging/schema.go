@@ -32,17 +32,17 @@ type GetLogSchemaRequest struct {
 	LogType string `json:"log_type"`
 }
 
-var supportedLogTypes = map[string]bool {
-	"k8s_audit_logs": true,
+var supportedLogTypes = map[string]bool{
+	"k8s_audit_logs":       true,
 	"k8s_application_logs": true,
-	"k8s_event_logs": true,
+	"k8s_event_logs":       true,
 }
 
 func installGetLogSchemas(s *server.MCPServer) {
 	var logTypeArr []string
-    for k := range supportedLogTypes {
-        logTypeArr = append(logTypeArr, k)
-    }
+	for k := range supportedLogTypes {
+		logTypeArr = append(logTypeArr, k)
+	}
 	getLogSchemaTool := mcp.NewTool("get_log_schema",
 		mcp.WithDescription("Get the schema for a specific log type."),
 		mcp.WithReadOnlyHintAnnotation(true),
