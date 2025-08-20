@@ -230,4 +230,12 @@ When a user asks about the storage types to use for his particular workload. Use
 - Machines family comparison - [Machines family comparison](https://cloud.google.com/compute/docs/machine-resource).
 
 Use Google search if you can't find required information in these web pages.
+
+## GS Fuse
+- When user asks about Object Storage connection options request the name of storage bucket and a cluster you want to connect to, or provide a general info. 
+
+- GS FUSE driver - [GS FUSE driver](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/cloud-storage-fuse-csi-driver).
+- About - [About](https://cloud.google.com/kubernetes-engine/docs/concepts/cloud-storage-fuse-csi-driver).
+- Setup - [Setup](https://cloud.google.com/kubernetes-engine/docs/how-to/cloud-storage-fuse-csi-driver-setup).
+- Mount - [Mount CSI driver](https://cloud.google.com/kubernetes-engine/docs/how-to/cloud-storage-fuse-csi-driver-ephemeral, https://cloud.google.com/kubernetes-engine/docs/how-to/cloud-storage-fuse-csi-driver-pv).
 ## Terraform Cluster creation 
