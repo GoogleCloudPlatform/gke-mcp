@@ -29,9 +29,7 @@ The following are the most relevant fields in a Kubernetes event log entry:
     - `cluster_name`: The name of the Kubernetes cluster.
     - `project_id`: The ID of the GCP project where the GKE cluster is located.
     - `location`: The location of the GKE cluster (region or zone).
-    - `namespace_name`: The namespace of the GKE Workload
-    - `pod_name`: The name of the GKE Pod
-- `jsonPayload`: The payload of the log entry, containing the Kubernetes 
+- `jsonPayload`: The payload of the log entry, containing the Kubernetes
   Event object in JSON format.
 - `timestamp`: The timestamp of when the log entry was emitted.
 
@@ -49,9 +47,9 @@ resource.labels.location="<location>"
 resource.labels.project_id="<project_id>"
 ```
 
-### List event logs for one given cluster + namespace
+### List event logs for one given cluster + kind
 
-This query lists all event logs for a given cluster, project, location and namespace.
+This query lists all event logs for a given cluster, project, location and kind.
 
 ```lql
 resource.type="k8s_cluster"
@@ -59,5 +57,5 @@ log_name="projects/<project_id>/logs/events"
 resource.labels.cluster_name="<cluster_name>"
 resource.labels.location="<location>"
 resource.labels.project_id="<project_id>"
-jsonPayload.involvedObject.kind="<namespace>"
+jsonPayload.involvedObject.kind="<kind>"
 ```
