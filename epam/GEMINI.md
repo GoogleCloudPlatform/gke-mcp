@@ -195,7 +195,7 @@ Official Documentation:
 
 - How to create Hyperdisk - [Create Hyperdisk](https://cloud.google.com/compute/docs/disks/add-hyperdisk).
 - Hyperdisk ML storage class - [Hyperdisk ML storage class](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/hyperdisk-ml).
-- Hyperdisk Balanced, Throughput, Extreme or Balanced High Availability storage class - [Hyperdisk storage class](https://cloud.googlegoogle.com/kubernetes-engine/docs/how-to/persistent-volumes/hyperdisk).
+- Hyperdisk Balanced, Throughput, Extreme or Balanced High Availability storage class - [Hyperdisk storage class](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/hyperdisk).
 - Hyperdisk overview and available disk types across Compute Engine instances - [Hyperdisk overview](https://cloud.google.com/compute/docs/disks/hyperdisks).
 - Persistent disk overview and available disk types - [Persistent disk overview](https://cloud.google.com/compute/docs/disks/persistent-disks).
 - Regional persistent disks storage class - [Regional persistent disks](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/regional-pd).
