@@ -2,7 +2,7 @@
 
 In Kubernetes, Events are objects that provide information about resources,
 such as state changes, node errors, Pod errors, or scheduling failures.
-Various Kubernetes components,such as the kubelet or workload controllers,
+Various Kubernetes components, such as the kubelet or workload controllers,
 create Events to report changes in objects. For example, the StatefulSet
 controller might create an Event when the number of replicas in a StatefulSet
 changes. For more information about Events, see the Event API
