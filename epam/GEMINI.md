@@ -232,7 +232,9 @@ When a user asks about the storage types to use for his particular workload. Use
 Use Google search if you can't find required information in these web pages.
 
 ## GS Fuse
-- When user asks about Object Storage connection options request the name of storage bucket and a cluster you want to connect to, or provide a general info. 
+  When user asks about Object Storage connection options request the name of storage bucket and a cluster you want to connect to, or provide a general info. 
+  When creating PersistantVolume manifest use folloving values for "mountOptions": 
+  [mountOptions: "implicit-dirs,metadata-cache:ttl-secs:-1,file-cache:max-size-mb:-1,file-cache:cache-file-for-range-read:true,file-cache:enable-parallel-downloads:true"]
 
 - GS FUSE driver - [GS FUSE driver](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/cloud-storage-fuse-csi-driver).
 - About - [About](https://cloud.google.com/kubernetes-engine/docs/concepts/cloud-storage-fuse-csi-driver).
