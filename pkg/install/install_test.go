@@ -434,18 +434,8 @@ func TestCursorMCPExtensionWithMalformedConfig(t *testing.T) {
 	}
 }
 
-// verifyClaudeDesktopConfig validates the Claude Desktop configuration file content
-func verifyClaudeDesktopConfig(t *testing.T, configPath, expectedExePath string) {
-	configData, err := os.ReadFile(configPath)
-	if err != nil {
-		t.Fatalf("Failed to read Claude Desktop config file: %v", err)
-	}
-
-	var config map[string]interface{}
-	if err := json.Unmarshal(configData, &config); err != nil {
-		t.Fatalf("Failed to unmarshal Claude Desktop config: %v", err)
-	}
-
+// verifyGkeMcpInClaudeConfig checks for the presence and correctness of the gke-mcp server entry.
+func verifyGkeMcpInClaudeConfig(t *testing.T, config map[string]interface{}, expectedExePath string) {
 	// Verify mcpServers exists and is a map
 	mcpServers, ok := config["mcpServers"].(map[string]interface{})
 	if !ok {
@@ -461,6 +451,21 @@ func verifyClaudeDesktopConfig(t *testing.T, configPath, expectedExePath string)
 	if gkeMcp["command"] != expectedExePath {
 		t.Errorf("Expected command to be %s, got %v", expectedExePath, gkeMcp["command"])
 	}
+}
+
+// verifyClaudeDesktopConfig validates the Claude Desktop configuration file content
+func verifyClaudeDesktopConfig(t *testing.T, configPath, expectedExePath string) {
+	configData, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("Failed to read Claude Desktop config file: %v", err)
+	}
+
+	var config map[string]interface{}
+	if err := json.Unmarshal(configData, &config); err != nil {
+		t.Fatalf("Failed to unmarshal Claude Desktop config: %v", err)
+	}
+
+	verifyGkeMcpInClaudeConfig(t, config, expectedExePath)
 }
 
 // createExistingClaudeConfig creates a pre-existing Claude Desktop configuration file for testing
@@ -572,14 +577,7 @@ func TestClaudeDesktopExtensionWithExistingConfig(t *testing.T) {
 	}
 
 	// Check that gke-mcp was added
-	gkeMcp, ok := mcpServers["gke-mcp"].(map[string]interface{})
-	if !ok {
-		t.Fatalf("Expected gke-mcp to be added, got %T", mcpServers["gke-mcp"])
-	}
-
-	if gkeMcp["command"] != testExePath {
-		t.Errorf("Expected gke-mcp command to be %s, got %v", testExePath, gkeMcp["command"])
-	}
+	verifyGkeMcpInClaudeConfig(t, config, testExePath)
 }
 
 func TestClaudeDesktopExtensionWithMalformedConfig(t *testing.T) {
@@ -625,19 +623,5 @@ func TestClaudeDesktopExtensionWithMalformedConfig(t *testing.T) {
 		t.Fatalf("Failed to unmarshal Claude Desktop config: %v", err)
 	}
 
-	// Check that mcpServers is now a proper map
-	mcpServers, ok := config["mcpServers"].(map[string]interface{})
-	if !ok {
-		t.Fatalf("Expected mcpServers to be fixed and become a map, got %T", config["mcpServers"])
-	}
-
-	// Check that gke-mcp was added successfully
-	gkeMcp, ok := mcpServers["gke-mcp"].(map[string]interface{})
-	if !ok {
-		t.Fatalf("Expected gke-mcp to be added, got %T", mcpServers["gke-mcp"])
-	}
-
-	if gkeMcp["command"] != testExePath {
-		t.Errorf("Expected gke-mcp command to be %s, got %v", testExePath, gkeMcp["command"])
-	}
+	verifyGkeMcpInClaudeConfig(t, config, testExePath)
 }
