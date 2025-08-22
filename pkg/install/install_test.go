@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -44,6 +45,23 @@ func testSetup(t *testing.T, mockHome bool) (string, func()) {
 	}
 
 	return tmpDir, cleanup
+}
+
+// mockHomeAndAppData mocks the HOME and APPDATA environment variables to a temporary directory
+// for the duration of a test. It returns a cleanup function to restore the original values.
+func mockHomeAndAppData(t *testing.T, tmpDir string) func() {
+	originalHome := os.Getenv("HOME")
+	originalAppData := os.Getenv("APPDATA")
+
+	os.Setenv("HOME", tmpDir)
+	if runtime.GOOS == "windows" {
+		os.Setenv("APPDATA", tmpDir)
+	}
+
+	return func() {
+		os.Setenv("HOME", originalHome)
+		os.Setenv("APPDATA", originalAppData)
+	}
 }
 
 // verifyCursorInstallation checks that the Cursor installation created the expected files and structure
@@ -418,3 +436,240 @@ func TestCursorMCPExtensionWithMalformedConfig(t *testing.T) {
 		t.Errorf("Expected gke-mcp command to be %s, got %v", testExePath, gkeMcp["command"])
 	}
 }
+
+// verifyClaudeDesktopConfig validates the Claude Desktop configuration file content
+func verifyClaudeDesktopConfig(t *testing.T, configPath, expectedExePath string) {
+	configData, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("Failed to read Claude Desktop config file: %v", err)
+	}
+
+	var config map[string]interface{}
+	if err := json.Unmarshal(configData, &config); err != nil {
+		t.Fatalf("Failed to unmarshal Claude Desktop config: %v", err)
+	}
+
+	// Verify mcpServers exists and is a map
+	mcpServers, ok := config["mcpServers"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected mcpServers to be a map, got %T", config["mcpServers"])
+	}
+
+	// Verify gke-mcp server configuration
+	gkeMcp, ok := mcpServers["gke-mcp"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected gke-mcp to be a map, got %T", mcpServers["gke-mcp"])
+	}
+
+	if gkeMcp["command"] != expectedExePath {
+		t.Errorf("Expected command to be %s, got %v", expectedExePath, gkeMcp["command"])
+	}
+}
+
+// createExistingClaudeConfig creates a pre-existing Claude Desktop configuration file for testing
+func createExistingClaudeConfig(t *testing.T, configDir string, config map[string]interface{}) string {
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		t.Fatalf("Failed to create claude config directory: %v", err)
+	}
+
+	configData, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		t.Fatalf("Failed to marshal config: %v", err)
+	}
+
+	configPath := filepath.Join(configDir, "claude_desktop_config.json")
+	if err := os.WriteFile(configPath, configData, 0644); err != nil {
+		t.Fatalf("Failed to write config: %v", err)
+	}
+
+	return configPath
+}
+
+// mockClaudeDesktopConfigPath mocks the getClaudeDesktopConfigPath function for testing
+func mockClaudeDesktopConfigPath(tmpDir string) string {
+	var configDir string
+	switch runtime.GOOS {
+	case "darwin": // macOS
+		configDir = filepath.Join(tmpDir, "Library", "Application Support", "Claude")
+	case "windows":
+		configDir = filepath.Join(tmpDir, "Claude")
+	case "linux":
+		configDir = filepath.Join(tmpDir, ".config", "Claude")
+	default:
+        // For unsupported OS, fall back to linux-style path for testing
+		// In production, this would return an error
+		configDir = filepath.Join(tmpDir, ".config", "Claude")
+	}
+	return filepath.Join(configDir, "claude_desktop_config.json")
+}
+
+func TestClaudeDesktopExtension(t *testing.T) {
+	tmpDir, cleanup := testSetup(t, true)
+	defer cleanup()
+
+	testExePath := "/usr/local/bin/gke-mcp"
+
+	// Mock the config path by temporarily setting environment variables
+	cleanupEnv := mockHomeAndAppData(t, tmpDir)
+    defer cleanupEnv()
+
+	opts := &InstallOptions{
+		installDir: tmpDir,
+		exePath:    testExePath,
+	}
+	if err := ClaudeDesktopExtension(opts); err != nil {
+		t.Fatalf("ClaudeDesktopExtension() failed: %v", err)
+	}
+
+	expectedConfigPath := mockClaudeDesktopConfigPath(tmpDir)
+	verifyClaudeDesktopConfig(t, expectedConfigPath, testExePath)
+}
+
+func TestClaudeDesktopExtensionWithExistingConfig(t *testing.T) {
+	tmpDir, cleanup := testSetup(t, true)
+	defer cleanup()
+
+	// Mock environment variables
+	cleanupEnv := mockHomeAndAppData(t, tmpDir)
+    defer cleanupEnv()
+
+	// Create existing Claude Desktop configuration
+	var configDir string
+	switch runtime.GOOS {
+	case "darwin":
+		configDir = filepath.Join(tmpDir, "Library", "Application Support", "Claude")
+	case "windows":
+		configDir = filepath.Join(tmpDir, "Claude")
+	default:
+		configDir = filepath.Join(tmpDir, ".config", "Claude")
+	}
+
+	existingConfig := map[string]interface{}{
+		"mcpServers": map[string]interface{}{
+			"existing-server": map[string]interface{}{
+				"command": "/usr/bin/existing",
+				"env":     map[string]interface{}{},
+			},
+		},
+		"otherSetting": "value",
+	}
+
+	configPath := createExistingClaudeConfig(t, configDir, existingConfig)
+
+	// Install gke-mcp
+	testExePath := "/usr/local/bin/gke-mcp"
+	opts := &InstallOptions{
+		installDir: tmpDir,
+		exePath:    testExePath,
+	}
+	if err := ClaudeDesktopExtension(opts); err != nil {
+		t.Fatalf("ClaudeDesktopExtension() failed: %v", err)
+	}
+
+	// Verify that existing configuration is preserved
+	configData, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("Failed to read Claude Desktop config file: %v", err)
+	}
+
+	var config map[string]interface{}
+	if err := json.Unmarshal(configData, &config); err != nil {
+		t.Fatalf("Failed to unmarshal Claude Desktop config: %v", err)
+	}
+
+	// Check that existing server is preserved
+	mcpServers, ok := config["mcpServers"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected mcpServers to be a map, got %T", config["mcpServers"])
+	}
+
+	existingServer, ok := mcpServers["existing-server"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected existing-server to be preserved, got %T", mcpServers["existing-server"])
+	}
+
+	if existingServer["command"] != "/usr/bin/existing" {
+		t.Errorf("Expected existing server command to be preserved, got %v", existingServer["command"])
+	}
+
+	// Check that other settings are preserved
+	if config["otherSetting"] != "value" {
+		t.Errorf("Expected otherSetting to be preserved, got %v", config["otherSetting"])
+	}
+
+	// Check that gke-mcp was added
+	gkeMcp, ok := mcpServers["gke-mcp"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected gke-mcp to be added, got %T", mcpServers["gke-mcp"])
+	}
+
+	if gkeMcp["command"] != testExePath {
+		t.Errorf("Expected gke-mcp command to be %s, got %v", testExePath, gkeMcp["command"])
+	}
+}
+
+func TestClaudeDesktopExtensionWithMalformedConfig(t *testing.T) {
+	tmpDir, cleanup := testSetup(t, true)
+	defer cleanup()
+
+	// Mock environment variables
+	cleanupEnv := mockHomeAndAppData(t, tmpDir)
+    defer cleanupEnv()
+
+	// Create malformed Claude Desktop configuration (mcpServers as string instead of map)
+	var configDir string
+	switch runtime.GOOS {
+	case "darwin":
+		configDir = filepath.Join(tmpDir, "Library", "Application Support", "Claude")
+	case "windows":
+		configDir = filepath.Join(tmpDir, "Claude")
+	default:
+		configDir = filepath.Join(tmpDir, ".config", "Claude")
+	}
+
+	malformedConfig := map[string]interface{}{
+		"mcpServers":   "this should be a map, not a string",
+		"otherSetting": "value",
+	}
+
+	configPath := createExistingClaudeConfig(t, configDir, malformedConfig)
+
+	// Install gke-mcp - this should handle the malformed config gracefully
+	testExePath := "/usr/local/bin/gke-mcp"
+
+	opts := &InstallOptions{
+		installDir: tmpDir,
+		exePath:    testExePath,
+	}
+	if err := ClaudeDesktopExtension(opts); err != nil {
+		t.Fatalf("ClaudeDesktopExtension() failed: %v", err)
+	}
+
+	// Verify that the malformed config was fixed
+	configData, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("Failed to read Claude Desktop config file: %v", err)
+	}
+
+	var config map[string]interface{}
+	if err := json.Unmarshal(configData, &config); err != nil {
+		t.Fatalf("Failed to unmarshal Claude Desktop config: %v", err)
+	}
+
+	// Check that mcpServers is now a proper map
+	mcpServers, ok := config["mcpServers"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected mcpServers to be fixed and become a map, got %T", config["mcpServers"])
+	}
+
+	// Check that gke-mcp was added successfully
+	gkeMcp, ok := mcpServers["gke-mcp"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected gke-mcp to be added, got %T", mcpServers["gke-mcp"])
+	}
+
+	if gkeMcp["command"] != testExePath {
+		t.Errorf("Expected gke-mcp command to be %s, got %v", testExePath, gkeMcp["command"])
+	}
+}
+
