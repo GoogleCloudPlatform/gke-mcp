@@ -26,7 +26,7 @@ import (
 
 // testSetup creates a temporary directory and optionally mocks the HOME environment
 func testSetup(t *testing.T, mockHome bool) (string, func()) {
-	tmpDir, err := os.MkdirTemp("", "cursor-test")
+	tmpDir, err := os.MkdirTemp("", "test")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
@@ -47,19 +47,16 @@ func testSetup(t *testing.T, mockHome bool) (string, func()) {
 	return tmpDir, cleanup
 }
 
-// mockHomeAndAppData mocks the HOME and APPDATA environment variables to a temporary directory
+// mockAppData mocks the APPDATA environment variables to a temporary directory
 // for the duration of a test. It returns a cleanup function to restore the original values.
-func mockHomeAndAppData(t *testing.T, tmpDir string) func() {
-	originalHome := os.Getenv("HOME")
+func mockAppData(t *testing.T, tmpDir string) func() {
 	originalAppData := os.Getenv("APPDATA")
 
-	os.Setenv("HOME", tmpDir)
 	if runtime.GOOS == "windows" {
 		os.Setenv("APPDATA", tmpDir)
 	}
 
 	return func() {
-		os.Setenv("HOME", originalHome)
 		os.Setenv("APPDATA", originalAppData)
 	}
 }
@@ -510,7 +507,7 @@ func TestClaudeDesktopExtension(t *testing.T) {
 	testExePath := "/usr/local/bin/gke-mcp"
 
 	// Mock the config path by temporarily setting environment variables
-	cleanupEnv := mockHomeAndAppData(t, tmpDir)
+	cleanupEnv := mockAppData(t, tmpDir)
     defer cleanupEnv()
 
 	opts := &InstallOptions{
@@ -530,7 +527,7 @@ func TestClaudeDesktopExtensionWithExistingConfig(t *testing.T) {
 	defer cleanup()
 
 	// Mock environment variables
-	cleanupEnv := mockHomeAndAppData(t, tmpDir)
+	cleanupEnv := mockAppData(t, tmpDir)
     defer cleanupEnv()
 
 	// Create existing Claude Desktop configuration
@@ -613,7 +610,7 @@ func TestClaudeDesktopExtensionWithMalformedConfig(t *testing.T) {
 	defer cleanup()
 
 	// Mock environment variables
-	cleanupEnv := mockHomeAndAppData(t, tmpDir)
+	cleanupEnv := mockAppData(t, tmpDir)
     defer cleanupEnv()
 
 	// Create malformed Claude Desktop configuration (mcpServers as string instead of map)
