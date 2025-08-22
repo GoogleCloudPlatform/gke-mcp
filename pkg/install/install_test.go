@@ -493,7 +493,7 @@ func mockClaudeDesktopConfigPath(tmpDir string) string {
 	case "linux":
 		configDir = filepath.Join(tmpDir, ".config", "Claude")
 	default:
-        // For unsupported OS, fall back to linux-style path for testing
+		// For unsupported OS, fall back to linux-style path for testing
 		// In production, this would return an error
 		configDir = filepath.Join(tmpDir, ".config", "Claude")
 	}
@@ -508,7 +508,7 @@ func TestClaudeDesktopExtension(t *testing.T) {
 
 	// Mock the config path by temporarily setting environment variables
 	cleanupEnv := mockAppData(t, tmpDir)
-    defer cleanupEnv()
+	defer cleanupEnv()
 
 	opts := &InstallOptions{
 		installDir: tmpDir,
@@ -528,7 +528,7 @@ func TestClaudeDesktopExtensionWithExistingConfig(t *testing.T) {
 
 	// Mock environment variables
 	cleanupEnv := mockAppData(t, tmpDir)
-    defer cleanupEnv()
+	defer cleanupEnv()
 
 	// Create existing Claude Desktop configuration
 	var configDir string
@@ -611,7 +611,7 @@ func TestClaudeDesktopExtensionWithMalformedConfig(t *testing.T) {
 
 	// Mock environment variables
 	cleanupEnv := mockAppData(t, tmpDir)
-    defer cleanupEnv()
+	defer cleanupEnv()
 
 	// Create malformed Claude Desktop configuration (mcpServers as string instead of map)
 	var configDir string
@@ -669,4 +669,3 @@ func TestClaudeDesktopExtensionWithMalformedConfig(t *testing.T) {
 		t.Errorf("Expected gke-mcp command to be %s, got %v", testExePath, gkeMcp["command"])
 	}
 }
-
