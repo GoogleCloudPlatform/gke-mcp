@@ -641,4 +641,3 @@ func TestClaudeDesktopExtensionWithMalformedConfig(t *testing.T) {
 		t.Errorf("Expected gke-mcp command to be %s, got %v", testExePath, gkeMcp["command"])
 	}
 }
-
