@@ -35,21 +35,9 @@ This rule provides context for using the gke-mcp tool within Cursor.
 `
 
 // CursorMCPExtension installs the gke-mcp server as a Cursor MCP extension
-func CursorMCPExtension(baseDir, exePath string, projectOnlyMode bool) error {
-	// Determine the Cursor MCP configuration directory
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return fmt.Errorf("could not determine home directory: %w", err)
-	}
+func CursorMCPExtension(opts *InstallOptions) error {
+	mcpDir := filepath.Join(opts.installDir, ".cursor")
 
-	mcpDir := ""
-	if !projectOnlyMode {
-		// Create the global Cursor MCP configuration directory
-		mcpDir = filepath.Join(homeDir, ".cursor")
-	} else {
-		// Create project-specific configuration if projectOnlyMode set to true
-		mcpDir = filepath.Join(baseDir, ".cursor")
-	}
 	if err := os.MkdirAll(mcpDir, 0755); err != nil {
 		return fmt.Errorf("could not create Cursor directory at %s: %w", mcpDir, err)
 	}
@@ -88,7 +76,7 @@ func CursorMCPExtension(baseDir, exePath string, projectOnlyMode bool) error {
 	}
 
 	mcpServers["gke-mcp"] = map[string]interface{}{
-		"command": exePath,
+		"command": opts.exePath,
 		"type":    "stdio",
 	}
 

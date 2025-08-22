@@ -155,7 +155,14 @@ func TestGeminiCLIExtension(t *testing.T) {
 
 	testVersion := "0.1.0-test"
 	testExePath := "/usr/local/bin/gke-mcp"
-	if err := GeminiCLIExtension(tmpDir, testVersion, testExePath, false); err != nil {
+	opts := &InstallOptions{
+		version:       testVersion,
+		installDir:    tmpDir,
+		exePath:       testExePath,
+		developerMode: false,
+	}
+
+	if err := GeminiCLIExtension(opts); err != nil {
 		t.Fatalf("GeminiCLIExtension() failed: %v", err)
 	}
 
@@ -198,7 +205,7 @@ func TestGeminiCLIExtension(t *testing.T) {
 }
 
 func TestGeminiCLIExtensionDeveloperMode(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "gemini-cli-test")
+	tmpDir, err := os.MkdirTemp(".", ".gemini-cli-test")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
@@ -214,7 +221,14 @@ func TestGeminiCLIExtensionDeveloperMode(t *testing.T) {
 
 	testVersion := "0.1.0-test"
 	testExePath := filepath.Join(tmpDir, "gke-mcp")
-	if err := GeminiCLIExtension(tmpDir, testVersion, testExePath, true); err != nil {
+	opts := &InstallOptions{
+		version:       testVersion,
+		installDir:    tmpDir,
+		exePath:       testExePath,
+		developerMode: true,
+	}
+
+	if err := GeminiCLIExtension(opts); err != nil {
 		t.Fatalf("GeminiCLIExtension() failed: %v", err)
 	}
 
@@ -253,7 +267,12 @@ func TestCursorMCPExtensionGlobal(t *testing.T) {
 	defer cleanup()
 
 	testExePath := "/usr/local/bin/gke-mcp"
-	if err := CursorMCPExtension(tmpDir, testExePath, false); err != nil {
+	opts := &InstallOptions{
+		installDir: tmpDir,
+		exePath:    testExePath,
+	}
+
+	if err := CursorMCPExtension(opts); err != nil {
 		t.Fatalf("CursorMCPExtension() failed: %v", err)
 	}
 
@@ -266,7 +285,11 @@ func TestCursorMCPExtensionProjectOnly(t *testing.T) {
 	defer cleanup()
 
 	testExePath := "/usr/local/bin/gke-mcp"
-	if err := CursorMCPExtension(tmpDir, testExePath, true); err != nil {
+	opts := &InstallOptions{
+		installDir: tmpDir,
+		exePath:    testExePath,
+	}
+	if err := CursorMCPExtension(opts); err != nil {
 		t.Fatalf("CursorMCPExtension() failed: %v", err)
 	}
 
@@ -294,7 +317,12 @@ func TestCursorMCPExtensionWithExistingConfig(t *testing.T) {
 
 	// Install gke-mcp
 	testExePath := "/usr/local/bin/gke-mcp"
-	if err := CursorMCPExtension(tmpDir, testExePath, false); err != nil {
+
+	opts := &InstallOptions{
+		installDir: tmpDir,
+		exePath:    testExePath,
+	}
+	if err := CursorMCPExtension(opts); err != nil {
 		t.Fatalf("CursorMCPExtension() failed: %v", err)
 	}
 
@@ -355,7 +383,11 @@ func TestCursorMCPExtensionWithMalformedConfig(t *testing.T) {
 
 	// Install gke-mcp - this should handle the malformed config gracefully
 	testExePath := "/usr/local/bin/gke-mcp"
-	if err := CursorMCPExtension(tmpDir, testExePath, false); err != nil {
+	opts := &InstallOptions{
+		installDir: tmpDir,
+		exePath:    testExePath,
+	}
+	if err := CursorMCPExtension(opts); err != nil {
 		t.Fatalf("CursorMCPExtension() failed: %v", err)
 	}
 

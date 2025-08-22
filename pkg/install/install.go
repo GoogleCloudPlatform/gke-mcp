@@ -15,61 +15,49 @@ package install
 
 import (
 	_ "embed"
-	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 )
+
+type InstallOptions struct {
+	version       string
+	installDir    string
+	exePath       string
+	developerMode bool
+}
+
+func NewInstallOptions(
+	version string,
+	projectOnly bool,
+	developerMode bool,
+) (*InstallOptions, error) {
+
+	installDir := ""
+	var err error
+	if projectOnly {
+		installDir, err = os.Getwd()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get current working directory: %w", err)
+		}
+	} else {
+		installDir, err = os.UserHomeDir()
+		if err != nil {
+			return nil, fmt.Errorf("could not determine home directory: %w", err)
+		}
+	}
+
+	exePath, err := os.Executable()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get executable path: %w", err)
+	}
+
+	return &InstallOptions{
+		version:       version,
+		installDir:    installDir,
+		exePath:       exePath,
+		developerMode: developerMode,
+	}, nil
+}
 
 //go:embed GEMINI.md
 var GeminiMarkdown []byte
-
-func GeminiCLIExtension(baseDir, version, exePath string, developerMode bool) error {
-
-	contextFilename := "GEMINI.md"
-	// In developer mode, we use the GEMINI.md file directly from the repo.
-	if developerMode {
-		contextFilename = filepath.Join(baseDir, "pkg", "install", "GEMINI.md")
-		if _, err := os.ReadFile(contextFilename); err != nil {
-			return fmt.Errorf("could not read context file from %s: %w", contextFilename, err)
-		}
-	}
-
-	extensionDir := filepath.Join(baseDir, ".gemini", "extensions", "gke-mcp")
-	if err := os.MkdirAll(extensionDir, 0755); err != nil {
-		return fmt.Errorf("could not create extension directory: %w", err)
-	}
-
-	// Create the manifest file as described in https://github.com/google-gemini/gemini-cli/blob/main/docs/extension.md.
-	manifest := map[string]interface{}{
-		"name":            "gke-mcp",
-		"version":         version,
-		"description":     "Enable MCP-compatible AI agents to interact with Google Kubernetes Engine.",
-		"contextFileName": contextFilename,
-		"mcpServers": map[string]interface{}{
-			"gke": map[string]interface{}{
-				"command": exePath,
-			},
-		},
-	}
-
-	manifestPath := filepath.Join(extensionDir, "gemini-extension.json")
-	data, err := json.MarshalIndent(manifest, "", "  ")
-	if err != nil {
-		return fmt.Errorf("could not marshal manifest.json: %w", err)
-	}
-
-	if err := os.WriteFile(manifestPath, data, 0644); err != nil {
-		return fmt.Errorf("could not write manifest.json: %w", err)
-	}
-
-	// In developer mode we don't need to create the GEMINI.md file.
-	if !developerMode {
-		geminiMdPath := filepath.Join(extensionDir, "GEMINI.md")
-		if err := os.WriteFile(geminiMdPath, GeminiMarkdown, 0644); err != nil {
-			return fmt.Errorf("could not write GEMINI.md: %w", err)
-		}
-	}
-
-	return nil
-}
