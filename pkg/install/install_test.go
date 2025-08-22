@@ -464,8 +464,8 @@ func verifyClaudeDesktopConfig(t *testing.T, configPath, expectedExePath string)
 }
 
 // createExistingClaudeConfig creates a pre-existing Claude Desktop configuration file for testing
-func createExistingClaudeConfig(t *testing.T, configDir string, config map[string]interface{}) string {
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+func createExistingClaudeConfig(t *testing.T, configPath string, config map[string]interface{}) {
+	if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
 		t.Fatalf("Failed to create claude config directory: %v", err)
 	}
 
@@ -474,30 +474,9 @@ func createExistingClaudeConfig(t *testing.T, configDir string, config map[strin
 		t.Fatalf("Failed to marshal config: %v", err)
 	}
 
-	configPath := filepath.Join(configDir, "claude_desktop_config.json")
 	if err := os.WriteFile(configPath, configData, 0644); err != nil {
 		t.Fatalf("Failed to write config: %v", err)
 	}
-
-	return configPath
-}
-
-// mockClaudeDesktopConfigPath mocks the getClaudeDesktopConfigPath function for testing
-func mockClaudeDesktopConfigPath(tmpDir string) string {
-	var configDir string
-	switch runtime.GOOS {
-	case "darwin": // macOS
-		configDir = filepath.Join(tmpDir, "Library", "Application Support", "Claude")
-	case "windows":
-		configDir = filepath.Join(tmpDir, "Claude")
-	case "linux":
-		configDir = filepath.Join(tmpDir, ".config", "Claude")
-	default:
-		// For unsupported OS, fall back to linux-style path for testing
-		// In production, this would return an error
-		configDir = filepath.Join(tmpDir, ".config", "Claude")
-	}
-	return filepath.Join(configDir, "claude_desktop_config.json")
 }
 
 func TestClaudeDesktopExtension(t *testing.T) {
@@ -518,7 +497,10 @@ func TestClaudeDesktopExtension(t *testing.T) {
 		t.Fatalf("ClaudeDesktopExtension() failed: %v", err)
 	}
 
-	expectedConfigPath := mockClaudeDesktopConfigPath(tmpDir)
+	expectedConfigPath, err := getClaudeDesktopConfigPath()
+	if err != nil {
+		t.Fatalf("could not determine Claude Desktop config path: %v", err)
+	}
 	verifyClaudeDesktopConfig(t, expectedConfigPath, testExePath)
 }
 
@@ -531,14 +513,9 @@ func TestClaudeDesktopExtensionWithExistingConfig(t *testing.T) {
 	defer cleanupEnv()
 
 	// Create existing Claude Desktop configuration
-	var configDir string
-	switch runtime.GOOS {
-	case "darwin":
-		configDir = filepath.Join(tmpDir, "Library", "Application Support", "Claude")
-	case "windows":
-		configDir = filepath.Join(tmpDir, "Claude")
-	default:
-		configDir = filepath.Join(tmpDir, ".config", "Claude")
+	configPath, err := getClaudeDesktopConfigPath()
+	if err != nil {
+		t.Fatalf("could not determine Claude Desktop config path: %v", err)
 	}
 
 	existingConfig := map[string]interface{}{
@@ -551,7 +528,7 @@ func TestClaudeDesktopExtensionWithExistingConfig(t *testing.T) {
 		"otherSetting": "value",
 	}
 
-	configPath := createExistingClaudeConfig(t, configDir, existingConfig)
+	createExistingClaudeConfig(t, configPath, existingConfig)
 
 	// Install gke-mcp
 	testExePath := "/usr/local/bin/gke-mcp"
@@ -614,14 +591,9 @@ func TestClaudeDesktopExtensionWithMalformedConfig(t *testing.T) {
 	defer cleanupEnv()
 
 	// Create malformed Claude Desktop configuration (mcpServers as string instead of map)
-	var configDir string
-	switch runtime.GOOS {
-	case "darwin":
-		configDir = filepath.Join(tmpDir, "Library", "Application Support", "Claude")
-	case "windows":
-		configDir = filepath.Join(tmpDir, "Claude")
-	default:
-		configDir = filepath.Join(tmpDir, ".config", "Claude")
+	configPath, err := getClaudeDesktopConfigPath()
+	if err != nil {
+		t.Fatalf("could not determine Claude Desktop config path: %v", err)
 	}
 
 	malformedConfig := map[string]interface{}{
@@ -629,7 +601,7 @@ func TestClaudeDesktopExtensionWithMalformedConfig(t *testing.T) {
 		"otherSetting": "value",
 	}
 
-	configPath := createExistingClaudeConfig(t, configDir, malformedConfig)
+	createExistingClaudeConfig(t, configPath, malformedConfig)
 
 	// Install gke-mcp - this should handle the malformed config gracefully
 	testExePath := "/usr/local/bin/gke-mcp"
@@ -669,3 +641,4 @@ func TestClaudeDesktopExtensionWithMalformedConfig(t *testing.T) {
 		t.Errorf("Expected gke-mcp command to be %s, got %v", testExePath, gkeMcp["command"])
 	}
 }
+
