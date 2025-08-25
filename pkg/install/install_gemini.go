@@ -90,32 +90,14 @@ func installCustomCommands(opts *InstallOptions) error {
 		return fmt.Errorf("could not create commands directory: %w", err)
 	}
 
-	// Source template path - always use the template from the repo
-	sourcePath := filepath.Join(opts.exePath, "custom_commands", "gke", "cost.toml")
+	// Use the embedded template content
 	destPath := filepath.Join(commandsDir, "cost.toml")
+	costContent := getCostTemplate()
 
-	// Copy the template file
-	if err := copyFile(sourcePath, destPath); err != nil {
-		return fmt.Errorf("could not copy custom command template: %w", err)
+	// Write the embedded template content
+	if err := os.WriteFile(destPath, costContent, 0644); err != nil {
+		return fmt.Errorf("could not write custom command file: %w", err)
 	}
 
 	return nil
-}
-
-// copyFile copies a file from src to dst
-func copyFile(src, dst string) error {
-	sourceFile, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer sourceFile.Close()
-
-	destFile, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer destFile.Close()
-
-	_, err = destFile.ReadFrom(sourceFile)
-	return err
 }
