@@ -44,6 +44,13 @@ gke-mcp install gemini-cli
 
 This will create a manifest file in `./.gemini/extensions/gke-mcp` that points to the `gke-mcp` binary.
 
+**Custom Slash Commands**: The installation also automatically sets up a custom slash command `/gke:cost` that answers natural language questions about GKE-related costs, optimization, and billing. Use it in Gemini CLI sessions like:
+
+```sh
+/gke:cost How can I reduce my GKE cluster costs?
+/gke:cost What is the cost breakdown for my production namespace?
+```
+
 #### Other AIs
 
 For detailed instructions on how to connect the GKE MCP Server to various AI clients, including cursor and claude desktop, please refer to our dedicated [installation guide](docs/installation_guide/).
@@ -57,6 +64,10 @@ For detailed instructions on how to connect the GKE MCP Server to various AI cli
 - `list_recommendations`: List recommendations for your GKE clusters.
 - `query_logs`: Query Google Cloud Platform logs using Logging Query Language (LQL).
 - `get_log_schema`: Get the schema for a specific GKE log type.
+
+## Gemini CLI Slash Commands
+
+- `/gke:cost`: Answer natural language questions about GKE-related costs, optimization, and billing using the bundled cost context instructions.
 
 ## MCP Context
 
