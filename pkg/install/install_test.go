@@ -203,7 +203,7 @@ func TestGeminiCLIExtension(t *testing.T) {
 		t.Errorf("Manifest content mismatch. Diff:\n%v", diff)
 	}
 
-	// Verify slash command was installed by copying the template
+	// Verify slash command was installed with the embedded template
 	destCmd := filepath.Join(tmpDir, ".gemini", "commands", "gke", "cost.toml")
 	if _, err := os.Stat(destCmd); os.IsNotExist(err) {
 		t.Fatalf("expected cost.toml to be installed at %s", destCmd)
@@ -213,13 +213,9 @@ func TestGeminiCLIExtension(t *testing.T) {
 		t.Fatalf("failed to read installed cost.toml: %v", err)
 	}
 
-	srcCmd := filepath.Join(testExePath, "custom_commands", "gke", "cost.toml")
-	srcContent, err := os.ReadFile(srcCmd)
-	if err != nil {
-		t.Fatalf("failed to read source cost.toml: %v", err)
-	}
-	if string(destContent) != string(srcContent) {
-		t.Fatalf("installed cost.toml content mismatch; got %q want %q", string(destContent), string(srcContent))
+	expectedContent := getCostTemplate()
+	if string(destContent) != string(expectedContent) {
+		t.Fatalf("installed cost.toml content mismatch; got %q want %q", string(destContent), string(expectedContent))
 	}
 }
 
@@ -280,7 +276,7 @@ func TestGeminiCLIExtensionDeveloperMode(t *testing.T) {
 		t.Errorf("Manifest content mismatch. Diff:\n%v", diff)
 	}
 
-	// Verify slash command was installed by copying the template
+	// Verify slash command was installed with the embedded template
 	destCmd := filepath.Join(tmpDir, ".gemini", "commands", "gke", "cost.toml")
 	if _, err := os.Stat(destCmd); os.IsNotExist(err) {
 		t.Fatalf("expected cost.toml to be installed at %s", destCmd)
@@ -289,13 +285,11 @@ func TestGeminiCLIExtensionDeveloperMode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read installed cost.toml: %v", err)
 	}
-	srcCmd := filepath.Join(testExePath, "custom_commands", "gke", "cost.toml")
-	srcContent, err := os.ReadFile(srcCmd)
-	if err != nil {
-		t.Fatalf("failed to read source cost.toml: %v", err)
-	}
-	if string(destContent) != string(srcContent) {
-		t.Fatalf("installed cost.toml content mismatch; got %q want %q", string(destContent), string(srcContent))
+
+	// Compare with the embedded template content
+	expectedContent := getCostTemplate()
+	if string(destContent) != string(expectedContent) {
+		t.Fatalf("installed cost.toml content mismatch; got %q want %q", string(destContent), string(expectedContent))
 	}
 }
 
