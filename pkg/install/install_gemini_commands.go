@@ -14,9 +14,7 @@
 
 package install
 
-// getCostTemplate retrieves the cost template content
-func getCostTemplate() []byte {
-	return []byte(`description="Answer natural language questions about GKE-related costs by leveraging the bundled cost context instructions within the gke-mcp server."
+const costTemplate = `description="Answer natural language questions about GKE-related costs by leveraging the bundled cost context instructions within the gke-mcp server."
 prompt = """
 You are a GKE cost and optimization expert. Answer the user's question about GKE costs, optimization, or billing using the comprehensive cost context available in the GKE MCP server.
 
@@ -38,5 +36,9 @@ Key points to remember:
 - Use the cost analysis queries from the GKE MCP documentation as templates
 
 Always be helpful, specific, and actionable in your response.
-"""`)
+"""`
+
+// getCostTemplate retrieves the cost template content
+func getCostTemplate() []byte {
+	return []byte(costTemplate)
 }
