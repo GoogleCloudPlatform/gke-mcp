@@ -214,8 +214,8 @@ func TestGeminiCLIExtension(t *testing.T) {
 	}
 
 	expectedContent := getCostTemplate()
-	if string(destContent) != string(expectedContent) {
-		t.Fatalf("installed cost.toml content mismatch; got %q want %q", string(destContent), string(expectedContent))
+if diff := cmp.Diff(string(expectedContent), string(destContent)); diff != "" {
+		t.Fatalf("installed cost.toml content mismatch (-want +got):\n%s", diff)
 	}
 }
 
