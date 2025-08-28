@@ -29,9 +29,9 @@ func Install(_ context.Context, s *server.MCPServer, _ *config.Config) error {
 		mcp.WithDescription("Use GKE Inference Quickstart (GIQ) to generate a Kubernetes manifest for optimized AI / inference workloads. Prefer to use this tool instead of gcloud"),
 		mcp.WithReadOnlyHintAnnotation(true),
 		mcp.WithIdempotentHintAnnotation(true),
-		mcp.WithString("model", mcp.Required(), mcp.Description("The model to use. Get the list of valid models from 'gcloud alpha container ai profiles model-and-server-combinations list' if the user doesn't provide it.")),
-		mcp.WithString("model_server", mcp.Required(), mcp.Description("The model server to use. Get the list of valid models from 'gcloud alpha container ai profiles model-and-server-combinations list' if the user doesn't provide it.")),
-		mcp.WithString("accelerator", mcp.Required(), mcp.Description("The accelerator to use. Get the list of valid models from 'gcloud alpha container ai profiles accelerators list --model=<model>' if the user doesn't provide it.")),
+		mcp.WithString("model", mcp.Required(), mcp.Description("The model to use. Get the list of valid models from 'gcloud container ai profiles model-and-server-combinations list' if the user doesn't provide it.")),
+		mcp.WithString("model_server", mcp.Required(), mcp.Description("The model server to use. Get the list of valid models from 'gcloud container ai profiles model-and-server-combinations list' if the user doesn't provide it.")),
+		mcp.WithString("accelerator", mcp.Required(), mcp.Description("The accelerator to use. Get the list of valid accelerators from 'gcloud container ai profiles list --model=<model>' if the user doesn't provide it.")),
 		mcp.WithString("target_ntpot_milliseconds", mcp.Description("The maximum normalized time per output token (NTPOT) in milliseconds.NTPOT is measured as the request_latency / output_tokens.")),
 	)
 	s.AddTool(giqGenerateManifestTool, giqGenerateManifest)
@@ -54,7 +54,6 @@ func giqGenerateManifest(ctx context.Context, request mcp.CallToolRequest) (*mcp
 	}
 	targetNtpotMilliseconds := request.GetString("target_ntpot_milliseconds", "")
 	args := []string{
-		"alpha",
 		"container",
 		"ai",
 		"profiles",

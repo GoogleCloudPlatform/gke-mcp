@@ -117,10 +117,10 @@ GIQ provides estimates of expected performance based on benchmarks conducted on 
 GIQ provides equivalent costs in terms of token generation, e.g. cost to generate 1M tokens, most kubernetes users pay for the machine instance type regardless of token processing rates. Actual costs should be sourced through GCP billing features.
 The user should be made aware that token costs from GIQ are estimated equivalent costs that are provided to support high-level comparisons with model-as-a-service solutions.
 
-- **To see what models have been benchmarked:** Use gcloud alpha container ai profiles models list.
-- **To see the available hardware and performance benchmarks for a specific model:** Use gcloud alpha container ai profiles accelerators list --model=<model-name>. You can also filter by latency.
-- **To get cost estimates for a specific configuration:** Add the --cost-usage-type flag to the gcloud alpha container ai profiles accelerators list command.
-- **To generate an optimized Kubernetes deployment manifest:** Use gcloud alpha container ai profiles manifests create with your desired model and performance requirements.
+- **To see what models have been benchmarked:** Use gcloud container ai profiles models list.
+- **To see the available hardware and performance benchmarks for a specific model:** Use gcloud container ai profiles list --model=<model-name>. You can also filter by normalized time per output token, time to first token, and cost targets, such as price per output token and price per input token.
+- **To get cost estimates for a specific configuration:** use the gcloud container ai profiles list command. You can also put in cost targets to filter based on price per output token and price per input token.
+- **To generate an optimized Kubernetes deployment manifest:** Use gcloud container ai profiles manifests create with your desired model and performance requirements.
 - **To list your available GKE clusters:** Use gcloud container clusters list.
 
 **Examples**
@@ -130,31 +130,43 @@ Here is how you can complete the requested tasks using the Gemini CLI with GIQ:
 1. Which models have been benchmarked by GIQ?
 
 ```sh
-gcloud alpha container ai profiles models list
+gcloud container ai profiles models list
 ```
 
 2. Can I see benchmarks for llama 4 maverick?
 
 ```sh
-gcloud alpha container ai profiles accelerators list --model=meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8
+gcloud container ai profiles list --model=meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8
 ```
 
 3. Can you list the different hardware options that can serve Gemma-3-27B under 500 ms latency?
 
 ```sh
-gcloud alpha container ai profiles accelerators list --model=Gemma-3-27B --target-ntpot-milliseconds=500
+gcloud container ai profiles list --model=Gemma-3-27B --target-ntpot-milliseconds=500
 ```
 
 4. Can you generate a manifest to deploy an application that uses Gemma-3-27B and requires 500ms latency?
 
 ```sh
-gcloud alpha container ai profiles manifests create --model=Gemma-3-27B --target-ntpot-milliseconds=500 --output-file=gemma_deployment.yaml
+gcloud container ai profiles manifests create --model=Gemma-3-27B --target-ntpot-milliseconds=500
 ```
 
 5. Do I have a cluster available to deploy this manifest?
 
 ```sh
 gcloud container clusters list
+```
+
+6. Can you generate a manifest to deploy an application that uses Gemma-3-27B and requires 500ms time to first token (ttft)?
+
+```sh
+gcloud container ai profiles manifests create --model=Gemma-3-27B --target-ttft-milliseconds=500
+```
+
+7. Can you give me all of the performance metrics you have on Gemma-3-27B on nvidia-l4?
+
+```sh
+gcloud container ai profiles benchmarks list --model=Gemma-3-27B --accelerator-type=nvidia-l4 --model-server=vllm
 ```
 
 ## GKE Cluster Known Issues
