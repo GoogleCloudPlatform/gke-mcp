@@ -217,6 +217,21 @@ func TestGeminiCLIExtension(t *testing.T) {
 	if diff := cmp.Diff(actual, expected); diff != "" {
 		t.Errorf("Manifest content mismatch. Diff:\n%v", diff)
 	}
+
+	// Verify slash command was installed with the embedded template
+	destCmd := filepath.Join(tmpDir, ".gemini", "commands", "gke", "cost.toml")
+	if _, err := os.Stat(destCmd); os.IsNotExist(err) {
+		t.Fatalf("expected cost.toml to be installed at %s", destCmd)
+	}
+	destContent, err := os.ReadFile(destCmd)
+	if err != nil {
+		t.Fatalf("failed to read installed cost.toml: %v", err)
+	}
+
+	expectedContent := getCostTemplate()
+	if diff := cmp.Diff(string(expectedContent), string(destContent)); diff != "" {
+		t.Fatalf("installed cost.toml content mismatch (-want +got):\n%s", diff)
+	}
 }
 
 func TestGeminiCLIExtensionDeveloperMode(t *testing.T) {
@@ -274,6 +289,22 @@ func TestGeminiCLIExtensionDeveloperMode(t *testing.T) {
 
 	if diff := cmp.Diff(actual, expected); diff != "" {
 		t.Errorf("Manifest content mismatch. Diff:\n%v", diff)
+	}
+
+	// Verify slash command was installed with the embedded template
+	destCmd := filepath.Join(tmpDir, ".gemini", "commands", "gke", "cost.toml")
+	if _, err := os.Stat(destCmd); os.IsNotExist(err) {
+		t.Fatalf("expected cost.toml to be installed at %s", destCmd)
+	}
+	destContent, err := os.ReadFile(destCmd)
+	if err != nil {
+		t.Fatalf("failed to read installed cost.toml: %v", err)
+	}
+
+	// Compare with the embedded template content
+	expectedContent := getCostTemplate()
+	if diff := cmp.Diff(string(expectedContent), string(destContent)); diff != "" {
+		t.Fatalf("installed cost.toml content mismatch (-want +got):\n%s", diff)
 	}
 }
 

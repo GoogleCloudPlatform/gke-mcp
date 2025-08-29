@@ -74,5 +74,30 @@ func GeminiCLIExtension(opts *InstallOptions) error {
 		}
 	}
 
+	// Install custom slash command for gke:cost
+	if err := installCustomCommands(opts); err != nil {
+		return fmt.Errorf("failed to install custom commands: %w", err)
+	}
+
+	return nil
+}
+
+// installCustomCommands installs the custom slash commands for Gemini CLI
+func installCustomCommands(opts *InstallOptions) error {
+	// Create the commands directory
+	commandsDir := filepath.Join(opts.installDir, ".gemini", "commands", "gke")
+	if err := os.MkdirAll(commandsDir, 0755); err != nil {
+		return fmt.Errorf("could not create commands directory: %w", err)
+	}
+
+	// Use the embedded template content
+	destPath := filepath.Join(commandsDir, "cost.toml")
+	costContent := getCostTemplate()
+
+	// Write the embedded template content
+	if err := os.WriteFile(destPath, costContent, 0644); err != nil {
+		return fmt.Errorf("could not write custom command file: %w", err)
+	}
+
 	return nil
 }
