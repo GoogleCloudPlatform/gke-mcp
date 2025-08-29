@@ -123,8 +123,20 @@ The user should be made aware that token costs from GIQ are estimated equivalent
 - **To generate an optimized Kubernetes deployment manifest:** Use gcloud container ai profiles manifests create with your desired model and performance requirements.
 - **To list your available GKE clusters:** Use gcloud container clusters list.
 - **To get the cheapest models available:** use the gcloud container ai profiles list command with no input to compare all the costs for each model.
-- **To change default output input cost ratio used in gcloud container ai profiles list and gcloud container ai profiles benchmarks list:** the current formula is used to calculate the output and input cost per token : "$/output token = Accelerator secondly cost / (1/4 input tokens/s + output tokens/s) where $/input token = ($/output token) / 4". This assumes a 1:4 input:output ratio based on the accelerators total cost. You will need the new desired input:output token ratio to update the values shown. Based on that formula, the cost for an input or output token depends on three factors: 1. The accelerator's hourly cost. 2. The input token processing speed (input tokens/s). 3. The output token processing speed (output tokens/s). The gcloud command provides the final costs and the output tokens/s, but not the accelerator's hourly cost or the input token speed. Without those missing values, you
-can't re-run the formula directly to get the new costs for a 2:1 ratio. However, you can work backwards from the numbers you've been given. The most logical interpretation of "dividing the cost" is that the total machine cost to process a canonical workload (e.g., one million input tokens and one million output tokens) remains the same, and we are just changing how that total cost is attributed to the input vs. output tokens.
+- **To change the default input:output cost ratio:**
+  The gcloud container ai profiles list and gcloud container ai profiles benchmarks list commands calculate costs based on a default 1:4 input-to-output token ratio. The formula is:
+
+  $/output_token = accelerator_per_second_cost / (0.25 * input_tokens/s + output_tokens/s)
+  $/input_token = $/output_token / 4
+
+  The cost per token depends on:
+  1. The accelerator's hourly cost.
+  2. Input token processing speed (input tokens/s).
+  3. Output token processing speed (output tokens/s).
+
+  The gcloud command provides the final costs and output tokens/s, but not the accelerator's hourly cost or the input token speed. This means you cannot directly recalculate costs for a different ratio (e.g., 2:1).
+
+  As a workaround, you can work backwards. The total machine cost for a canonical workload (e.g., one million input and one million output tokens) is constant. You can re-attribute this total cost between input and output tokens according to your desired ratio.
 
 **Examples**
 
