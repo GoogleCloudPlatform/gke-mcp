@@ -8,7 +8,7 @@ This document provides instructions for an AI agent on how to use the available 
 - **Clarify Ambiguity:** Do not guess or assume values for required parameters like cluster names or locations. If the user's request is ambiguous, ask clarifying questions to confirm the exact resource they intend to interact with.
 - **Use Defaults:** If a `project_id` is not specified by the user, you can use the default value configured in the environment.
 - **Verify Commands:** Before providing any command to the user， verify it is correct and appropriate for the user's request. You can search online or refer to [gcloud documentation](https://cloud.google.com/sdk/gcloud).
-- **Verbosity:** In the end of response add related links which were used to form a response. 
+- **Verbosity:** In the end of response add related links which were used to form a response.
 - **Table Investigation:** If in document search Table appears - read it in JSON format to correctly interpret provided data.
 
 ## Authentication
@@ -221,11 +221,11 @@ If you cannot find the required information in these documents, you may use Goog
 If the user requests any action or change involving disks, such as creating, deleting, attaching, detaching, migrating, resizing, or modifying Hyperdisks or persistent disks:
 * Do not perform any changes immediately.
 * First, present a concise, clearly structured plan that includes:
-    - The goals of the action.
-    - Short explanation of each step.
-    - A summary of steps you intend to take.
-    - Potential risks or consequences (e.g., service downtime, data loss).
-    - Any prerequisites that must be satisfied.
+  - The goals of the action.
+  - Short explanation of each step.
+  - A summary of steps you intend to take.
+  - Potential risks or consequences (e.g., service downtime, data loss).
+  - Any prerequisites that must be satisfied.
 
 Never execute actions against production infrastructure without explicit confirmation. The system operates in production, and data loss is unacceptable.
 Prefer using gcloud CLI commands for all actions.
@@ -234,7 +234,7 @@ Always plan before acting. Always confirm before executing.
 
 ## Storage options
 
-When a user asks about the storage types to use for his particular workload. Use information from included links for  more detailed response. Next check if instance support this type of storage. Provide a response naming a machine type taken from user envirinment and highlight storage option in use then provide a list of acceptable options   
+When a user asks about the storage types to use for his particular workload. Use information from included links for  more detailed response. Next check if instance support this type of storage. Provide a response naming a machine type taken from user envirinment and highlight storage option in use then provide a list of acceptable options. 
 
 - Storage types - [Storage types](https://cloud.google.com/blog/products/storage-data-transfer/pick-the-right-storage-option-on-google-cloud).
 - Machines family comparison - [Machines family comparison](https://cloud.google.com/compute/docs/machine-resource).
@@ -243,12 +243,13 @@ Use Google search if you can't find required information in these web pages.
 
 ## GCS Fuse
   
-When user asks about Object Storage connection options request the name of storage bucket and a cluster you want to connect to, or provide a general info. 
-When creating PersistantVolume manifest use folloving values for "mountOptions": 
+When user asks about Object Storage connection options request the name of storage bucket and a cluster you want to connect to, or provide a general info.
+When creating PersistantVolume manifest use folloving values for "mountOptions":
   [mountOptions: "implicit-dirs,metadata-cache:ttl-secs:-1,file-cache:max-size-mb:-1,file-cache:cache-file-for-range-read:true,file-cache:enable-parallel-downloads:true"]
 
 - GCS FUSE driver - [GCS FUSE driver](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/cloud-storage-fuse-csi-driver).
 - About - [About](https://cloud.google.com/kubernetes-engine/docs/concepts/cloud-storage-fuse-csi-driver).
 - Setup - [Setup](https://cloud.google.com/kubernetes-engine/docs/how-to/cloud-storage-fuse-csi-driver-setup).
-- Mount - [Mount CSI driver](https://cloud.google.com/kubernetes-engine/docs/how-to/cloud-storage-fuse-csi-driver-ephemeral, https://cloud.google.com/kubernetes-engine/docs/how-to/cloud-storage-fuse-csi-driver-pv).
+- Mount fuse ephemeral - [Mount CSI driver](https://cloud.google.com/kubernetes-engine/docs/how-to/cloud-storage-fuse-csi-driver-ephemeral).
+- Mount fuse pv - [Mount CSI driver pv](https://cloud.google.com/kubernetes-engine/docs/how-to/cloud-storage-fuse-csi-driver-pv).
 
