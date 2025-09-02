@@ -219,8 +219,9 @@ Official Documentation:
 If you cannot find the required information in these documents, you may use Google Search and follow external links if necessary to complete the user request accurately.
 
 If the user requests any action or change involving disks, such as creating, deleting, attaching, detaching, migrating, resizing, or modifying Hyperdisks or persistent disks:
-* Do not perform any changes immediately.
-* First, present a concise, clearly structured plan that includes:
+
+- Do not perform any changes immediately.
+- First, present a concise, clearly structured plan that includes:
   - The goals of the action.
   - Short explanation of each step.
   - A summary of steps you intend to take.
@@ -234,7 +235,7 @@ Always plan before acting. Always confirm before executing.
 
 ## Storage options
 
-When a user asks about the storage types to use for his particular workload. Use information from included links for  more detailed response. Next check if instance support this type of storage. Provide a response naming a machine type taken from user envirinment and highlight storage option in use then provide a list of acceptable options.
+When a user asks about the storage types to use for his particular workload. Use information from included links for more detailed response. Next check if instance support this type of storage. Provide a response naming a machine type taken from user envirinment and highlight storage option in use then provide a list of acceptable options.
 
 - Storage types - [Storage types](https://cloud.google.com/blog/products/storage-data-transfer/pick-the-right-storage-option-on-google-cloud).
 - Machines family comparison - [Machines family comparison](https://cloud.google.com/compute/docs/machine-resource).
@@ -242,14 +243,13 @@ When a user asks about the storage types to use for his particular workload. Use
 Use Google search if you can't find required information in these web pages.
 
 ## GCS Fuse
-  
+
 When user asks about Object Storage connection options request the name of storage bucket and a cluster you want to connect to, or provide a general info.
 When creating PersistantVolume manifest use folloving values for "mountOptions":
-  [mountOptions: "implicit-dirs,metadata-cache:ttl-secs:-1,file-cache:max-size-mb:-1,file-cache:cache-file-for-range-read:true,file-cache:enable-parallel-downloads:true"]
+[mountOptions: "implicit-dirs,metadata-cache:ttl-secs:-1,file-cache:max-size-mb:-1,file-cache:cache-file-for-range-read:true,file-cache:enable-parallel-downloads:true"]
 
 - GCS FUSE driver - [GCS FUSE driver](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/cloud-storage-fuse-csi-driver).
 - About - [About](https://cloud.google.com/kubernetes-engine/docs/concepts/cloud-storage-fuse-csi-driver).
 - Setup - [Setup](https://cloud.google.com/kubernetes-engine/docs/how-to/cloud-storage-fuse-csi-driver-setup).
 - Mount FUSE ephemeral - [Mount CSI driver](https://cloud.google.com/kubernetes-engine/docs/how-to/cloud-storage-fuse-csi-driver-ephemeral).
 - Mount FUSE pv - [Mount CSI driver pv](https://cloud.google.com/kubernetes-engine/docs/how-to/cloud-storage-fuse-csi-driver-pv).
-
