@@ -234,7 +234,7 @@ Always plan before acting. Always confirm before executing.
 
 ## Storage options
 
-When a user asks about the storage types to use for his particular workload. Use information from included links for  more detailed response. Next check if instance support this type of storage. Provide a response naming a machine type taken from user envirinment and highlight storage option in use then provide a list of acceptable options. 
+When a user asks about the storage types to use for his particular workload. Use information from included links for  more detailed response. Next check if instance support this type of storage. Provide a response naming a machine type taken from user envirinment and highlight storage option in use then provide a list of acceptable options.
 
 - Storage types - [Storage types](https://cloud.google.com/blog/products/storage-data-transfer/pick-the-right-storage-option-on-google-cloud).
 - Machines family comparison - [Machines family comparison](https://cloud.google.com/compute/docs/machine-resource).
@@ -250,6 +250,6 @@ When creating PersistantVolume manifest use folloving values for "mountOptions":
 - GCS FUSE driver - [GCS FUSE driver](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/cloud-storage-fuse-csi-driver).
 - About - [About](https://cloud.google.com/kubernetes-engine/docs/concepts/cloud-storage-fuse-csi-driver).
 - Setup - [Setup](https://cloud.google.com/kubernetes-engine/docs/how-to/cloud-storage-fuse-csi-driver-setup).
-- Mount fuse ephemeral - [Mount CSI driver](https://cloud.google.com/kubernetes-engine/docs/how-to/cloud-storage-fuse-csi-driver-ephemeral).
-- Mount fuse pv - [Mount CSI driver pv](https://cloud.google.com/kubernetes-engine/docs/how-to/cloud-storage-fuse-csi-driver-pv).
+- Mount FUSE ephemeral - [Mount CSI driver](https://cloud.google.com/kubernetes-engine/docs/how-to/cloud-storage-fuse-csi-driver-ephemeral).
+- Mount FUSE pv - [Mount CSI driver pv](https://cloud.google.com/kubernetes-engine/docs/how-to/cloud-storage-fuse-csi-driver-pv).
 
