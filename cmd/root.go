@@ -157,6 +157,8 @@ func startMCPServer(ctx context.Context, opts startOptions) {
 			},
 		}, nil
 	})
+	
+	s.AddPrompt(GkeCostPrompt, GkeCostHandler)
 
 	if err := tools.Install(ctx, s, c); err != nil {
 		log.Fatalf("Failed to install tools: %v\n", err)
