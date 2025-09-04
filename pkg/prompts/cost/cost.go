@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"text/template"
 
 	"github.com/mark3labs/mcp-go/mcp"
