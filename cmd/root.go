@@ -27,6 +27,7 @@ import (
 	"cloud.google.com/go/container/apiv1/containerpb"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/install"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/prompts/cost"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -158,7 +159,7 @@ func startMCPServer(ctx context.Context, opts startOptions) {
 		}, nil
 	})
 
-	s.AddPrompt(GkeCostPrompt, GkeCostHandler)
+	s.AddPrompt(cost.GkeCostPrompt, cost.GkeCostHandler)
 
 	if err := tools.Install(ctx, s, c); err != nil {
 		log.Fatalf("Failed to install tools: %v\n", err)

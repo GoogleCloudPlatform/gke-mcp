@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package cost
 
 import (
 	"bytes"
@@ -49,6 +49,8 @@ Key points to remember:
 - Use the cost analysis queries from the GKE MCP documentation as templates
 Always be helpful, specific, and actionable in your response.
 `
+
+var gkeCostTmpl = template.Must(template.New("gke-cost").Parse(gkeCostPromptTemplate))
 
 // GkeCostHandler is the handler function for the /gke:cost prompt
 func GkeCostHandler(ctx context.Context, request mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
