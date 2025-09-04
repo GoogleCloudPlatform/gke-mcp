@@ -23,15 +23,6 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-// GkeCostPrompt defines the /gke:cost command
-var GkeCostPrompt = mcp.NewPrompt("gke:cost",
-	mcp.WithPromptDescription("Answer natural language questions about GKE-related costs by leveraging the bundled cost context instructions within the gke-mcp server."),
-	mcp.WithArgument("user_question",
-		mcp.ArgumentDescription("The user's natural language question about GKE costs"),
-		mcp.RequiredArgument(),
-	),
-)
-
 const gkeCostPromptTemplate = `
 You are a GKE cost and optimization expert. Answer the user's question about GKE costs, optimization, or billing using the comprehensive cost context available in the GKE MCP server.
 User Question: {{.user_question}}
@@ -51,6 +42,15 @@ Always be helpful, specific, and actionable in your response.
 `
 
 var gkeCostTmpl = template.Must(template.New("gke-cost").Parse(gkeCostPromptTemplate))
+
+// GkeCostPrompt defines the /gke:cost command
+var GkeCostPrompt = mcp.NewPrompt("gke:cost",
+	mcp.WithPromptDescription("Answer natural language questions about GKE-related costs by leveraging the bundled cost context instructions within the gke-mcp server."),
+	mcp.WithArgument("user_question",
+		mcp.ArgumentDescription("The user's natural language question about GKE costs"),
+		mcp.RequiredArgument(),
+	),
+)
 
 // GkeCostHandler is the handler function for the /gke:cost prompt
 func GkeCostHandler(ctx context.Context, request mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
