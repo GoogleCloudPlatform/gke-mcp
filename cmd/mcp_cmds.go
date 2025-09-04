@@ -57,13 +57,8 @@ func GkeCostHandler(ctx context.Context, request mcp.GetPromptRequest) (*mcp.Get
 		return nil, fmt.Errorf("user_question is required")
 	}
 
-	tmpl, err := template.New("gkeCost").Parse(gkeCostPromptTemplate)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse prompt template: %w", err)
-	}
-
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, map[string]string{"user_question": userQuestion}); err != nil {
+	if err := gkeCostTmpl.Execute(&buf, map[string]string{"user_question": userQuestion}); err != nil {
 		return nil, fmt.Errorf("failed to execute prompt template: %w", err)
 	}
 
