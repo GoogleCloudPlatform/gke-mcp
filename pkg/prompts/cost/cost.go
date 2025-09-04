@@ -53,7 +53,7 @@ var GkeCostPrompt = mcp.NewPrompt("gke:cost",
 )
 
 // GkeCostHandler is the handler function for the /gke:cost prompt
-func GkeCostHandler(ctx context.Context, request mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
+func GkeCostHandler(_ context.Context, request mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
 	userQuestion := request.Params.Arguments["user_question"]
 	if userQuestion == "" {
 		return nil, fmt.Errorf("user_question is required")
