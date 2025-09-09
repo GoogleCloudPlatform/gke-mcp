@@ -110,7 +110,7 @@ func ClaudeCodeExtension(opts *InstallOptions) error {
 	if err := os.WriteFile(claudeMdPath, GeminiMarkdown, 0644); err != nil {
 		return fmt.Errorf("could not write CLAUDE.md: %w", err)
 	}
-	
+
 	// Execute the command to add the MCP server
 	command := "claude"
 	args := []string{
