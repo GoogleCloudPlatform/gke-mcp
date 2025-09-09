@@ -8,7 +8,7 @@ This guide covers installation of the GKE MCP server for Claude Desktop, Claude 
 2. The software for the specific tool the `gke-mcp` server is being installed on is also installed.
    - Claude Desktop can be downloaded from [Claude's official site](https://claude.ai/download).
    - Claude Code can also be downloaded from [Claude's official site](https://www.anthropic.com/claude-code).
-   - Claude Web does not need to be downloaded and can be accessed from the following [link](https://claude.ai/).
+   - Claude Web does not need to be downloaded and can be accessed from [claude.ai](https://claude.ai/).
 
 ## Claude Desktop
 
