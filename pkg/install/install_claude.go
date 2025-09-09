@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 )
@@ -98,4 +99,35 @@ func getClaudeDesktopConfigPath() (string, error) {
 	}
 
 	return filepath.Join(configDir, "claude_desktop_config.json"), nil
+}
+
+// ClaudeCodeExtension installs the GKE MCP Server for Claude Code CLI
+func ClaudeCodeExtension(opts *InstallOptions) error {
+	installDir := opts.installDir
+
+	// Create the CLAUDE.md file
+	claudeMdPath := filepath.Join(installDir, "CLAUDE.md")
+	if err := os.WriteFile(claudeMdPath, GeminiMarkdown, 0644); err != nil {
+		return fmt.Errorf("could not write CLAUDE.md: %w", err)
+	}
+	
+	// Execute the command to add the MCP server
+	command := "claude"
+	args := []string{
+		"mcp",
+		"add",
+		"gke-mcp",
+		"--command", opts.exePath,
+		"--arg", "--system-prompt=./CLAUDE.md",
+	}
+
+	cmdToRun := exec.Command(command, args...)
+	cmdToRun.Stdout = os.Stdout
+	cmdToRun.Stderr = os.Stderr
+
+	if err := cmdToRun.Run(); err != nil {
+		return fmt.Errorf("failed to run command 'claude mcp add': %w", err)
+	}
+
+	return nil
 }

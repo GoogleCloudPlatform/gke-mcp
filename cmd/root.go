@@ -76,6 +76,12 @@ var (
 		Run:   runInstallClaudeDesktopCmd,
 	}
 
+	installClaudeCodeCmd = &cobra.Command{
+		Use:   "claude-code",
+		Short: "Install the GKE MCP Server for use with the Claude Code CLI.",
+		Run:   runInstallClaudeCodeCmd,
+	}
+
 	installDeveloper   bool
 	installProjectOnly bool
 )
@@ -103,11 +109,13 @@ func init() {
 	installCmd.AddCommand(installGeminiCLICmd)
 	installCmd.AddCommand(installCursorCmd)
 	installCmd.AddCommand(installClaudeDesktopCmd)
+	installCmd.AddCommand(installClaudeCodeCmd)
 
 	installGeminiCLICmd.Flags().BoolVarP(&installDeveloper, "developer", "d", false, "Install the MCP Server in developer mode for Gemini CLI")
 	installGeminiCLICmd.Flags().BoolVarP(&installProjectOnly, "project-only", "p", false, "Install the MCP Server only for the current project. Please run this in the root directory of your project")
 
 	installCursorCmd.Flags().BoolVarP(&installProjectOnly, "project-only", "p", false, "Install the MCP Server only for the current project. Please run this in the root directory of your project")
+	installClaudeCodeCmd.Flags().BoolVarP(&installProjectOnly, "project-only", "p", false, "Install the MCP Server only for the current project. Please run this in the root directory of your project")
 }
 
 type startOptions struct {
@@ -269,4 +277,17 @@ func runInstallClaudeDesktopCmd(cmd *cobra.Command, args []string) {
 		log.Fatalf("Failed to install for Claude Desktop: %v", err)
 	}
 	fmt.Println("Successfully installed GKE MCP server in Claude Desktop configuration.")
+}
+
+func runInstallClaudeCodeCmd(cmd *cobra.Command, args []string) {
+	opts, err := installOptions()
+	if err != nil {
+		log.Fatalf("Failed to get install options: %v", err)
+	}
+
+	if err := install.ClaudeCodeExtension(opts); err != nil {
+		log.Fatalf("Failed to install for Claude Code: %v", err)
+	}
+
+	fmt.Println("Successfully installed GKE MCP server for Claude Code.")
 }
