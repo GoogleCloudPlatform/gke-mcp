@@ -72,7 +72,10 @@ Claude Code CLI provides command-line access to Claude with MCP server integrati
 The easiest way to install the GKE MCP Server for Claude Code is using the built-in installation command.
 
 ```commandline
-gke-mcp install claude-code
+# Please run this in the root directory of your project
+gke-mcp install claude-code --project-only
+# or use the short form
+gke-mcp install claude-code -p
 ```
 
 This single command will automatically:
@@ -90,7 +93,7 @@ To set up the gke-mcp server for the Claude Code CLI manually, you need to first
 2. Add the MCP server: Run the following command in your terminal, replacing <path_to_gke-mcp_binary> with the actual path to your gke-mcp executable. If gke-mcp is in your system's PATH, you can just use gke-mcp.
 
 ```commandline
-claude mcp add gke-mcp --command <path_to_gke-mcp_binary> --arg --system-prompt=./CLAUDE.md
+claude mcp add gke-mcp --command <path_to_gke-mcp_binary>
 ```
 
 ## Claude Web (claude.ai)

@@ -78,7 +78,7 @@ var (
 
 	installClaudeCodeCmd = &cobra.Command{
 		Use:   "claude-code",
-		Short: "Install the GKE MCP Server for use with the Claude Code CLI.",
+		Short: "Install the GKE MCP Server into your Claude Code CLI settings.",
 		Run:   runInstallClaudeCodeCmd,
 	}
 

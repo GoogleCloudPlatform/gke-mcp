@@ -118,7 +118,6 @@ func ClaudeCodeExtension(opts *InstallOptions) error {
 		"add",
 		"gke-mcp",
 		"--command", opts.exePath,
-		"--arg", "--system-prompt=./CLAUDE.md",
 	}
 
 	cmdToRun := exec.Command(command, args...)
