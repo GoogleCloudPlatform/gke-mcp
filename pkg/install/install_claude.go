@@ -16,6 +16,7 @@
 package install
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -23,7 +24,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"bufio"
 )
 
 // ClaudeDesktopExtension installs the GKE MCP Server into Claude Desktop settings
