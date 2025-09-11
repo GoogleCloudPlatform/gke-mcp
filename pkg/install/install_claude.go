@@ -104,12 +104,54 @@ func getClaudeDesktopConfigPath() (string, error) {
 // ClaudeCodeExtension installs the GKE MCP Server for Claude Code CLI
 func ClaudeCodeExtension(opts *InstallOptions) error {
 	installDir := opts.installDir
+	claudeMDPath := filepath.Join(installDir, "CLAUDE.md")
 
-	// Create the CLAUDE.md file
-	claudeMdPath := filepath.Join(installDir, "CLAUDE.md")
-	if err := os.WriteFile(claudeMdPath, GeminiMarkdown, 0644); err != nil {
-		return fmt.Errorf("could not write CLAUDE.md: %w", err)
+	// Check if CLAUDE.md exists to determine the warning message
+	_, err := os.Stat(claudeMDPath)
+	exists := err == nil
+	isNew := os.IsNotExist(err)
+
+	// Ask for user confirmation to create/edit CLAUDE.md
+	if exists {
+		fmt.Println("Warning: CLAUDE.md already exists. The GKE MCP usage instructions will be appended.")
+	} else if isNew {
+		fmt.Println("Note: CLAUDE.md does not exist. A new one will be created and the GKE MCP usage instructions will be added.")
+	} else {
+		return fmt.Errorf("failed to check file status: %w", err)
 	}
+
+	fmt.Print("Would you like to proceed? (yes/no): ")
+	reader := bufio.NewReader(os.Stdin)
+	response, err := reader.ReadString('\n')
+	if err != nil {
+		return fmt.Errorf("failed to read user input: %w", err)
+	}
+
+	if strings.ToLower(strings.TrimSpace(response)) != "yes" {
+		fmt.Println("Installation canceled.")
+		return nil
+	}
+
+	// Create the GKE_MCP_USAGE_GUIDE.md file
+	usageGuideMDPath := filepath.Join(installDir, "GKE_MCP_USAGE_GUIDE.md")
+	if err := os.WriteFile(usageGuideMDPath, []byte(GeminiMarkdown), 0644); err != nil {
+		return fmt.Errorf("could not create GKE_MCP_USAGE_GUIDE.md: %w", err)
+	}
+	fmt.Println("Created GKE_MCP_USAGE_GUIDE.md.")
+
+	// Add the reference line with the actual path to CLAUDE.md
+	claudeLine := fmt.Sprintf("\n# GKE-MCP Server Instructions\n - @%s", usageGuideMDPath)
+
+	file, err := os.OpenFile(claudeMDPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("could not open or create CLAUDE.md: %w", err)
+	}
+	defer file.Close()
+
+	if _, err := file.WriteString(claudeLine); err != nil {
+		return fmt.Errorf("could not append to CLAUDE.md: %w", err)
+	}
+	fmt.Println("Added a reference to GKE_MCP_USAGE_GUIDE.md in CLAUDE.md.")
 
 	// Execute the command to add the MCP server
 	command := "claude"
@@ -117,7 +159,7 @@ func ClaudeCodeExtension(opts *InstallOptions) error {
 		"mcp",
 		"add",
 		"gke-mcp",
-		"--command", opts.exePath,
+		opts.exePath,
 	}
 
 	cmdToRun := exec.Command(command, args...)
