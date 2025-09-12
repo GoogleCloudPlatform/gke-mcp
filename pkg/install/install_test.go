@@ -781,8 +781,8 @@ func TestClaudeCodeExtensionWithExistingClaude(t *testing.T) {
 		t.Fatalf("Failed to create existing CLAUDE.md: %v", err)
 	}
 
-    // Mock Claude Command
-    logFile, cleanupCommand := MockClaudeCommand(t)
+	// Mock Claude Command
+	logFile, cleanupCommand := MockClaudeCommand(t)
 	defer cleanupCommand()
 
 	// Mock user input to answer "yes" to the confirmation prompt
