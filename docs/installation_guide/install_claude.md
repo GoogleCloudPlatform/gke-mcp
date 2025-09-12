@@ -83,9 +83,9 @@ gke-mcp install claude-code -p
 
 This single command will automatically:
 
-1. Create the CLAUDE.md context file in your current working directory.
+1. Create a `GKE_MCP_USAGE_GUIDE.md` file and add a reference to it in `CLAUDE.md` in your current working directory.
 
-2. Execute the claude mcp add command with the correct arguments to register the GKE MCP server.
+2. Execute the `claude mcp add` command with the correct arguments to register the GKE MCP server.
 
 ### Claude Code Manual Installation
 
