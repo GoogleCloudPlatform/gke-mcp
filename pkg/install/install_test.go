@@ -1,20 +1,9 @@
-// Copyright 2025 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//	http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 package install
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -61,6 +50,80 @@ func mockAppData(t *testing.T, tmpDir string) func() {
 	}
 }
 
+// mockInput simulates user input for interactive prompts
+func mockInput(input string) func() {
+	// Create a pipe to simulate user input
+	r, w, _ := os.Pipe()
+	oldStdin := os.Stdin
+	os.Stdin = r
+
+	// Write the input to the pipe
+	go func() {
+		defer w.Close()
+		w.WriteString(input)
+	}()
+
+	// Return cleanup function
+	return func() {
+		os.Stdin = oldStdin
+		r.Close()
+	}
+}
+
+// MockClaudeCommand creates a mock 'claude' command in a temporary directory
+// and sets up the PATH environment variable so that it is found before the real command.
+// It returns the log file path which includes its arguments.
+func MockClaudeCommand(t *testing.T) (logFile string, cleanup func()) {
+	tmpDir, err := os.MkdirTemp("", "claude-mock")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir for mock claude: %v", err)
+	}
+
+	logFile = filepath.Join(tmpDir, "claude-log.txt")
+	claudePath := filepath.Join(tmpDir, "claude")
+	if runtime.GOOS == "windows" {
+		claudePath += ".bat"
+	}
+
+	var mockScript string
+	if runtime.GOOS == "windows" {
+		// On Windows, %* represents all arguments
+		mockScript = fmt.Sprintf("@echo off\necho %%* >> %s\n", logFile)
+	} else {
+		// On Unix/Linux/macOS, "$@" represents all arguments
+		mockScript = fmt.Sprintf("#!/bin/bash\necho \"$@\" >> %s\n", logFile)
+	}
+
+	if err := os.WriteFile(claudePath, []byte(mockScript), 0755); err != nil {
+		t.Fatalf("Failed to create logging claude command: %v", err)
+	}
+
+	originalPath := os.Getenv("PATH")
+	os.Setenv("PATH", tmpDir+string(os.PathListSeparator)+originalPath)
+
+	cleanup = func() {
+		os.Setenv("PATH", originalPath)
+		os.RemoveAll(tmpDir)
+	}
+
+	return logFile, cleanup
+}
+
+// Verifies that the expected arguments are in the log file.
+func verifyArgs(t *testing.T, logFile string, testExePath string) {
+
+	// Verify the claude command was called with correct arguments
+	logContent, err := os.ReadFile(logFile)
+	if err != nil {
+		t.Fatalf("Failed to read command log: %v", err)
+	}
+
+	expectedArgs := fmt.Sprintf("mcp add gke-mcp %s", testExePath)
+	if !strings.Contains(string(logContent), expectedArgs) {
+		t.Errorf("Expected claude command to be called with args '%s', but log contains: %s", expectedArgs, string(logContent))
+	}
+}
+
 // verifyCursorInstallation checks that the Cursor installation created the expected files and structure
 func verifyCursorInstallation(t *testing.T, baseDir string, projectOnly bool) {
 	// Determine expected paths
@@ -81,6 +144,42 @@ func verifyCursorInstallation(t *testing.T, baseDir string, projectOnly bool) {
 
 	// Verify rules file exists and has correct content
 	verifyRuleFile(t, rulesPath)
+}
+
+// verifyClaudeCodeInstallation checks that Claude Code installation created the expected files
+func verifyClaudeCodeInstallation(t *testing.T, installDir, testExePath string) {
+	claudeMDPath := filepath.Join(installDir, "CLAUDE.md")
+	usageGuidePath := filepath.Join(installDir, "GKE_MCP_USAGE_GUIDE.md")
+
+	// Verify CLAUDE.md exists and has correct content
+	if _, err := os.Stat(claudeMDPath); os.IsNotExist(err) {
+		t.Errorf("Expected CLAUDE.md file to be created at %s, but it was not", claudeMDPath)
+	} else {
+		claudeContent, err := os.ReadFile(claudeMDPath)
+		if err != nil {
+			t.Fatalf("Failed to read CLAUDE.md: %v", err)
+		}
+
+		expectedReference := fmt.Sprintf("# GKE-MCP Server Instructions\n - @%s", usageGuidePath)
+		if !strings.Contains(string(claudeContent), expectedReference) {
+			t.Errorf("Expected CLAUDE.md to contain reference to usage guide, but it was not found.\nContent: %s\nExpected: %s", string(claudeContent), expectedReference)
+		}
+	}
+
+	// Verify GKE_MCP_USAGE_GUIDE.md exists and has correct content
+	if _, err := os.Stat(usageGuidePath); os.IsNotExist(err) {
+		t.Errorf("Expected GKE_MCP_USAGE_GUIDE.md file to be created at %s, but it was not", usageGuidePath)
+	} else {
+		usageContent, err := os.ReadFile(usageGuidePath)
+		if err != nil {
+			t.Fatalf("Failed to read GKE_MCP_USAGE_GUIDE.md: %v", err)
+		}
+
+		// Verify content matches GeminiMarkdown
+		if !bytes.Equal(usageContent, GeminiMarkdown) {
+			t.Errorf("Expected GKE_MCP_USAGE_GUIDE.md content to match GeminiMarkdown")
+		}
+	}
 }
 
 // verifyMCPConfig validates the MCP configuration file content
@@ -624,4 +723,115 @@ func TestClaudeDesktopExtensionWithMalformedConfig(t *testing.T) {
 	}
 
 	verifyGkeMcpInClaudeConfig(t, config, testExePath)
+}
+
+// Claude Code Extension Tests
+
+func TestClaudeCodeExtension(t *testing.T) {
+	tmpDir, cleanup := testSetup(t, false)
+	defer cleanup()
+
+	testExePath := "/usr/local/bin/gke-mcp"
+
+	logFile, cleanupCommand := MockClaudeCommand(t)
+	defer cleanupCommand()
+
+	// Mock user input to answer "yes" to the confirmation prompt
+	cleanupInput := mockInput("yes\n")
+	defer cleanupInput()
+
+	opts := &InstallOptions{
+		installDir: tmpDir,
+		exePath:    testExePath,
+	}
+
+	if err := ClaudeCodeExtension(opts); err != nil {
+		t.Fatalf("ClaudeCodeExtension() failed: %v", err)
+	}
+
+	// Verify installation
+	verifyClaudeCodeInstallation(t, tmpDir, testExePath)
+
+	verifyArgs(t, logFile, testExePath)
+}
+
+func TestClaudeCodeExtensionWithExistingClaude(t *testing.T) {
+	tmpDir, cleanup := testSetup(t, false)
+	defer cleanup()
+
+	testExePath := "/usr/local/bin/gke-mcp"
+
+	// Create existing CLAUDE.md file
+	claudeMDPath := filepath.Join(tmpDir, "CLAUDE.md")
+	existingContent := "# Existing Content\nSome existing instructions."
+	if err := os.WriteFile(claudeMDPath, []byte(existingContent), 0644); err != nil {
+		t.Fatalf("Failed to create existing CLAUDE.md: %v", err)
+	}
+
+    // Mock Claude Command
+    logFile, cleanupCommand := MockClaudeCommand(t)
+	defer cleanupCommand()
+
+	// Mock user input to answer "yes" to the confirmation prompt
+	cleanupInput := mockInput("yes\n")
+	defer cleanupInput()
+
+	opts := &InstallOptions{
+		installDir: tmpDir,
+		exePath:    testExePath,
+	}
+
+	if err := ClaudeCodeExtension(opts); err != nil {
+		t.Fatalf("ClaudeCodeExtension() failed: %v", err)
+	}
+
+	// Verify that existing content is preserved and new content is appended
+	claudeContent, err := os.ReadFile(claudeMDPath)
+	if err != nil {
+		t.Fatalf("Failed to read CLAUDE.md: %v", err)
+	}
+
+	// Should contain both existing content and new reference
+	if !strings.Contains(string(claudeContent), existingContent) {
+		t.Errorf("Expected CLAUDE.md to preserve existing content")
+	}
+
+	// Verify other files were created
+	verifyClaudeCodeInstallation(t, tmpDir, testExePath)
+
+	//verify claude command execution
+	verifyArgs(t, logFile, testExePath)
+}
+
+func TestClaudeCodeExtensionUserDeclines(t *testing.T) {
+	tmpDir, cleanup := testSetup(t, false)
+	defer cleanup()
+
+	testExePath := "/usr/local/bin/gke-mcp"
+
+	// Mock user input to answer "no" to the confirmation prompt
+	cleanupInput := mockInput("no\n")
+	defer cleanupInput()
+
+	opts := &InstallOptions{
+		installDir: tmpDir,
+		exePath:    testExePath,
+	}
+
+	// This should not return an error, but should not create files
+	if err := ClaudeCodeExtension(opts); err != nil {
+		t.Fatalf("ClaudeCodeExtension() failed: %v", err)
+	}
+
+	// Verify that files were NOT created
+	claudeMDPath := filepath.Join(tmpDir, "CLAUDE.md")
+	usageGuidePath := filepath.Join(tmpDir, "GKE_MCP_USAGE_GUIDE.md")
+
+	if _, err := os.Stat(claudeMDPath); err == nil {
+		t.Errorf("Expected CLAUDE.md to NOT be created when user declines, but it was")
+	}
+
+	if _, err := os.Stat(usageGuidePath); err == nil {
+		t.Errorf("Expected GKE_MCP_USAGE_GUIDE.md to NOT be created when user declines, but it was")
+	}
 }
