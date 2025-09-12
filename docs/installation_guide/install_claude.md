@@ -91,7 +91,7 @@ This single command will automatically:
 
 To set up the gke-mcp server for the Claude Code CLI manually, you need to first create the context file and then add the server using the claude CLI command.
 
-1. Create the context file: Manually create a new file named CLAUDE.md and copy the content of the gke-mcp's GEMINI.md file into it. This step isn't necessary but recommended as the Claude CLI uses this file as a system prompt to understand how to interact with the gke-mcp server.
+1. Create the context file: Manually create a new file named CLAUDE.md and copy the content of the gke-mcp's GEMINI.md file into it (alternatively, just add a reference to GEMINI.md to keep your CLAUDE.md clean). This step isn't necessary but recommended as the Claude CLI uses this file as a system prompt to understand how to interact with the gke-mcp server.
 
 2. Add the MCP server: Run the following command in your terminal, replacing <path_to_gke-mcp_binary> with the actual path to your gke-mcp executable. If gke-mcp is in your system's PATH, you can just use gke-mcp.
 
