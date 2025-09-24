@@ -1,4 +1,4 @@
-# GKE MCP Server
+# GKE MCP Server and Gemini CLI Extension
 
 Enable MCP-compatible AI agents to interact with Google Kubernetes Engine.
 
@@ -8,7 +8,17 @@ Enable MCP-compatible AI agents to interact with Google Kubernetes Engine.
 
 Choose a way to install the MCP Server and then connect your AI to it.
 
-### Install the MCP Server
+### Use as a Gemini CLI Extension
+
+1. Install [Gemini CLI ](https://github.com/google-gemini/gemini-cli?tab=readme-ov-file#-installation).
+
+2. Install the extension 
+```sh
+gemini extensions install https://github.com/GoogleCloudPlatform/gke-mcp.git
+```
+
+
+### Use in MCP Clients / Other AIs
 
 #### Quick Install (Linux & macOS only)
 
@@ -33,18 +43,6 @@ You can find the exact location by running `go env GOBIN`. If the command return
 For additional help, refer to the troubleshoot section: [gke-mcp: command not found](TROUBLESHOOTING.md#gke-mcp-command-not-found-on-macos-or-linux).
 
 ### Add the MCP Server to your AI
-
-#### Gemini CLI
-
-Install it as a `gemini-cli` extension:
-
-```sh
-gke-mcp install gemini-cli
-```
-
-This will create a manifest file in `./.gemini/extensions/gke-mcp` that points to the `gke-mcp` binary.
-
-#### Other AIs
 
 For detailed instructions on how to connect the GKE MCP Server to various AI clients, including cursor and claude desktop, please refer to our dedicated [installation guide](docs/installation_guide/).
 
