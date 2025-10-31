@@ -51,7 +51,7 @@ For detailed instructions on how to connect the GKE MCP Server to various AI cli
 - `cluster_toolkit`: Creates AI optimized GKE Clusters.
 - `list_clusters`: List your GKE clusters.
 - `get_cluster`: Get detailed about a single GKE Cluster.
-- `get_kubeconfig`: Config the kubeconfig to a sungle GKE Cluster.
+- `get_kubeconfig`: Config the kubeconfig to a single GKE Cluster.
 - `giq_generate_manifest`: Generate a GKE manifest for AI/ML inference workloads using Google Inference Quickstart.
 - `list_recommendations`: List recommendations for your GKE clusters.
 - `query_logs`: Query Google Cloud Platform logs using Logging Query Language (LQL).
