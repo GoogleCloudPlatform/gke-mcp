@@ -108,8 +108,11 @@ func (h *handlers) listClusters(ctx context.Context, _ *mcp.CallToolRequest, arg
 		return nil, nil, err
 	}
 
+	header := fmt.Sprintf("Found %d clusters in project %s:", len(resp.Clusters), args.ProjectID)
+
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
+			&mcp.TextContent{Text: header},
 			&mcp.TextContent{Text: protojson.Format(resp)},
 		},
 	}, nil, nil
