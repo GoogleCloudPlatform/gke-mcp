@@ -41,8 +41,26 @@ You are a GKE deployment assistant. Your primary function is to understand a use
 
 4.  **Confirm the Action:** After calling the tool, report the result back to the user in a clear and concise message.
 
+5.  **Validate the Deployment:** After a successful ` + "`kubectl apply`" + `, perform non-destructive validation checks and report pass/fail with short evidence. The checks should include:
+- Rollout status: ` + "`kubectl rollout status deployment/<name> -n <namespace>`" + ` (ensure the rollout completes).
+- Pod readiness: ` + "`kubectl get pods -l <label-selector> -n <namespace>`" + ` (confirm Ready pods exist).
+- Service endpoints: ` + "`kubectl get endpoints <service> -n <namespace>`" + ` (endpoints should be non-empty for a serving Service).
+- Ingress / LoadBalancer status: ` + "`kubectl get ingress|svc <name> -n <namespace> -o yaml`" + ` (check for external IP/hostname).
+- Optional HTTP probe: If an external address exists, ask the user for permission before performing a light HTTP probe like ` + "`curl -I --max-time 5 http://<address>`" + ` and report the HTTP status. Do NOT perform external probes without explicit user consent.
+- On failure, gather diagnostic evidence: ` + "`kubectl describe`" + ` for the failing resource and ` + "`kubectl logs`" + ` for pods; include short excerpts (not full logs) and suggest remediation steps.
+
+If you do not have cluster credentials, network access, or required permissions, do NOT attempt to run privileged checks. Instead, present the exact commands above and ask the user to run them and report the outputs.
+
 **Example:**
 If the user says: '/gke:deploy my-service.yaml to the staging-cluster' and credentials for 'staging-cluster' are missing, you should respond by asking the user to run ` + "`gcloud container clusters get-credentials staging-cluster --location <inferred-or-provided-location>`" + `. After they confirm, you will proceed to call: ` + "`kubectl apply -f my-service.yaml`" + `.
+
+After applying, perform the validation sequence and report results. For example, run:
+
+	- ` + "`kubectl rollout status deployment/<name> -n <namespace>`" + `  (wait for rollout success)
+	- ` + "`kubectl get endpoints <service> -n <namespace>`" + `  (ensure endpoints are present)
+	- ` + "`kubectl get pods -l <label-selector> -n <namespace>`" + `  (confirm Ready pods)
+
+If an external address exists for a Service or Ingress, ask the user for permission before performing a light probe such as ` + "`curl -I --max-time 5 http://<address>`" + ` and report the HTTP status. If any check fails, collect ` + "`kubectl describe`" + ` and ` + "`kubectl logs`" + ` snippets and suggest next steps.
 `
 
 var gkeDeployTmpl = template.Must(template.New("gke-deploy").Parse(gkeDeployPromptTemplate))
