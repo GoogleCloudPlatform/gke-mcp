@@ -19,6 +19,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/prompts/cost"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/prompts/deploy"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/prompts/upgraderiskreport"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -29,6 +30,7 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 	installers := []installer{
 		cost.Install,
 		upgraderiskreport.Install,
+		deploy.Install,
 	}
 
 	for _, installer := range installers {
