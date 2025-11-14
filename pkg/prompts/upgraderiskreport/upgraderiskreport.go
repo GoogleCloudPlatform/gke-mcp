@@ -26,37 +26,69 @@ import (
 )
 
 const gkeUpgradeRiskReportPromptTemplate = `
-You are a GKE expert, you have to upgrade a GKE cluster {{.clusterName}} in {{.clusterLocation}} location to {{.target_version}} version, but before that you have to understand how safe it is to perform the upgrade to the specified version, for that you generate an upgrade risk report.
+# GKE Upgrade Risk Report Generation
 
-You're providing a GKE Cluster Upgrade risk report for a specific GKE cluster, the report focuses on a specific GKE upgrade risks which may raise upgrading from the current cluster version to the specified target version.
+**1. Input Parameters:**
+  - Cluster Name: {{.clusterName}}
+  - Cluster Location: {{.clusterLocation}}
+  - Target Version: {{.targetVersion}}
 
-For fetching any in-cluster resources use kubectl tool and gcloud get-credentials.
+**2. Your Role:**
+You are a GKE expert. Your task is to generate a comprehensive upgrade risk report for the specified GKE cluster, analyzing the potential risks of upgrading from its current version to the 'Target Version'.
 
-The current version is a lowest version among cluster control plane version and versions on cluster node pools.
+**3. Primary Goal:**
+Produce a report outlining potential risks, and actionable recommendations to ensure a safe and smooth GKE upgrade. The report should be based on the changes introduced between the cluster's current control plane version and the 'Target Version'.
 
-You download GKE release notes (https://cloud.google.com/kubernetes-engine/docs/release-notes) and extract changes relevant for the upgrade. To download GKE release notes content, you use command line tool - lynx. You remember that release notes can be updated and need to be loaded again on each report generating.
+**4. Handling Missing Target Version:**
+If 'Target Version' is not provided:
+  a. State that the target version is required.
+  b. Use ` + "`gcloud container get-server-config`" + ` to fetch available GKE versions.
+  c. Filter this list to show only versions NEWER than the cluster's current control plane version and compatible with the cluster's release channel.
+  d. Present these versions to the user to help them choose a 'Target Version'.
 
-You download a corresponding minor kubernetes version changelog files (e.g. https://raw.githubusercontent.com/kubernetes/kubernetes/master/CHANGELOG/CHANGELOG-1.31.md is a changelog file URL for kuberentes minor version 1.31) for the upgrade and extract changes relevant for the upgrade. To download kubernetes changelog file, you can use curl or lynx tools. You remember that a changelog file can be updated and need to be loaded again on each report generating.
+**5. Information Gathering & Tools:**
+Assume you have the ability to run the following commands to gather necessary information:
+  - **Cluster Details:** Use ` + "`gcloud`" + ` to get cluster details like control plane version, release channel, node pool versions, etc.
+  - **In-Cluster Resources:** Use ` + "`kubectl`" + ` (after ` + "`gcloud container clusters get-credentials`" + `) for inspecting workloads, APIs in use, etc.
+  - **Kubernetes Changelogs:** Use the ` + "`get_k8s_changelog`" + ` tool to fetch kubernetes changelogs.
 
-Extracting changes from release notes and changelog, you don't use grep, but use LLM capabilities.
+**6. Changelog Analysis:**
+  - **Minor Versions:** Include changelogs for ALL minor versions from the current control plane minor version up to AND INCLUDING the target minor version. (e.g., 1.29.x to 1.31.y requires looking at changes in 1.29, 1.30, 1.31).
+  - **Patch Versions:** Analyze changes for EVERY patch version BETWEEN the current version (exclusive) and the target version (inclusive). (e.g., 1.29.1 to 1.29.5 means analyzing 1.29.2, 1.29.3, 1.29.4, 1.29.5).
+  - **GKE Versions:** Analyze changes for GKE version BETWEEN the current version (exclusive) and the target version (inclusive). (e.g., 1.29.1-gke.123000 to 1.29.5-gke.234000 means analyzing 1.29.1-gke.123500, 1.29.1-gke.124000 etc, and 1.29.5-gke.234000).
 
-You identify changes the upgrade brings including changes from intermediate versions and put them in a list. You transform the list of changes to a checklist with items to verify to ensure that a specific upgrade is safe. The checklist item should tell how critical it is from LOW to HIGH in LOW, MEDIUM, HIGH.
+**7. Risk Identification - Focus on:**
+  - **API Deprecations/Removals:** Especially those affecting in-use cluster resources.
+  - **Breaking Changes:** Significant behavioral changes in existing, stable features.
+  - **Default Configuration Changes:** Modifications to defaults that could alter workload behavior.
+  - **New Feature Interactions:** Potentially disruptive interactions between new features and existing setups.
+  - Changes REQUIRING manual action before upgrade to prevent outages.
 
-The checklist format follows rules:
+**8. Report Format:**
+Present the risks as a single list, ordered by severity. Each risk item MUST follow this markdown structure:
 
-- there is only one checklist combined from all changes;
-- each checklist item is a section with 3 informational parts: Criticality, Risk description, Recommendation;
-- sections are ordered by criticality from HIGH to LOW.
+` + "```markdown" + `
+# Short Risk Title
 
-An example of a checklist item:
+## Description
 
+(Detailed description of the change and the potential risk it introduces for THIS specific upgrade)
+
+## Verification Recommendations
+
+(Clear, actionable steps or commands to check if the cluster is affected by this risk. Include example ` + "`kubectl`" + ` or ` + "`gcloud`" + ` commands where appropriate. Reference specific documentation links if possible.)
+
+## Mitigation Recommendations
+
+(Clear, actionable steps, configuration changes, or code adjustments to mitigate the risk BEFORE the upgrade. Provide examples and link to docs.)
 ` + "```" + `
-HIGH: Potential for Network File System (NFS) volume mount failures
 
-  * Criticality: HIGH
-  * Risk description: In GKE versions 1.32.4-gke.1029000 and later, MountVolume calls for Network File System (NFS) volumes might fail with the error: mount.nfs: rpc.statd is not running but is required for remote locking. This can occur if a Pod mounting an NFS volume runs on the same node as an NFS server Pod, and the NFS server Pod starts before the client Pod attempts to mount the volume.
-  * Recommendation: Before upgrading, deploy the recommended DaemonSet (https://cloud.google.com/kubernetes-engine/docs/release-notes#october_14_2025_2) on all nodes where you mount NFS volumes to ensure that the required services start correctly.
-` + "```\n"
+**9. Important Considerations:**
+  - Be specific for each risk; avoid grouping unrelated issues.
+  - Ensure Verification and Mitigation steps are practical and provide sufficient detail for a GKE administrator to act upon.
+  - Base the analysis SOLELY on the changes between the cluster's current version and the target version.
+
+`
 
 var gkeUpgradeRiskReportTmpl = template.Must(template.New("gke-upgrade-risk-report").Parse(gkeUpgradeRiskReportPromptTemplate))
 
@@ -84,7 +116,7 @@ func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 			{
 				Name:        targetVersionArgName,
 				Description: "A version user want to upgrade their cluster to.",
-				Required:    true,
+				Required:    false,
 			},
 		},
 	}, gkeUpgradeRiskReportHandler)
@@ -94,18 +126,15 @@ func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 
 // gkeUpgradeRiskReportHandler is the handler function for the /gke:upgraderiskreport prompt
 func gkeUpgradeRiskReportHandler(_ context.Context, request *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
-	clusterName := request.Params.Arguments[clusterNameArgName]
-	if strings.TrimSpace(clusterName) == "" {
+	clusterName := strings.TrimSpace(request.Params.Arguments[clusterNameArgName])
+	if clusterName == "" {
 		return nil, fmt.Errorf("argument '%s' cannot be empty", clusterNameArgName)
 	}
-	clusterLocation := request.Params.Arguments[clusterLocationArgName]
-	if strings.TrimSpace(clusterLocation) == "" {
+	clusterLocation := strings.TrimSpace(request.Params.Arguments[clusterLocationArgName])
+	if clusterLocation == "" {
 		return nil, fmt.Errorf("argument '%s' cannot be empty", clusterLocationArgName)
 	}
-	targetVersion := request.Params.Arguments[targetVersionArgName]
-	if strings.TrimSpace(targetVersion) == "" {
-		return nil, fmt.Errorf("argument '%s' cannot be empty", targetVersionArgName)
-	}
+	targetVersion := strings.TrimSpace(request.Params.Arguments[targetVersionArgName])
 
 	var buf bytes.Buffer
 	if err := gkeUpgradeRiskReportTmpl.Execute(&buf, map[string]string{

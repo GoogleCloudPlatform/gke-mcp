@@ -1,0 +1,117 @@
+// Copyright 2025 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package k8schangelog
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"os/exec"
+	"regexp"
+	"strings"
+
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+)
+
+var (
+	kubernetesMinorVersionRegexp = regexp.MustCompile(`^\d+\.\d+$`)
+)
+
+type getK8sChangelogArgs struct {
+	KubernetesMinorVersion string `json:"KubernetesMinorVersion" jsonschema:"The kubernetes minor version to get changelog for. For example, '1.33'."`
+}
+
+func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_k8s_changelog",
+		Description: "Get changelog file for a specific kubernetes minor version and keep only changes content. Prefer to use this tool if kubernetes minor version changelog is needed.",
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint:   true,
+			IdempotentHint: true,
+		},
+	}, getK8sChangelog)
+
+	return nil
+}
+
+func getK8sChangelog(ctx context.Context, req *mcp.CallToolRequest, args *getK8sChangelogArgs) (*mcp.CallToolResult, any, error) {
+	version := strings.TrimSpace(args.KubernetesMinorVersion)
+	if !kubernetesMinorVersionRegexp.MatchString(version) {
+		return nil, nil, fmt.Errorf("invalid kubernetes minor version: %s", version)
+	}
+
+	changelogUrl := fmt.Sprintf("https://raw.githubusercontent.com/kubernetes/kubernetes/refs/heads/master/CHANGELOG/CHANGELOG-%s.md", version)
+	out, err := exec.Command("curl", changelogUrl).Output()
+	if err != nil {
+		log.Printf("Failed to get changelog: %v", err)
+
+		return nil, nil, err
+	}
+
+	changelogFileContent := string(out)
+
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: keepOnlyChanges(changelogFileContent)},
+		},
+	}, nil, nil
+}
+
+var (
+	changelogVersionLineRegexp = regexp.MustCompile(`^# v\d\.\d+\.\d+`)
+	ignoredSectionPrefixes     = []string{"## Dependencies", "## Downloads for"}
+)
+
+func keepOnlyChanges(changelog string) string {
+	var result strings.Builder
+	hasMetTheFirstVersionHeading := false // it is set to true only once when the first version heading is met and then never change
+	isInIgnoredSection := false
+	lines := strings.Split(changelog, "\n")
+
+	for _, line := range lines {
+		if !hasMetTheFirstVersionHeading {
+			if changelogVersionLineRegexp.MatchString(line) {
+				hasMetTheFirstVersionHeading = true
+			} else {
+				continue
+			}
+		}
+
+		isIgnoredSectionHeader := false
+		for _, prefix := range ignoredSectionPrefixes {
+			if strings.HasPrefix(line, prefix) {
+				isInIgnoredSection = true
+				isIgnoredSectionHeader = true
+				break
+			}
+		}
+		if isIgnoredSectionHeader {
+			continue
+		}
+
+		if isInIgnoredSection {
+			if strings.HasPrefix(line, "# ") || strings.HasPrefix(line, "## ") {
+				isInIgnoredSection = false
+			}
+		}
+
+		if !isInIgnoredSection {
+			result.WriteString(line)
+			result.WriteString("\n")
+		}
+	}
+	return result.String()
+}

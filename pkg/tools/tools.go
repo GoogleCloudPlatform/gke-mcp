@@ -21,6 +21,7 @@ import (
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/cluster"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/clustertoolkit"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/giq"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/k8schangelog"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/logging"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/monitoring"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/recommendation"
@@ -37,6 +38,7 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 		logging.Install,
 		monitoring.Install,
 		recommendation.Install,
+		k8schangelog.Install,
 	}
 
 	for _, installer := range installers {
