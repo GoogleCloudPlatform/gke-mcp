@@ -17,8 +17,9 @@ package k8schangelog
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
-	"os/exec"
+	"net/http"
 	"regexp"
 	"strings"
 
@@ -28,6 +29,7 @@ import (
 
 var (
 	kubernetesMinorVersionRegexp = regexp.MustCompile(`^\d+\.\d+$`)
+	changelogHostUrl             = "https://raw.githubusercontent.com"
 )
 
 type getK8sChangelogArgs struct {
@@ -53,15 +55,26 @@ func getK8sChangelog(ctx context.Context, req *mcp.CallToolRequest, args *getK8s
 		return nil, nil, fmt.Errorf("invalid kubernetes minor version: %s", version)
 	}
 
-	changelogUrl := fmt.Sprintf("https://raw.githubusercontent.com/kubernetes/kubernetes/refs/heads/master/CHANGELOG/CHANGELOG-%s.md", version)
-	out, err := exec.Command("curl", changelogUrl).Output()
+	changelogUrl := fmt.Sprintf("%s/kubernetes/kubernetes/refs/heads/master/CHANGELOG/CHANGELOG-%s.md", changelogHostUrl, version)
+	resp, err := http.Get(changelogUrl)
 	if err != nil {
 		log.Printf("Failed to get changelog: %v", err)
+		return nil, nil, err
+	}
+	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		err := fmt.Errorf("failed to get changelog with status code: %d", resp.StatusCode)
+		log.Printf("Failed to get changelog: %v", err)
 		return nil, nil, err
 	}
 
-	changelogFileContent := string(out)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Failed to read changelog response body: %v", err)
+		return nil, nil, err
+	}
+	changelogFileContent := string(body)
 
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
