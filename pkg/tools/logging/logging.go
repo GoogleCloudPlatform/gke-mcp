@@ -25,6 +25,7 @@ import (
 func Install(_ context.Context, s *mcp.Server, c *config.Config) error {
 	installQueryLogsTool(s, c)
 	installGetLogSchemas(s)
+	installGetSampleQueriesTool(s)
 
 	return nil
 }
