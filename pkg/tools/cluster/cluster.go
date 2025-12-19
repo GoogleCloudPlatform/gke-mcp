@@ -15,10 +15,17 @@
 package cluster
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
 	"strings"
+	"time"
 
 	container "cloud.google.com/go/container/apiv1"
 	containerpb "cloud.google.com/go/container/apiv1/containerpb"
@@ -51,6 +58,13 @@ type getKubeconfigArgs struct {
 	ProjectID string `json:"project_id,omitempty" jsonschema:"GCP project ID. Use the default if the user doesn't provide it."`
 	Location  string `json:"location" jsonschema:"GKE cluster location. Leave this empty if the user doesn't provide it."`
 	Name      string `json:"name" jsonschema:"GKE cluster name. Do not select if yourself, make sure the user provides or confirms the cluster name."`
+}
+
+type getNodeSosReportArgs struct {
+	Node           string `json:"node" jsonschema:"GKE node name to collect SOS report from."`
+	Destination    string `json:"destination,omitempty" jsonschema:"Local directory to download the SOS report to. Defaults to /tmp/sos-report if not specified."`
+	Method         string `json:"method,omitempty" jsonschema:"Method to get sos report. Can be 'pod', 'ssh' or 'any'. Defaults to 'any'. When the node is unhealthy from api server, use ssh only."`
+	TimeoutSeconds int    `json:"timeout,omitempty" jsonschema:"Timeout in seconds for the report collection (applies to both pod and ssh methods). Defaults to 180 (3 minutes)."`
 }
 
 func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
@@ -88,6 +102,11 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 			// ReadOnlyHint is removed because this tool now performs a write operation.
 		},
 	}, h.getKubeconfig)
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_node_sos_report",
+		Description: "Generate and download an SOS report from a GKE node. Can use 'pod', 'ssh' or 'any' methods. Defaults to 'any' (pod with fallback to ssh). Use 'ssh' if node is API-unhealthy.",
+	}, h.getNodeSosReport)
 
 	return nil
 }
@@ -230,6 +249,239 @@ func (h *handlers) getKubeconfig(ctx context.Context, _ *mcp.CallToolRequest, ar
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
 			&mcp.TextContent{Text: fmt.Sprintf("Kubeconfig for cluster %s (Project: %s, Location: %s) successfully appended/updated in %s. Current context set to %s.", args.Name, args.ProjectID, args.Location, pathOptions.GlobalFile, newClusterName)},
+		},
+	}, nil, nil
+}
+
+func (h *handlers) getNodeSosReport(ctx context.Context, _ *mcp.CallToolRequest, args *getNodeSosReportArgs) (*mcp.CallToolResult, any, error) {
+	if args.Node == "" {
+		return nil, nil, fmt.Errorf("node argument cannot be empty")
+	}
+	if args.Destination == "" {
+		args.Destination = "/tmp/sos-report"
+	}
+	if args.Method == "" {
+		args.Method = "any"
+	}
+	if args.TimeoutSeconds <= 0 {
+		args.TimeoutSeconds = 180 // Default to 3 minutes
+	}
+
+	// Check if node is healthy
+	isHealthy := false
+	cmd := exec.CommandContext(ctx, "kubectl", "get", "node", args.Node, "-o", "jsonpath='{.status.conditions[?(@.type==\"Ready\")].status}'")
+	out, err := cmd.Output()
+	if err == nil && strings.Contains(string(out), "True") {
+		isHealthy = true
+	}
+
+	if !isHealthy {
+		args.Method = "ssh"
+	}
+
+	if err := os.MkdirAll(args.Destination, 0755); err != nil {
+		return nil, nil, fmt.Errorf("failed to create destination directory %s: %w", args.Destination, err)
+	}
+
+	if args.Method == "pod" || args.Method == "any" {
+		// 1. Try Pod-based approach with timeout
+		podCtx, podCancel := context.WithTimeout(ctx, time.Duration(args.TimeoutSeconds)*time.Second)
+		defer podCancel()
+
+		res, _, err := h.getNodeSosReportWithPod(podCtx, args)
+		if err == nil {
+			return res, nil, nil
+		}
+		if args.Method == "pod" {
+			return nil, nil, fmt.Errorf("failed to get sos report with pod: %w", err)
+		}
+		// If method is any and pod failed (e.g. timeout), fall through to ssh
+	}
+
+	// 2. Fallback or direct SSH approach with timeout
+	sshCtx, sshCancel := context.WithTimeout(ctx, time.Duration(args.TimeoutSeconds)*time.Second)
+	defer sshCancel()
+	return h.getNodeSosReportWithSSH(sshCtx, args)
+}
+
+func (h *handlers) getNodeSosReportWithPod(ctx context.Context, args *getNodeSosReportArgs) (*mcp.CallToolResult, any, error) {
+	// 1. Prepare and run debug pod
+	podName := fmt.Sprintf("sos-debug-%d", time.Now().Unix())
+	overrides := map[string]interface{}{
+		"spec": map[string]interface{}{
+			"nodeName":    args.Node,
+			"hostNetwork": true,
+			"hostPID":     true,
+			"hostIPC":     true,
+			"containers": []map[string]interface{}{
+				{
+					"name":    "main",
+					"image":   "gke.gcr.io/debian-base",
+					"command": []string{"/bin/sleep", "99999"},
+					"volumeMounts": []map[string]interface{}{
+						{
+							"mountPath": "/host",
+							"name":      "root",
+						},
+					},
+				},
+			},
+			"volumes": []map[string]interface{}{
+				{
+					"name": "root",
+					"hostPath": map[string]interface{}{
+						"path": "/",
+						"type": "Directory",
+					},
+				},
+			},
+			"securityContext": map[string]interface{}{
+				"runAsUser": 0,
+			},
+			"nodeSelector": map[string]interface{}{
+				"kubernetes.io/hostname": args.Node,
+			},
+		},
+	}
+	overridesBytes, err := json.Marshal(overrides)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to marshal overrides: %w", err)
+	}
+
+	runCmd := exec.CommandContext(ctx, "kubectl", "run", podName, "--image=gke.gcr.io/debian-base", "--restart=Never", "--overrides="+string(overridesBytes))
+	if out, err := runCmd.CombinedOutput(); err != nil {
+		return nil, nil, fmt.Errorf("failed to create debug pod: %s, %w", string(out), err)
+	}
+
+	defer func() {
+		// Cleanup pod
+		delCmd := exec.Command("kubectl", "delete", "pod", podName, "--wait=false", "--grace-period=0", "--force")
+		delCmd.Run()
+	}()
+
+	// 2. Wait for pod to be ready
+	waitCmd := exec.CommandContext(ctx, "kubectl", "wait", "--for=condition=Ready", "pod/"+podName, "--timeout=60s")
+	if out, err := waitCmd.CombinedOutput(); err != nil {
+		return nil, nil, fmt.Errorf("debug pod did not become ready: %s, %w", string(out), err)
+	}
+
+	// 3. Run sos report inside the pod (chrooted to host)
+	// We create a temp dir for the report to avoid conflicts in /tmp
+	remoteTmpDir := fmt.Sprintf("/tmp/sos-%s", podName)
+	// Prepare command: mkdir dir, run sos report, and ensure we capture output
+	// Note: chroot /host allows us to use the host's sosreport command and filesystem
+	execScript := fmt.Sprintf("apt update && apt install -y sosreport && mkdir -p /host%s && sos report --sysroot=/host --all-logs --batch --tmp-dir=/host%s", remoteTmpDir, remoteTmpDir)
+
+	execCmd := exec.CommandContext(ctx, "kubectl", "exec", podName, "--", "sh", "-c", execScript)
+	outBytes, err := execCmd.CombinedOutput()
+	output := string(outBytes)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to generate sos report: %s, %w", output, err)
+	}
+
+	// 4. Parse the output to find the filename
+	// The output usually contains: "Your sosreport has been generated and saved in: /path/to/file.tar.xz"
+	// The path might be reported as /host/tmp/... or /tmp/... depending on how sos report was invoked.
+	// We also handle both .tar.xz and .tar.gz extensions.
+	re := regexp.MustCompile(`(/host)?` + regexp.QuoteMeta(remoteTmpDir) + `/[^\s]+\.tar\.(xz|gz)`)
+	match := re.FindString(output)
+	if match == "" {
+		return nil, nil, fmt.Errorf("could not find sos report filename in output: %s", output)
+	}
+
+	// The file path inside the pod is what we need for 'cat'.
+	// If the match didn't start with /host, we prepend it because we mounted host root at /host.
+	remotePath := match
+	if !strings.HasPrefix(remotePath, "/host") {
+		remotePath = "/host" + remotePath
+	}
+	localFilename := fmt.Sprintf("sosreport-%s-%s.tar.xz", args.Node, time.Now().Format("2006-01-02-15-04-05"))
+	localPath := filepath.Join(args.Destination, localFilename)
+
+	// 5. Copy the file from the pod to local current directory
+	f, err := os.Create(localPath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create local file %s: %w", localPath, err)
+	}
+
+	catCmd := exec.CommandContext(ctx, "kubectl", "exec", podName, "--", "cat", remotePath)
+	catCmd.Stdout = f
+	var stderr bytes.Buffer
+	catCmd.Stderr = &stderr
+
+	if err := catCmd.Run(); err != nil {
+		f.Close()
+		os.Remove(localPath)
+		return nil, nil, fmt.Errorf("failed to copy sos report from pod: %s, %w", stderr.String(), err)
+	}
+	f.Close()
+
+	// 6. Cleanup remote files on host (via pod)
+	cleanupScript := fmt.Sprintf("rm -rf %s", remoteTmpDir)
+	cleanCmd := exec.CommandContext(ctx, "kubectl", "exec", podName, "--", "sh", "-c", cleanupScript)
+	cleanCmd.Run() // Best effort cleanup
+
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: fmt.Sprintf("SOS report successfully generated and downloaded to: %s", localPath)},
+		},
+	}, nil, nil
+}
+
+func (h *handlers) getNodeSosReportWithSSH(ctx context.Context, args *getNodeSosReportArgs) (*mcp.CallToolResult, any, error) {
+	// 1. Find the zone of the VM
+	// gcloud compute instances list --filter="name=NODE_NAME" --format="value(zone)"
+	findZoneCmd := exec.CommandContext(ctx, "gcloud", "compute", "instances", "list", fmt.Sprintf("--filter=name=%s", args.Node), "--format=value(zone)")
+	zoneOut, err := findZoneCmd.Output()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to find zone for node %s using gcloud: %w", args.Node, err)
+	}
+	zone := strings.TrimSpace(string(zoneOut))
+	if zone == "" {
+		return nil, nil, fmt.Errorf("could not find zone for node %s", args.Node)
+	}
+
+	// 2. Generate SOS report via SSH
+	// gcloud compute ssh --zone "ZONE" "NODE_NAME" --command "sudo sos report --all-logs --batch --tmp-dir=/var"
+	sshCmd := exec.CommandContext(ctx, "gcloud", "compute", "ssh", "--zone", zone, args.Node, "--command", "sudo sos report --all-logs --batch --tmp-dir=/var")
+	outBytes, err := sshCmd.CombinedOutput()
+	output := string(outBytes)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to generate sos report via ssh: %s, %w", output, err)
+	}
+
+	// 3. Parse output for filename
+	// Matches /var/sosreport-.*.tar.xz
+	re := regexp.MustCompile(`/var/sosreport-[^\s]+\.tar\.xz`)
+	match := re.FindString(output)
+	if match == "" {
+		return nil, nil, fmt.Errorf("could not find sos report filename in ssh output: %s", output)
+	}
+	remotePath := match
+
+	// 4. Change ownership of the file
+	// gcloud compute ssh ... --command "sudo chown $USER REMOTE_PATH"
+	chownCmd := exec.CommandContext(ctx, "gcloud", "compute", "ssh", "--zone", zone, args.Node, "--command", fmt.Sprintf("sudo chown $USER %s", remotePath))
+	if out, err := chownCmd.CombinedOutput(); err != nil {
+		return nil, nil, fmt.Errorf("failed to chown remote file: %s, %w", string(out), err)
+	}
+
+	// 5. SCP the file
+	// gcloud compute scp --zone "ZONE" "NODE_NAME:REMOTE_PATH" LOCAL_DESTINATION
+	localFilename := fmt.Sprintf("sosreport-%s-%s.tar.xz", args.Node, time.Now().Format("2006-01-02-15-04-05"))
+	localPath := filepath.Join(args.Destination, localFilename)
+	scpCmd := exec.CommandContext(ctx, "gcloud", "compute", "scp", "--zone", zone, fmt.Sprintf("%s:%s", args.Node, remotePath), localPath)
+	if out, err := scpCmd.CombinedOutput(); err != nil {
+		return nil, nil, fmt.Errorf("failed to scp file: %s, %w", string(out), err)
+	}
+
+	// 6. Cleanup remote files on host
+	rmCmd := exec.CommandContext(ctx, "gcloud", "compute", "ssh", "--zone", zone, args.Node, "--command", fmt.Sprintf("sudo rm %s", remotePath))
+	rmCmd.Run()
+
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: fmt.Sprintf("SOS report successfully generated (via SSH) and downloaded to: %s", localPath)},
 		},
 	}, nil, nil
 }
