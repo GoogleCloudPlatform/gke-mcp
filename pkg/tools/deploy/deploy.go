@@ -62,43 +62,34 @@ Proactive Help: Anticipate user needs. For example, offer to provide links to do
 
 var gkeDeployTmpl = template.Must(template.New("gke-deploy").Parse(gkeDeployPromptTemplate))
 
-func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
-	s.AddPrompt(&mcp.Prompt{
-		Name:        "gke:deploy",
+type deployArgs struct {
+	UserRequest string `json:"user_request" jsonschema:"A natural language request specifying the configuration file to deploy. e.g. 'my-app.yaml to staging'"`
+}
+
+func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "gke_deploy",
 		Description: "Deploys a workload to a GKE cluster using a configuration file.",
-		Arguments: []*mcp.PromptArgument{
-			{
-				Name:        "user_request",
-				Description: "A natural language request specifying the configuration file to deploy. e.g., 'my-app.yaml to staging'",
-				Required:    true,
-			},
-		},
 	}, gkeDeployHandler)
 
 	return nil
 }
 
-// gkeDeployHandler is the handler function for the /gke:deploy prompt
-func gkeDeployHandler(_ context.Context, request *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
-	userRequest := request.Params.Arguments["user_request"]
-	if strings.TrimSpace(userRequest) == "" {
-		return nil, fmt.Errorf("argument 'user_request' cannot be empty")
+func gkeDeployHandler(ctx context.Context, request *mcp.CallToolRequest, args *deployArgs) (*mcp.CallToolResult, any, error) {
+	if strings.TrimSpace(args.UserRequest) == "" {
+		return nil, nil, fmt.Errorf("argument 'user_request' cannot be empty")
 	}
 
 	var buf bytes.Buffer
-	if err := gkeDeployTmpl.Execute(&buf, map[string]string{"user_request": userRequest}); err != nil {
-		return nil, fmt.Errorf("failed to execute prompt template: %w", err)
+	if err := gkeDeployTmpl.Execute(&buf, map[string]string{"user_request": args.UserRequest}); err != nil {
+		return nil, nil, fmt.Errorf("failed to execute prompt template: %w", err)
 	}
 
-	return &mcp.GetPromptResult{
-		Description: "GKE Deployment System Prompt",
-		Messages: []*mcp.PromptMessage{
-			{
-				Content: &mcp.TextContent{
-					Text: buf.String(),
-				},
-				Role: "user",
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{
+				Text: buf.String(),
 			},
 		},
-	}, nil
+	}, nil, nil
 }
