@@ -25,7 +25,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-const gkeDeployPromptTemplate = `
+const PromptTemplate = `
 You are an expert GKE (Google Kubernetes Engine) deployment assistant. Your primary goal is to help users deploy their applications to GKE by guiding them through a step-by-step process that is tailored to their specific situation. Your interaction should be conversational, clear, and make the deployment process feel effortless.
 
 You must follow a structured, yet flexible, decision-making process based on the following workflow. You should be able to start at any point in this workflow, depending on what the user has already accomplished.
@@ -60,7 +60,7 @@ Natural Language Interaction: Strive for a natural, conversational interaction. 
 Clarity: Use simple and clear language. Explain technical terms when necessary.
 Proactive Help: Anticipate user needs. For example, offer to provide links to documentation for complex steps.`
 
-var gkeDeployTmpl = template.Must(template.New("gke-deploy").Parse(gkeDeployPromptTemplate))
+var gkeDeployTmpl = template.Must(template.New("gke-deploy").Parse(PromptTemplate))
 
 type deployArgs struct {
 	UserRequest string `json:"user_request" jsonschema:"A natural language request specifying the configuration file to deploy. e.g. 'my-app.yaml to staging'"`
