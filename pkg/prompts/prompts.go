@@ -30,9 +30,9 @@ type installer func(ctx context.Context, s *mcp.Server, c *config.Config) error
 func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 	installers := []installer{
 		cost.Install,
+		deploy.Install,
 		upgraderiskreport.Install,
 		upgradesbestpracticesriskreport.Install,
-		deploy.Install,
 	}
 
 	for _, installer := range installers {
