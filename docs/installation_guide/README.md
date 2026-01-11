@@ -5,6 +5,7 @@ This directory contains detailed instructions on how to install and configure th
 - **[Gemini CLI](../../README.md#add-the-mcp-server-to-your-ai)**
 - **[Cursor](install_cursor.md)**
 - **[Claude Applications](install_claude.md)**
+- **[Visual Studio Code](install_vscode.md)**
 
 ## Other AIs
 

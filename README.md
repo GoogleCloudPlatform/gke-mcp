@@ -44,7 +44,7 @@ For additional help, refer to the troubleshoot section: [gke-mcp: command not fo
 
 ### Add the MCP Server to your AI
 
-For detailed instructions on how to connect the GKE MCP Server to various AI clients, including cursor and claude desktop, please refer to our dedicated [installation guide](docs/installation_guide/).
+For detailed instructions on how to connect the GKE MCP Server to various AI clients, including cursor, Visual Studio Code, and claude desktop, please refer to our dedicated [installation guide](docs/installation_guide/).
 
 ## MCP Tools
 
