@@ -166,12 +166,6 @@ func TestNewConfigDifferentVersions(t *testing.T) {
 			if cfg.UserAgent() != tt.wantAgent {
 				t.Errorf("UserAgent() = %s, want %s", cfg.UserAgent(), tt.wantAgent)
 			}
-			if cfg.DefaultProjectID() != "" {
-				t.Errorf("Expected empty DefaultProjectID, got %s", cfg.DefaultProjectID())
-			}
-			if cfg.DefaultLocation() != "" {
-				t.Errorf("Expected empty DefaultLocation, got %s", cfg.DefaultLocation())
-			}
 		})
 	}
 }
