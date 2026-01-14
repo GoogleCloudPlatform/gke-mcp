@@ -59,7 +59,7 @@ For detailed instructions on how to connect the GKE MCP Server to various AI cli
 
 ## MCP Commands
 
-Commands provide in-context domain specific functionality based on expert knowledge and best practices. 
+Commands provide in-context domain specific functionality based on expert knowledge and best practices.
 
 - `gke-upgrade-risk-report`: GKE control plane upgrade risk report, analyzing the potential risks of upgrading from its current version to the target version. Performs pre-upgrade checks, API deprecations scans, and more.
 - `gke-upgrades-best-practices-risk-report`: GKE control plane upgrade best practices, applied for the specified cluster. Helps making upgrades uneventful.
