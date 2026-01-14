@@ -56,6 +56,8 @@ For detailed instructions on how to connect the GKE MCP Server to various AI cli
 - `list_recommendations`: List recommendations for your GKE clusters.
 - `query_logs`: Query Google Cloud Platform logs using Logging Query Language (LQL).
 - `get_log_schema`: Get the schema for a specific GKE log type.
+- `gke-upgrade-risk-report`: GKE control plane upgrade risk report, analyzing the potential risks of upgrading from its current version to the target version.
+- `gke-upgrades-best-practices-risk-report`: GKE control plane upgrade best practices, applied for the specified cluster.
 
 ## MCP Context
 
