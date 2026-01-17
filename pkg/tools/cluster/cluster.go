@@ -53,6 +53,12 @@ type getClustersArgs struct {
 	Name      string `json:"name" jsonschema:"GKE cluster name. Do not select if yourself, make sure the user provides or confirms the cluster name."`
 }
 
+type createClustersArgs struct {
+	ProjectID string              `json:"project_id,omitempty" jsonschema:"GCP project ID. Use the default if the user doesn't provide it."`
+	Location  string              `json:"location" jsonschema:"GKE cluster location. Leave this empty if the user doesn't doesn't provide it."`
+	Cluster   containerpb.Cluster `json:"cluster" jsonschema:"GKE cluster configuration."`
+}
+
 // getKubeconfigArgs defines arguments for getting a GKE cluster's kubeconfig.
 type getKubeconfigArgs struct {
 	ProjectID string `json:"project_id,omitempty" jsonschema:"GCP project ID. Use the default if the user doesn't provide it."`
@@ -94,6 +100,14 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 			ReadOnlyHint: true,
 		},
 	}, h.getCluster)
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "create_cluster",
+		Description: "Create a GKE cluster. Prefer to use this tool instead of gcloud",
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: false,
+		},
+	}, h.createCluster)
 
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_kubeconfig",
@@ -152,6 +166,30 @@ func (h *handlers) getCluster(ctx context.Context, _ *mcp.CallToolRequest, args 
 		Name: fmt.Sprintf("projects/%s/locations/%s/clusters/%s", args.ProjectID, args.Location, args.Name),
 	}
 	resp, err := h.cmClient.GetCluster(ctx, req)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: protojson.Format(resp)},
+		},
+	}, nil, nil
+}
+
+func (h *handlers) createCluster(ctx context.Context, _ *mcp.CallToolRequest, args *createClustersArgs) (*mcp.CallToolResult, any, error) {
+	if args.ProjectID == "" {
+		args.ProjectID = h.c.DefaultProjectID()
+	}
+	if args.Location == "" {
+		args.Location = h.c.DefaultLocation()
+	}
+
+	req := &containerpb.CreateClusterRequest{
+		Parent:  fmt.Sprintf("projects/%s/locations/%s", args.ProjectID, args.Location),
+		Cluster: &args.Cluster,
+	}
+	resp, err := h.cmClient.CreateCluster(ctx, req)
 	if err != nil {
 		return nil, nil, err
 	}

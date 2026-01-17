@@ -16,6 +16,8 @@ package cluster
 
 import (
 	"testing"
+
+	containerpb "cloud.google.com/go/container/apiv1/containerpb"
 )
 
 func TestListClustersArgs_Fields(t *testing.T) {
@@ -47,6 +49,26 @@ func TestGetClustersArgs_Fields(t *testing.T) {
 	}
 	if args.Name != "my-cluster" {
 		t.Errorf("Name = %s, want my-cluster", args.Name)
+	}
+}
+
+func TestCreateClustersArgs_Fields(t *testing.T) {
+	args := createClustersArgs{
+		ProjectID: "test-project",
+		Location:  "us-central1",
+		Cluster: containerpb.Cluster{
+			Name: "my-cluster",
+		},
+	}
+
+	if args.ProjectID != "test-project" {
+		t.Errorf("ProjectID = %s, want test-project", args.ProjectID)
+	}
+	if args.Location != "us-central1" {
+		t.Errorf("Location = %s, want us-central1", args.Location)
+	}
+	if args.Cluster.Name != "my-cluster" {
+		t.Errorf("Name = %s, want my-cluster", args.Cluster.Name)
 	}
 }
 
