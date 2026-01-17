@@ -41,6 +41,14 @@ run_task "./dev/ci/presubmits/go-build.sh"
 run_task "./dev/ci/presubmits/go-test.sh"
 run_task "./dev/ci/presubmits/go-vet.sh"
 
+# Run golangci-lint if available
+if command -v golangci-lint &> /dev/null; then
+    run_task "./dev/ci/presubmits/golangci-lint.sh"
+else
+    echo "Warning: golangci-lint not found. Install it with:"
+    echo "  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b \$(go env GOPATH)/bin"
+fi
+
 run_task "./dev/tasks/format.sh"
 run_task "./dev/tasks/gomod.sh"
 run_task "./dev/tasks/super-linter.sh"

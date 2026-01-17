@@ -65,6 +65,24 @@ jobs:
         run: |
           ./dev/ci/presubmits/go-vet.sh
 
+  golangci-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: "read"
+      checks: "write"  # For annotations on PRs
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+      - name: "Install golangci-lint"
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+      - name: "Run golangci-lint"
+        run: |
+          ./dev/ci/presubmits/golangci-lint.sh
+
   verify-format:
     runs-on: ubuntu-latest
     timeout-minutes: 60
