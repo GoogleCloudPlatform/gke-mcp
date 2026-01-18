@@ -17,6 +17,7 @@ package monitoring
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
@@ -63,7 +64,11 @@ func (h *handlers) listMRDescriptor(ctx context.Context, _ *mcp.CallToolRequest,
 	if err != nil {
 		return nil, nil, err
 	}
-	defer c.Close()
+	defer func() {
+		if err := c.Close(); err != nil {
+			log.Printf("Failed to close monitoring client: %v\n", err)
+		}
+	}()
 	req := &monitoringpb.ListMonitoredResourceDescriptorsRequest{
 		Name: fmt.Sprintf("projects/%s", args.ProjectID),
 	}

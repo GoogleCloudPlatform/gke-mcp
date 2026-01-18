@@ -61,7 +61,7 @@ func getK8sChangelog(ctx context.Context, req *mcp.CallToolRequest, args *getK8s
 		log.Printf("Failed to get changelog: %v", err)
 		return nil, nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		err := fmt.Errorf("failed to get changelog with status code: %d", resp.StatusCode)

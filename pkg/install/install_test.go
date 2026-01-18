@@ -34,15 +34,15 @@ func testSetup(t *testing.T, mockHome bool) (string, func()) {
 	}
 
 	cleanup := func() {
-		os.RemoveAll(tmpDir)
+		_ = os.RemoveAll(tmpDir) // Best-effort cleanup
 	}
 
 	if mockHome {
 		originalHome := os.Getenv("HOME")
-		os.Setenv("HOME", tmpDir)
+		_ = os.Setenv("HOME", tmpDir) // Test environment setup
 		cleanup = func() {
-			os.RemoveAll(tmpDir)
-			os.Setenv("HOME", originalHome)
+			_ = os.RemoveAll(tmpDir)            // Best-effort cleanup
+			_ = os.Setenv("HOME", originalHome) // Restore environment
 		}
 	}
 
@@ -55,11 +55,11 @@ func mockAppData(t *testing.T, tmpDir string) func() {
 	originalAppData := os.Getenv("APPDATA")
 
 	if runtime.GOOS == "windows" {
-		os.Setenv("APPDATA", tmpDir)
+		_ = os.Setenv("APPDATA", tmpDir) // Test environment setup
 	}
 
 	return func() {
-		os.Setenv("APPDATA", originalAppData)
+		_ = os.Setenv("APPDATA", originalAppData) // Restore environment
 	}
 }
 
@@ -72,14 +72,14 @@ func mockInput(input string) func() {
 
 	// Write the input to the pipe
 	go func() {
-		defer w.Close()
-		w.WriteString(input)
+		defer func() { _ = w.Close() }()
+		_, _ = w.WriteString(input) // Test input
 	}()
 
 	// Return cleanup function
 	return func() {
 		os.Stdin = oldStdin
-		r.Close()
+		_ = r.Close() // Cleanup pipe
 	}
 }
 
@@ -112,11 +112,11 @@ func MockClaudeCommand(t *testing.T) (logFile string, cleanup func()) {
 	}
 
 	originalPath := os.Getenv("PATH")
-	os.Setenv("PATH", tmpDir+string(os.PathListSeparator)+originalPath)
+	_ = os.Setenv("PATH", tmpDir+string(os.PathListSeparator)+originalPath)
 
 	cleanup = func() {
-		os.Setenv("PATH", originalPath)
-		os.RemoveAll(tmpDir)
+		_ = os.Setenv("PATH", originalPath) // Restore environment
+		_ = os.RemoveAll(tmpDir)            // Best-effort cleanup
 	}
 
 	return logFile, cleanup
@@ -278,7 +278,7 @@ func TestGeminiCLIExtension(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	testVersion := "0.1.0-test"
 	testExePath := "/usr/local/bin/gke-mcp"
@@ -336,7 +336,7 @@ func TestGeminiCLIExtensionDeveloperMode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	geminiMdPath := filepath.Join(tmpDir, "pkg", "install", "GEMINI.md")
 	if err := os.MkdirAll(filepath.Dir(geminiMdPath), 0700); err != nil {

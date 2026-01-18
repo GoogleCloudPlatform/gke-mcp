@@ -356,7 +356,7 @@ func (h *handlers) getNodeSosReportWithPod(ctx context.Context, args *getNodeSos
 	defer func() {
 		// Cleanup pod
 		delCmd := exec.Command("kubectl", "delete", "pod", podName, "--wait=false", "--grace-period=0", "--force")
-		delCmd.Run()
+		_ = delCmd.Run() // Best-effort cleanup
 	}()
 
 	// 2. Wait for pod to be ready
@@ -410,16 +410,16 @@ func (h *handlers) getNodeSosReportWithPod(ctx context.Context, args *getNodeSos
 	catCmd.Stderr = &stderr
 
 	if err := catCmd.Run(); err != nil {
-		f.Close()
-		os.Remove(localPath)
+		_ = f.Close()            // Best-effort cleanup
+		_ = os.Remove(localPath) // Best-effort cleanup
 		return nil, nil, fmt.Errorf("failed to copy sos report from pod: %s, %w", stderr.String(), err)
 	}
-	f.Close()
+	_ = f.Close() // Best-effort cleanup
 
 	// 6. Cleanup remote files on host (via pod)
 	cleanupScript := fmt.Sprintf("rm -rf %s", remoteTmpDir)
 	cleanCmd := exec.CommandContext(ctx, "kubectl", "exec", podName, "--", "sh", "-c", cleanupScript)
-	cleanCmd.Run() // Best effort cleanup
+	_ = cleanCmd.Run() // Best-effort cleanup
 
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
@@ -477,7 +477,7 @@ func (h *handlers) getNodeSosReportWithSSH(ctx context.Context, args *getNodeSos
 
 	// 6. Cleanup remote files on host
 	rmCmd := exec.CommandContext(ctx, "gcloud", "compute", "ssh", "--zone", zone, args.Node, "--command", fmt.Sprintf("sudo rm %s", remotePath))
-	rmCmd.Run()
+	_ = rmCmd.Run() // Best-effort cleanup
 
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{

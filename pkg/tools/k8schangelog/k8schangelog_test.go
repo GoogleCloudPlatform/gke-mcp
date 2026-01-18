@@ -36,10 +36,10 @@ func TestGetK8sChangelog(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, "CHANGELOG-1.31.md") {
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprint(w, fakeChangelogContent)
+			_, _ = fmt.Fprint(w, fakeChangelogContent) // Test response
 		} else if strings.HasSuffix(r.URL.Path, "CHANGELOG-1.32.md") {
 			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, "Not Found")
+			_, _ = fmt.Fprint(w, "Not Found") // Test response
 		} else {
 			w.WriteHeader(http.StatusInternalServerError)
 		}

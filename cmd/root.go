@@ -244,7 +244,11 @@ func adcAuthCheck(ctx context.Context, c *config.Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to create cluster manager client: %w", err)
 	}
-	defer cmClient.Close()
+	defer func() {
+		if err := cmClient.Close(); err != nil {
+			log.Printf("Failed to close cluster manager client: %v\n", err)
+		}
+	}()
 
 	_, err = cmClient.GetServerConfig(ctx, &containerpb.GetServerConfigRequest{
 		Name: fmt.Sprintf("projects/%s/locations/%s", projectID, location),

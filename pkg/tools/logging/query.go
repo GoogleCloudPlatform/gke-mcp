@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 	"text/template"
 	"time"
@@ -126,7 +127,11 @@ func (t *queryLogsTool) queryGCPLogs(ctx context.Context, req *LogQueryRequest) 
 	if err != nil {
 		return "", fmt.Errorf("failed to create logging client: %v", err)
 	}
-	defer client.Close()
+	defer func() {
+		if err := client.Close(); err != nil {
+			log.Printf("Failed to close logging client: %v\n", err)
+		}
+	}()
 
 	listLogsReq := buildListLogEntriesRequest(req)
 	// Request one more than the limit to check for truncation.

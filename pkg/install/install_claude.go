@@ -19,6 +19,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -148,7 +149,11 @@ func ClaudeCodeExtension(opts *InstallOptions) error {
 	if err != nil {
 		return fmt.Errorf("could not open or create CLAUDE.md: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Printf("Failed to close CLAUDE.md: %v\n", err)
+		}
+	}()
 
 	if _, err := file.WriteString(claudeLine); err != nil {
 		return fmt.Errorf("could not append to CLAUDE.md: %w", err)
