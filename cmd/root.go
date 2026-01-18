@@ -173,7 +173,7 @@ func startMCPServer(ctx context.Context, opts startOptions) {
 	s.AddResource(resource, func(_ context.Context, _ *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
 		return &mcp.ReadResourceResult{
 			Contents: []*mcp.ResourceContents{
-				&mcp.ResourceContents{
+				{
 					URI:      geminiInstructionsURI,
 					MIMEType: "text/markdown",
 					Text:     string(install.GeminiMarkdown),
