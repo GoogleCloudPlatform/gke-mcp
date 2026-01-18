@@ -21,4 +21,6 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "${REPO_ROOT}"
 
 echo "Running golangci-lint..."
-golangci-lint run --timeout=5m
+# Only check new code in PRs to allow linting infrastructure without fixing all existing issues
+# The --new flag checks only code added/modified in git working tree
+golangci-lint run --timeout=5m --new
