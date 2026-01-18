@@ -76,7 +76,7 @@ func getGkeReleaseNotes(ctx context.Context, req *mcp.CallToolRequest, args *get
 			log.Printf("Failed to get release notes: %v", err)
 			return nil, nil, err
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		out, err = io.ReadAll(resp.Body)
 		if err != nil {
 			log.Printf("Failed to read release notes response body: %v", err)

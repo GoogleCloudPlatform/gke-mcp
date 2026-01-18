@@ -17,6 +17,7 @@ package recommendation
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	recommender "cloud.google.com/go/recommender/apiv1"
@@ -68,7 +69,11 @@ func (h *handlers) listProjectRecommendations(ctx context.Context, _ *mcp.CallTo
 	if err != nil {
 		return nil, nil, err
 	}
-	defer c.Close()
+	defer func() {
+		if err := c.Close(); err != nil {
+			log.Printf("Failed to close recommender client: %v\n", err)
+		}
+	}()
 
 	req := &recommenderpb.ListRecommendationsRequest{
 		Parent: fmt.Sprintf("projects/%s/locations/%s/recommenders/google.container.DiagnosisRecommender", args.ProjectID, args.Location),
