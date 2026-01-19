@@ -35,10 +35,6 @@ Please report security vulnerabilities by emailing:
 
 **[security@google.com](mailto:security@google.com)**
 
-Alternatively, you can use Google's Vulnerability Reward Program (VRP):
-
-**<https://bughunters.google.com/>**
-
 ### What to Expect
 
 - You should receive an acknowledgment of your report within 24-48 hours.
