@@ -36,7 +36,7 @@ gcloud container ai profiles models list
 
 ```bash
 # Replace <MODEL_NAME> with a model from the list above (e.g., 'gemma-2-9b-it')
-gcloud alpha container ai profiles model-and-server-combinations list --model=<MODEL_NAME>
+gcloud container ai profiles list --model=<MODEL_NAME>
 ```
 
 **View benchmarks/profiles (optional):**
