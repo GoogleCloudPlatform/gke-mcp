@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package upgraderiskreport provides prompt templates for upgrade risk reports.
 package upgraderiskreport
 
 import (
@@ -101,6 +102,7 @@ const (
 	targetVersionArgName   = "target_version"
 )
 
+// Install registers the upgrade risk report prompt with the MCP server.
 func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 	s.AddPrompt(&mcp.Prompt{
 		Name:        "gke:upgrade-risk-report",

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package tools registers MCP tools for GKE workflows.
 package tools
 
 import (
@@ -32,6 +33,7 @@ import (
 
 type installer func(ctx context.Context, s *mcp.Server, c *config.Config) error
 
+// Install registers all tools with the MCP server.
 func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 	installers := []installer{
 		cluster.Install,

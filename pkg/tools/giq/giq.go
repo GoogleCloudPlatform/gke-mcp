@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package giq provides tools for GKE Inference Quickstart workflows.
 package giq
 
 import (
@@ -31,6 +32,7 @@ type giqGenerateManifestArgs struct {
 	TargetNTPOTMilliseconds string `json:"target_ntpot_milliseconds,omitempty" jsonschema:"The maximum normalized time per output token (NTPOT) in milliseconds.NTPOT is measured as the request_latency / output_tokens."`
 }
 
+// Install registers GIQ tools with the MCP server.
 func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "giq_generate_manifest",
@@ -44,7 +46,7 @@ func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 	return nil
 }
 
-func giqGenerateManifest(ctx context.Context, req *mcp.CallToolRequest, args *giqGenerateManifestArgs) (*mcp.CallToolResult, any, error) {
+func giqGenerateManifest(_ context.Context, _ *mcp.CallToolRequest, args *giqGenerateManifestArgs) (*mcp.CallToolResult, any, error) {
 	if args.Model == "" {
 		return nil, nil, fmt.Errorf("model argument cannot be empty")
 	}

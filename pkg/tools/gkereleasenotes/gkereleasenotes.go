@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package gkereleasenotes provides tools for fetching GKE release notes.
 package gkereleasenotes
 
 import (
@@ -43,6 +44,7 @@ type getGkeReleaseNotesArgs struct {
 	TargetVersion string `json:"TargetVersion" jsonschema:"A target GKE version an upgrade happens from. For example, '1.34.3-gke.240500'."`
 }
 
+// Install registers the GKE release notes tool with the MCP server.
 func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_gke_release_notes",
@@ -56,7 +58,7 @@ func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 	return nil
 }
 
-func getGkeReleaseNotes(ctx context.Context, req *mcp.CallToolRequest, args *getGkeReleaseNotesArgs) (*mcp.CallToolResult, any, error) {
+func getGkeReleaseNotes(_ context.Context, _ *mcp.CallToolRequest, args *getGkeReleaseNotesArgs) (*mcp.CallToolResult, any, error) {
 	releaseNotesFilePath := fmt.Sprintf("release-notes-%s.html", time.Now().Format("2006-01-02"))
 	releaseNotesFilePath = filepath.Clean(releaseNotesFilePath)
 
@@ -72,8 +74,8 @@ func getGkeReleaseNotes(ctx context.Context, req *mcp.CallToolRequest, args *get
 		}
 	} else {
 		log.Printf("Fetching release notes from web")
-		const releaseNotesPageUrl = "https://cloud.google.com/kubernetes-engine/docs/release-notes"
-		resp, err := http.Get(releaseNotesPageUrl)
+		const releaseNotesPageURL = "https://cloud.google.com/kubernetes-engine/docs/release-notes"
+		resp, err := http.Get(releaseNotesPageURL)
 		if err != nil {
 			log.Printf("Failed to get release notes: %v", err)
 			return nil, nil, err
@@ -99,7 +101,7 @@ func getGkeReleaseNotes(ctx context.Context, req *mcp.CallToolRequest, args *get
 	var fullReleaseNotesContent strings.Builder
 	doc.Find("[data-text$=\"Version updates\"]").Parent().Parent().Remove()
 	doc.Find("[data-text$=\"Security updates\"]").Parent().Parent().Remove()
-	doc.Find(".releases").Each(func(i int, s *goquery.Selection) {
+	doc.Find(".releases").Each(func(_ int, s *goquery.Selection) {
 		fullReleaseNotesContent.WriteString(s.Text())
 	})
 	fullReleaseNotesContentText := fullReleaseNotesContent.String()
@@ -217,38 +219,38 @@ func extractReleaseNotesRelevantForUpgrade(fullReleaseNotes string, sourceVersio
 // - 0 if b == a
 // - -1 if b < a
 func compareVersions(a, b string) (int, error) {
-	a_major, a_minor, a_patch, a_gke, err := parseGkeVersion(a)
+	aMajor, aMinor, aPatch, aGKE, err := parseGkeVersion(a)
 	if err != nil {
 		log.Printf("Failed to parse version A '%s': %v", a, err)
 		return 0, err
 	}
-	b_major, b_minor, b_patch, b_gke, err := parseGkeVersion(b)
+	bMajor, bMinor, bPatch, bGKE, err := parseGkeVersion(b)
 	if err != nil {
 		log.Printf("Failed to parse version B '%s': %v", b, err)
 		return 0, err
 	}
 
-	if b_major > a_major {
+	if bMajor > aMajor {
 		return 1, nil
-	} else if b_major < a_major {
+	} else if bMajor < aMajor {
 		return -1, nil
 	}
 
-	if b_minor > a_minor {
+	if bMinor > aMinor {
 		return 1, nil
-	} else if b_minor < a_minor {
+	} else if bMinor < aMinor {
 		return -1, nil
 	}
 
-	if b_patch > a_patch {
+	if bPatch > aPatch {
 		return 1, nil
-	} else if b_patch < a_patch {
+	} else if bPatch < aPatch {
 		return -1, nil
 	}
 
-	if b_gke > a_gke {
+	if bGKE > aGKE {
 		return 1, nil
-	} else if b_gke < a_gke {
+	} else if bGKE < aGKE {
 		return -1, nil
 	}
 

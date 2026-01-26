@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package upgradesbestpracticesriskreport provides prompt templates for upgrade best-practices risk reports.
 package upgradesbestpracticesriskreport
 
 import (
@@ -95,6 +96,7 @@ const (
 	clusterLocationArgName = "cluster_location"
 )
 
+// Install registers the upgrade best-practices prompt with the MCP server.
 func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 	s.AddPrompt(&mcp.Prompt{
 		Name:        "gke:upgrades-best-practices-risk-report",

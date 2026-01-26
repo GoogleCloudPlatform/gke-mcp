@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package config loads configuration derived from local gcloud defaults.
 package config
 
 import (
@@ -20,24 +21,29 @@ import (
 	"strings"
 )
 
+// Config contains runtime configuration derived from the environment.
 type Config struct {
 	userAgent        string
 	defaultProjectID string
 	defaultLocation  string
 }
 
+// UserAgent returns the user agent string for outbound API calls.
 func (c *Config) UserAgent() string {
 	return c.userAgent
 }
 
+// DefaultProjectID returns the default GCP project ID, if set.
 func (c *Config) DefaultProjectID() string {
 	return c.defaultProjectID
 }
 
+// DefaultLocation returns the default GCP region or zone, if set.
 func (c *Config) DefaultLocation() string {
 	return c.defaultLocation
 }
 
+// New constructs a Config populated from gcloud and build version.
 func New(version string) *Config {
 	return &Config{
 		userAgent:        "gke-mcp/" + version,

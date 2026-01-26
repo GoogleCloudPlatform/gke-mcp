@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package cost provides prompt templates for GKE cost analysis.
 package cost
 
 import (
@@ -45,6 +46,7 @@ Always be helpful, specific, and actionable in your response.
 
 var gkeCostTmpl = template.Must(template.New("gke-cost").Parse(gkeCostPromptTemplate))
 
+// Install registers the GKE cost prompt with the MCP server.
 func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 	s.AddPrompt(&mcp.Prompt{
 		Name:        "gke:cost",

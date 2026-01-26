@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package deploy provides MCP tools for deployment guidance.
 package deploy
 
 import (
@@ -25,6 +26,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
+// PromptTemplate is the base prompt template for deployment guidance.
 const PromptTemplate = `
 You are an expert GKE (Google Kubernetes Engine) deployment assistant. Your primary goal is to help users deploy their applications to GKE by guiding them through a step-by-step process that is tailored to their specific situation. Your interaction should be conversational, clear, and make the deployment process feel effortless.
 
@@ -66,7 +68,8 @@ type deployArgs struct {
 	UserRequest string `json:"user_request" jsonschema:"A natural language request specifying the configuration file to deploy. e.g. 'my-app.yaml to staging'"`
 }
 
-func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
+// Install registers deployment tools with the MCP server.
+func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "gke_deploy",
 		Description: "Deploys a workload to a GKE cluster using a configuration file.",
@@ -75,7 +78,7 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 	return nil
 }
 
-func gkeDeployHandler(ctx context.Context, request *mcp.CallToolRequest, args *deployArgs) (*mcp.CallToolResult, any, error) {
+func gkeDeployHandler(_ context.Context, _ *mcp.CallToolRequest, args *deployArgs) (*mcp.CallToolResult, any, error) {
 	if strings.TrimSpace(args.UserRequest) == "" {
 		return nil, nil, fmt.Errorf("argument 'user_request' cannot be empty")
 	}

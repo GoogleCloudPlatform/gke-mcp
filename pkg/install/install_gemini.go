@@ -11,10 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Package install provides helpers for installing the MCP server into clients.
 package install
 
 import (
-	_ "embed"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -23,7 +24,8 @@ import (
 	"strings"
 )
 
-func GeminiCLIExtension(opts *InstallOptions) error {
+// GeminiCLIExtension installs the gke-mcp server as a Gemini CLI extension.
+func GeminiCLIExtension(opts *Options) error {
 
 	contextFilename := "GEMINI.md"
 	// In developer mode, we use the GEMINI.md file directly from the repo.

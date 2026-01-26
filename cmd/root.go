@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package cmd wires up the CLI entrypoints for the GKE MCP server.
 package cmd
 
 import (
@@ -131,7 +132,7 @@ type startOptions struct {
 	allowedOrigins []string
 }
 
-func runRootCmd(cmd *cobra.Command, args []string) {
+func runRootCmd(cmd *cobra.Command, _ []string) {
 	opts := startOptions{
 		serverMode:     serverMode,
 		serverHost:     serverHost,
@@ -200,7 +201,7 @@ func startMCPServer(ctx context.Context, opts startOptions) {
 		tr := &mcp.LoggingTransport{Transport: &mcp.StdioTransport{}, Writer: log.Writer()}
 		err = s.Run(ctx, tr)
 	case "http":
-		mcpHandler := mcp.NewStreamableHTTPHandler(func(r *http.Request) *mcp.Server {
+		mcpHandler := mcp.NewStreamableHTTPHandler(func(_ *http.Request) *mcp.Server {
 			return s
 		}, nil)
 
@@ -265,7 +266,7 @@ func adcAuthCheck(ctx context.Context, c *config.Config) error {
 	return err
 }
 
-func installOptions() (*install.InstallOptions, error) {
+func installOptions() (*install.Options, error) {
 	return install.NewInstallOptions(
 		version,
 		installProjectOnly,
@@ -273,7 +274,7 @@ func installOptions() (*install.InstallOptions, error) {
 	)
 }
 
-func runInstallGeminiCLICmd(cmd *cobra.Command, args []string) {
+func runInstallGeminiCLICmd(_ *cobra.Command, _ []string) {
 	opts, err := installOptions()
 	if err != nil {
 		log.Fatalf("Failed to get install options: %v", err)
@@ -285,7 +286,7 @@ func runInstallGeminiCLICmd(cmd *cobra.Command, args []string) {
 	fmt.Println("Successfully installed GKE MCP server as a gemini-cli extension.")
 }
 
-func runInstallCursorCmd(cmd *cobra.Command, args []string) {
+func runInstallCursorCmd(_ *cobra.Command, _ []string) {
 	opts, err := installOptions()
 	if err != nil {
 		log.Fatalf("Failed to get install options: %v", err)
@@ -297,7 +298,7 @@ func runInstallCursorCmd(cmd *cobra.Command, args []string) {
 	fmt.Println("Successfully installed GKE MCP server as a cursor MCP server.")
 }
 
-func runInstallClaudeDesktopCmd(cmd *cobra.Command, args []string) {
+func runInstallClaudeDesktopCmd(_ *cobra.Command, _ []string) {
 	opts, err := installOptions()
 	if err != nil {
 		log.Fatalf("Failed to get install options: %v", err)
@@ -309,7 +310,7 @@ func runInstallClaudeDesktopCmd(cmd *cobra.Command, args []string) {
 	fmt.Println("Successfully installed GKE MCP server in Claude Desktop configuration.")
 }
 
-func runInstallClaudeCodeCmd(cmd *cobra.Command, args []string) {
+func runInstallClaudeCodeCmd(_ *cobra.Command, _ []string) {
 	opts, err := installOptions()
 	if err != nil {
 		log.Fatalf("Failed to get install options: %v", err)

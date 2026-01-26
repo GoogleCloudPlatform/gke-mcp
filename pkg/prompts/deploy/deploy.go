@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package deploy provides prompt templates for GKE deployment guidance.
 package deploy
 
 import (
@@ -28,7 +29,8 @@ import (
 
 var gkeDeployTmpl = template.Must(template.New("gke-deploy").Parse(tooldeploy.PromptTemplate))
 
-func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
+// Install registers the GKE deploy prompt with the MCP server.
+func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 	s.AddPrompt(&mcp.Prompt{
 		Name:        "gke:deploy",
 		Description: "Deploys a workload to a GKE cluster using a configuration file.",
@@ -44,7 +46,7 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 	return nil
 }
 
-func gkeDeployHandler(ctx context.Context, request *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
+func gkeDeployHandler(_ context.Context, request *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
 	userRequest := request.Params.Arguments["user_request"]
 	if strings.TrimSpace(userRequest) == "" {
 		return nil, fmt.Errorf("argument 'user_request' cannot be empty")

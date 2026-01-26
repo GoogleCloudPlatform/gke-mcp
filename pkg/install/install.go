@@ -11,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Package install provides helpers for installing the MCP server into clients.
 package install
 
 import (
@@ -19,18 +21,20 @@ import (
 	"os"
 )
 
-type InstallOptions struct {
+// Options captures settings for client installation.
+type Options struct {
 	version       string
 	installDir    string
 	exePath       string
 	developerMode bool
 }
 
+// NewInstallOptions builds installation options based on flags and environment.
 func NewInstallOptions(
 	version string,
 	projectOnly bool,
 	developerMode bool,
-) (*InstallOptions, error) {
+) (*Options, error) {
 
 	installDir := ""
 	var err error
@@ -51,7 +55,7 @@ func NewInstallOptions(
 		return nil, fmt.Errorf("failed to get executable path: %w", err)
 	}
 
-	return &InstallOptions{
+	return &Options{
 		version:       version,
 		installDir:    installDir,
 		exePath:       exePath,
@@ -59,5 +63,6 @@ func NewInstallOptions(
 	}, nil
 }
 
+// GeminiMarkdown contains the embedded Gemini CLI extension manifest.
 //go:embed GEMINI.md
 var GeminiMarkdown []byte

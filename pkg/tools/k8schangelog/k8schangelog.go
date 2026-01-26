@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package k8schangelog provides tools for fetching Kubernetes changelogs.
 package k8schangelog
 
 import (
@@ -29,13 +30,14 @@ import (
 
 var (
 	kubernetesMinorVersionRegexp = regexp.MustCompile(`^\d+\.\d+$`)
-	changelogHostUrl             = "https://raw.githubusercontent.com"
+	changelogHostURL             = "https://raw.githubusercontent.com"
 )
 
 type getK8sChangelogArgs struct {
 	KubernetesMinorVersion string `json:"KubernetesMinorVersion" jsonschema:"The kubernetes minor version to get changelog for. For example, '1.33'."`
 }
 
+// Install registers Kubernetes changelog tools with the MCP server.
 func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_k8s_changelog",
@@ -49,15 +51,15 @@ func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 	return nil
 }
 
-func getK8sChangelog(ctx context.Context, req *mcp.CallToolRequest, args *getK8sChangelogArgs) (*mcp.CallToolResult, any, error) {
+func getK8sChangelog(_ context.Context, _ *mcp.CallToolRequest, args *getK8sChangelogArgs) (*mcp.CallToolResult, any, error) {
 	version := strings.TrimSpace(args.KubernetesMinorVersion)
 	if !kubernetesMinorVersionRegexp.MatchString(version) {
 		return nil, nil, fmt.Errorf("invalid kubernetes minor version: %s", version)
 	}
 
-	changelogUrl := fmt.Sprintf("%s/kubernetes/kubernetes/refs/heads/master/CHANGELOG/CHANGELOG-%s.md", changelogHostUrl, version)
+	changelogURL := fmt.Sprintf("%s/kubernetes/kubernetes/refs/heads/master/CHANGELOG/CHANGELOG-%s.md", changelogHostURL, version)
 	// #nosec G107
-	resp, err := http.Get(changelogUrl)
+	resp, err := http.Get(changelogURL)
 	if err != nil {
 		log.Printf("Failed to get changelog: %v", err)
 		return nil, nil, err

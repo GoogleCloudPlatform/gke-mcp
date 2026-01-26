@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package cluster provides MCP tools for managing GKE clusters.
 package cluster
 
 import (
@@ -73,6 +74,7 @@ type getNodeSosReportArgs struct {
 	TimeoutSeconds int    `json:"timeout,omitempty" jsonschema:"Timeout in seconds for the report collection (applies to both pod and ssh methods). Defaults to 180 (3 minutes)."`
 }
 
+// Install registers cluster-related tools with the MCP server.
 func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 
 	cmClient, err := container.NewClusterManagerClient(ctx, option.WithUserAgent(c.UserAgent()))

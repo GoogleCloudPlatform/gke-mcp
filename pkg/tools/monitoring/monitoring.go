@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package monitoring provides tools for GKE-related monitoring data.
 package monitoring
 
 import (
@@ -37,6 +38,7 @@ type listMonitoredResourceDescriptorsArgs struct {
 	ProjectID string `json:"project_id,omitempty" jsonschema:"GCP project ID. Use the default if the user doesn't provide it."`
 }
 
+// Install registers monitoring tools with the MCP server.
 func Install(_ context.Context, s *mcp.Server, c *config.Config) error {
 	h := &handlers{
 		c: c,
