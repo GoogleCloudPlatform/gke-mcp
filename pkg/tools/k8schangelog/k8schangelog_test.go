@@ -27,11 +27,11 @@ import (
 
 func TestGetK8sChangelog(t *testing.T) {
 	expectedProcessedContentObject := mcp.TextContent{Text: expectedProcessedContent}
-	expectedProcessedContentObjectJson, err := expectedProcessedContentObject.MarshalJSON()
+	expectedProcessedContentObjectJSON, err := expectedProcessedContentObject.MarshalJSON()
 	if err != nil {
 		t.Errorf("expectedProcessedContentObject marshaling failed: %v", err)
 	}
-	expectedProcessedContentObjectJsonString := string(expectedProcessedContentObjectJson)
+	expectedProcessedContentObjectJSONString := string(expectedProcessedContentObjectJSON)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, "CHANGELOG-1.31.md") {
@@ -47,9 +47,9 @@ func TestGetK8sChangelog(t *testing.T) {
 	defer server.Close()
 
 	// Temporarily replace the changelog host URL to point to the test server.
-	originalChangelogHostUrl := changelogHostUrl
-	changelogHostUrl = server.URL
-	defer func() { changelogHostUrl = originalChangelogHostUrl }()
+	originalChangelogHostURL := changelogHostURL
+	changelogHostURL = server.URL
+	defer func() { changelogHostURL = originalChangelogHostURL }()
 
 	testCases := []struct {
 		name          string
@@ -101,13 +101,13 @@ func TestGetK8sChangelog(t *testing.T) {
 			if len(result.Content) != 1 {
 				t.Errorf("getK8sChangelog() returned %d content objects, want: 1", len(result.Content))
 			}
-			contentObjectJson, err := result.Content[0].MarshalJSON()
+			contentObjectJSON, err := result.Content[0].MarshalJSON()
 			if err != nil {
 				t.Errorf("content object marshaling failed: %v", err)
 			}
-			contentObjectJsonString := string(contentObjectJson)
-			if contentObjectJsonString != expectedProcessedContentObjectJsonString {
-				t.Errorf("getK8sChangelog() returned '%s'\n\n\nwant:\n'%s'", contentObjectJsonString, expectedProcessedContentObjectJsonString)
+			contentObjectJSONString := string(contentObjectJSON)
+			if contentObjectJSONString != expectedProcessedContentObjectJSONString {
+				t.Errorf("getK8sChangelog() returned '%s'\n\n\nwant:\n'%s'", contentObjectJSONString, expectedProcessedContentObjectJSONString)
 			}
 		})
 	}

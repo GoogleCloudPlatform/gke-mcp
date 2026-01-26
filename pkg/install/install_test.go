@@ -51,7 +51,7 @@ func testSetup(t *testing.T, mockHome bool) (string, func()) {
 
 // mockAppData mocks the APPDATA environment variables to a temporary directory
 // for the duration of a test. It returns a cleanup function to restore the original values.
-func mockAppData(t *testing.T, tmpDir string) func() {
+func mockAppData(_ *testing.T, tmpDir string) func() {
 	originalAppData := os.Getenv("APPDATA")
 
 	if runtime.GOOS == "windows" {
@@ -162,7 +162,7 @@ func verifyCursorInstallation(t *testing.T, baseDir string, projectOnly bool) {
 }
 
 // verifyClaudeCodeInstallation checks that Claude Code installation created the expected files
-func verifyClaudeCodeInstallation(t *testing.T, installDir, testExePath string) {
+func verifyClaudeCodeInstallation(t *testing.T, installDir string, _ string) {
 	claudeMDPath := filepath.Join(installDir, "CLAUDE.md")
 	usageGuidePath := filepath.Join(installDir, "GKE_MCP_USAGE_GUIDE.md")
 
@@ -289,7 +289,7 @@ func TestGeminiCLIExtension(t *testing.T) {
 
 	testVersion := "0.1.0-test"
 	testExePath := "/usr/local/bin/gke-mcp"
-	opts := &InstallOptions{
+	opts := &Options{
 		version:       testVersion,
 		installDir:    tmpDir,
 		exePath:       testExePath,
@@ -356,7 +356,7 @@ func TestGeminiCLIExtensionDeveloperMode(t *testing.T) {
 
 	testVersion := "0.1.0-test"
 	testExePath := filepath.Join(tmpDir, "gke-mcp")
-	opts := &InstallOptions{
+	opts := &Options{
 		version:       testVersion,
 		installDir:    tmpDir,
 		exePath:       testExePath,
@@ -402,7 +402,7 @@ func TestCursorMCPExtensionGlobal(t *testing.T) {
 	defer cleanup()
 
 	testExePath := "/usr/local/bin/gke-mcp"
-	opts := &InstallOptions{
+	opts := &Options{
 		installDir: tmpDir,
 		exePath:    testExePath,
 	}
@@ -420,7 +420,7 @@ func TestCursorMCPExtensionProjectOnly(t *testing.T) {
 	defer cleanup()
 
 	testExePath := "/usr/local/bin/gke-mcp"
-	opts := &InstallOptions{
+	opts := &Options{
 		installDir: tmpDir,
 		exePath:    testExePath,
 	}
@@ -453,7 +453,7 @@ func TestCursorMCPExtensionWithExistingConfig(t *testing.T) {
 	// Install gke-mcp
 	testExePath := "/usr/local/bin/gke-mcp"
 
-	opts := &InstallOptions{
+	opts := &Options{
 		installDir: tmpDir,
 		exePath:    testExePath,
 	}
@@ -519,7 +519,7 @@ func TestCursorMCPExtensionWithMalformedConfig(t *testing.T) {
 
 	// Install gke-mcp - this should handle the malformed config gracefully
 	testExePath := "/usr/local/bin/gke-mcp"
-	opts := &InstallOptions{
+	opts := &Options{
 		installDir: tmpDir,
 		exePath:    testExePath,
 	}
@@ -618,7 +618,7 @@ func TestClaudeDesktopExtension(t *testing.T) {
 	cleanupEnv := mockAppData(t, tmpDir)
 	defer cleanupEnv()
 
-	opts := &InstallOptions{
+	opts := &Options{
 		installDir: tmpDir,
 		exePath:    testExePath,
 	}
@@ -661,7 +661,7 @@ func TestClaudeDesktopExtensionWithExistingConfig(t *testing.T) {
 
 	// Install gke-mcp
 	testExePath := "/usr/local/bin/gke-mcp"
-	opts := &InstallOptions{
+	opts := &Options{
 		installDir: tmpDir,
 		exePath:    testExePath,
 	}
@@ -729,7 +729,7 @@ func TestClaudeDesktopExtensionWithMalformedConfig(t *testing.T) {
 	// Install gke-mcp - this should handle the malformed config gracefully
 	testExePath := "/usr/local/bin/gke-mcp"
 
-	opts := &InstallOptions{
+	opts := &Options{
 		installDir: tmpDir,
 		exePath:    testExePath,
 	}
@@ -767,7 +767,7 @@ func TestClaudeCodeExtension(t *testing.T) {
 	cleanupInput := mockInput("yes\n")
 	defer cleanupInput()
 
-	opts := &InstallOptions{
+	opts := &Options{
 		installDir: tmpDir,
 		exePath:    testExePath,
 	}
@@ -803,7 +803,7 @@ func TestClaudeCodeExtensionWithExistingClaude(t *testing.T) {
 	cleanupInput := mockInput("yes\n")
 	defer cleanupInput()
 
-	opts := &InstallOptions{
+	opts := &Options{
 		installDir: tmpDir,
 		exePath:    testExePath,
 	}
@@ -841,7 +841,7 @@ func TestClaudeCodeExtensionUserDeclines(t *testing.T) {
 	cleanupInput := mockInput("no\n")
 	defer cleanupInput()
 
-	opts := &InstallOptions{
+	opts := &Options{
 		installDir: tmpDir,
 		exePath:    testExePath,
 	}

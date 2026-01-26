@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package clustertoolkit provides tools for downloading Cluster Toolkit.
 package clustertoolkit
 
 import (
@@ -30,6 +31,7 @@ type clusterToolkitDownloadArgs struct {
 	DownloadDirectory string `json:"download_directory" jsonschema:"Download directory for the git repo. By default use the absolute path to the current working directory."`
 }
 
+// Install registers Cluster Toolkit tools with the MCP server.
 func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "cluster_toolkit_download",
@@ -39,7 +41,7 @@ func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 	return nil
 }
 
-func clusterToolkitDownload(ctx context.Context, _ *mcp.CallToolRequest, args *clusterToolkitDownloadArgs) (*mcp.CallToolResult, any, error) {
+func clusterToolkitDownload(_ context.Context, _ *mcp.CallToolRequest, args *clusterToolkitDownloadArgs) (*mcp.CallToolResult, any, error) {
 	if args.DownloadDirectory == "" {
 		return nil, nil, fmt.Errorf("download_directory argument cannot be empty")
 	}

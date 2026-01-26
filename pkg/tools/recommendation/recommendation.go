@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package recommendation provides tools for GKE recommendations.
 package recommendation
 
 import (
@@ -38,6 +39,7 @@ type listRecommendationsArgs struct {
 	Location  string `json:"location" jsonschema:"GKE cluster location. Leave this empty if the user doesn't doesn't provide it."`
 }
 
+// Install registers recommendation tools with the MCP server.
 func Install(_ context.Context, s *mcp.Server, c *config.Config) error {
 
 	h := &handlers{

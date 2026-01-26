@@ -26,6 +26,7 @@ import (
 //go:embed schemas/*.md
 var schemas embed.FS
 
+// GetLogSchemaRequest defines the requested log type schema.
 type GetLogSchemaRequest struct {
 	LogType string `json:"log_type" jsonschema:"The type of log to get schema for. Supported values are: ['k8s_audit_logs', 'k8s_application_logs', 'k8s_event_logs']."`
 }
@@ -59,7 +60,6 @@ func getLogSchema(_ context.Context, _ *mcp.CallToolRequest, req *GetLogSchemaRe
 				&mcp.TextContent{Text: string(content)},
 			},
 		}, nil, nil
-	} else {
-		return nil, nil, fmt.Errorf("unsupported log_type: %s", req.LogType)
 	}
+	return nil, nil, fmt.Errorf("unsupported log_type: %s", req.LogType)
 }

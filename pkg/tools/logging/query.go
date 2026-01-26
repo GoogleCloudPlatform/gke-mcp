@@ -33,6 +33,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
+// LogQueryRequest defines parameters for querying GCP logs.
 type LogQueryRequest struct {
 	Query     string    `json:"query" jsonschema:"LQL query string to filter and retrieve log entries. Don't specify time ranges in this filter. Use 'time_range' instead."`
 	ProjectID string    `json:"project_id" jsonschema:"GCP project ID to query logs from. Required."`
@@ -42,6 +43,7 @@ type LogQueryRequest struct {
 	Format    string    `json:"format,omitempty" jsonschema:"Go template string to format each log entry. If empty, the full JSON representation is returned. Note that empty fields are not included in the response. Example: '{{.timestamp}} [{{.severity}}] {{.textPayload}}'. It's strongly recommended to use a template to minimize the size of the response and only include the fields you need. Use the get_schema tool before this tool to get information about supported log types and their schemas."`
 }
 
+// TimeRange captures an optional start/end window for log queries.
 type TimeRange struct {
 	StartTime time.Time `json:"start_time" jsonschema:"Start time for log query (RFC3339 format)"`
 	EndTime   time.Time `json:"end_time" jsonschema:"End time for log query (RFC3339 format)"`

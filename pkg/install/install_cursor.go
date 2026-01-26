@@ -11,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Package install provides helpers for installing the MCP server into clients.
 package install
 
 import (
@@ -35,7 +37,7 @@ This rule provides context for using the gke-mcp tool within Cursor.
 `
 
 // CursorMCPExtension installs the gke-mcp server as a Cursor MCP extension
-func CursorMCPExtension(opts *InstallOptions) error {
+func CursorMCPExtension(opts *Options) error {
 	mcpDir := filepath.Join(opts.installDir, ".cursor")
 
 	if err := os.MkdirAll(mcpDir, 0750); err != nil {

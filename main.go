@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package main provides the gke-mcp CLI entrypoint.
 package main
 
 import "github.com/GoogleCloudPlatform/gke-mcp/cmd"

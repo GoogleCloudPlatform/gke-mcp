@@ -28,7 +28,7 @@ import (
 )
 
 // ClaudeDesktopExtension installs the GKE MCP Server into Claude Desktop settings
-func ClaudeDesktopExtension(opts *InstallOptions) error {
+func ClaudeDesktopExtension(opts *Options) error {
 	configPath, err := getClaudeDesktopConfigPath()
 	if err != nil {
 		return fmt.Errorf("could not determine Claude Desktop config path: %w", err)
@@ -111,7 +111,7 @@ func getClaudeDesktopConfigPath() (string, error) {
 }
 
 // ClaudeCodeExtension installs the GKE MCP Server for Claude Code CLI
-func ClaudeCodeExtension(opts *InstallOptions) error {
+func ClaudeCodeExtension(opts *Options) error {
 	installDir := opts.installDir
 	claudeMDPath := filepath.Join(installDir, "CLAUDE.md")
 

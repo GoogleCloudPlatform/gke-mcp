@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package prompts registers prompt handlers for the MCP server.
 package prompts
 
 import (
@@ -27,6 +28,7 @@ import (
 
 type installer func(ctx context.Context, s *mcp.Server, c *config.Config) error
 
+// Install registers all prompt handlers with the MCP server.
 func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 	installers := []installer{
 		cost.Install,
