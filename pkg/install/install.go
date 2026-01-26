@@ -64,5 +64,6 @@ func NewInstallOptions(
 }
 
 // GeminiMarkdown contains the embedded Gemini CLI extension manifest.
+//
 //go:embed GEMINI.md
 var GeminiMarkdown []byte
