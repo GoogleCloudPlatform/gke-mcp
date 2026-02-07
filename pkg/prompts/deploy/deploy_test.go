@@ -122,8 +122,8 @@ func TestGkeDeployHandler_PromptDescription(t *testing.T) {
 		t.Fatalf("gkeDeployHandler() error = %v", err)
 	}
 
-	if result.Description != "GKE Deployment System Prompt" {
-		t.Errorf("Expected description 'GKE Deployment System Prompt', got %s", result.Description)
+	if result.Description != "GKE Deploy Prompt" {
+		t.Errorf("Expected description 'GKE Deploy Prompt', got %s", result.Description)
 	}
 }
 
