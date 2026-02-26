@@ -23,6 +23,17 @@ on:
 permissions: read-all
 
 jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: "read"
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Run dev/ci/presubmits/docker-build.sh"
+        run: |
+          ./dev/ci/presubmits/docker-build.sh
+
   go-build:
     runs-on: ubuntu-latest
     timeout-minutes: 60

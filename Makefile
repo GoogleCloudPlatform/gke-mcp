@@ -8,6 +8,7 @@
 
 # Variables
 BINARY_NAME := gke-mcp
+DOCKER_IMAGE := $(BINARY_NAME)
 
 help: ## Display available commands
 	@echo "GKE MCP Server - Available Commands"
@@ -46,3 +47,12 @@ presubmit: ## Run all presubmit checks (build, test, vet, format)
 update-version: ## Update version. Usage: make update-version [BUMP_TYPE=major|minor|patch]
 	@echo "Updating version..."
 	@./dev/tasks/update_version.sh $(BUMP_TYPE)
+
+docker-build: ## Build the docker image
+	@echo "Building docker image $(DOCKER_IMAGE)..."
+	docker build -t $(DOCKER_IMAGE) .
+	@echo "✓ Built docker image $(DOCKER_IMAGE)"
+
+docker-run: docker-build ## Build and run the docker image
+	@echo "Running docker image $(DOCKER_IMAGE)..."
+	docker run -it --rm -p 8080:8080 $(DOCKER_IMAGE) --server-mode http --server-host 0.0.0.0

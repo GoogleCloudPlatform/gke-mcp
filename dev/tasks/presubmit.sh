@@ -40,6 +40,7 @@ cd "${REPO_ROOT}"
 run_task "./dev/ci/presubmits/go-build.sh"
 run_task "./dev/ci/presubmits/go-test.sh"
 run_task "./dev/ci/presubmits/go-vet.sh"
+run_task "./dev/ci/presubmits/docker-build.sh"
 
 # Run golangci-lint if available
 if command -v golangci-lint &> /dev/null; then
