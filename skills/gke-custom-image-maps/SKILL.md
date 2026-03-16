@@ -35,4 +35,4 @@ If a user doesn't know their exact configuration, use the following **Context Cl
 
 ## Example Output
 
-"Based on your setup (GKE 1.34.1, COS, and using the new H100 GPUs), I've inferred you need the **X86_64** image with **Accelerators** enabled. The golden base image is: `gke-1341-gke2909000-cos-125-19216-0-115-c-pre`"
+"Based on your setup (GKE 1.34.1-gke.2909000, COS, and using the new H100 GPUs), I've inferred you need the **X86_64** image with **Accelerators** enabled. The golden base image is: `gke-1341-gke2909000-cos-125-19216-0-115-c-pre`"
