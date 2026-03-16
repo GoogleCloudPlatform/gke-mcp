@@ -27,10 +27,10 @@ If a user doesn't know their exact configuration, use the following **Context Cl
 2. **Determine Minor Version**: Extract the major/minor version (e.g., `1.34`).
 3. **Fetch Data**: `curl` the mapping: `https://www.gstatic.com/gke-image-maps/base-images/node-config-to-base-images-<MINOR_VERSION>.json`
 4. **Filter Logic**:
-    - Match `version` exactly.
-    - Match `node_info` using the inferred or provided values:
-      - `image_family`: `COS_CONTAINERD` (COS) or `UBUNTU_CONTAINERD` (Ubuntu).
-      - Other fields match exactly.
+   - Match `version` exactly.
+   - Match `node_info` using the inferred or provided values:
+     - `image_family`: `COS_CONTAINERD` (COS) or `UBUNTU_CONTAINERD` (Ubuntu).
+     - Other fields match exactly.
 5. **Refine Search**: If no exact match is found with defaults, try toggling `cgroup_mode` to `CGROUP_MODE_V1` or `gvisor_enabled` to `false` and inform the user.
 
 ## Example Output
