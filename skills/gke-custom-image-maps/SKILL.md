@@ -23,15 +23,15 @@ If a user doesn't know their exact configuration, use the following **Context Cl
 
 ## Discovery Workflow
 
-1.  **Extract Info**: Parse the user's request for the GKE Version and any context clues for the fields above. Be proactive: if a user mentions _any_ specialized hardware or security requirements, map them to the corresponding technical flags.
-2.  **Determine Minor Version**: Extract the major/minor version (e.g., `1.34`).
-3.  **Fetch Data**: `curl` the mapping: `https://www.gstatic.com/gke-image-maps/base-images/node-config-to-base-images-<MINOR_VERSION>.json`
-4.  **Filter Logic**:
+1. **Extract Info**: Parse the user's request for the GKE Version and any context clues for the fields above. Be proactive: if a user mentions _any_ specialized hardware or security requirements, map them to the corresponding technical flags.
+2. **Determine Minor Version**: Extract the major/minor version (e.g., `1.34`).
+3. **Fetch Data**: `curl` the mapping: `https://www.gstatic.com/gke-image-maps/base-images/node-config-to-base-images-<MINOR_VERSION>.json`
+4. **Filter Logic**:
     - Match `version` exactly.
     - Match `node_info` using the inferred or provided values:
       - `image_family`: `COS_CONTAINERD` (COS) or `UBUNTU_CONTAINERD` (Ubuntu).
       - Other fields match exactly.
-5.  **Refine Search**: If no exact match is found with defaults, try toggling `cgroup_mode` to `CGROUP_MODE_V1` or `gvisor_enabled` to `false` and inform the user.
+5. **Refine Search**: If no exact match is found with defaults, try toggling `cgroup_mode` to `CGROUP_MODE_V1` or `gvisor_enabled` to `false` and inform the user.
 
 ## Example Output
 
