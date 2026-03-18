@@ -163,6 +163,7 @@ func startMCPServer(ctx context.Context, opts startOptions) {
 			Capabilities: &mcp.ServerCapabilities{
 				Tools:     &mcp.ToolCapabilities{ListChanged: true},
 				Resources: &mcp.ResourceCapabilities{ListChanged: true},
+				Prompts:   &mcp.PromptCapabilities{ListChanged: true},
 			},
 		},
 	)
