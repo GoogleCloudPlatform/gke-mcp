@@ -28,6 +28,7 @@ import (
 
 	container "cloud.google.com/go/container/apiv1"
 	"cloud.google.com/go/container/apiv1/containerpb"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/apps"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/install"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/prompts"
@@ -40,6 +41,7 @@ import (
 
 const (
 	geminiInstructionsURI = "mcp://gke/pkg/install/GEMINI.md"
+	mcpAppsExtensionID    = "io.modelcontextprotocol/ui"
 )
 
 var (
@@ -153,15 +155,31 @@ func startMCPServer(ctx context.Context, opts startOptions) {
 		}
 	}
 
-	s := mcp.NewServer(
+	var s *mcp.Server
+
+	s = mcp.NewServer(
 		&mcp.Implementation{
 			Name:    "GKE MCP Server",
 			Version: version,
 		},
 		&mcp.ServerOptions{
 			Instructions: instructions,
-			HasTools:     true,
-			HasResources: true,
+			Capabilities: &mcp.ServerCapabilities{
+				Tools:     &mcp.ToolCapabilities{ListChanged: true},
+				Resources: &mcp.ResourceCapabilities{ListChanged: true},
+				Prompts:   &mcp.PromptCapabilities{ListChanged: true},
+			},
+			InitializedHandler: func(ctx context.Context, req *mcp.InitializedRequest) {
+				params := req.Session.InitializeParams()
+				if params.Capabilities != nil && params.Capabilities.Extensions != nil {
+					if _, ok := params.Capabilities.Extensions[mcpAppsExtensionID]; ok {
+						log.Println("Verified: Client host supports MCP Apps. Registering apps...")
+						if err := apps.InstallApps(ctx, s, c); err != nil {
+							log.Printf("Failed to install apps: %v\n", err)
+						}
+					}
+				}
+			},
 		},
 	)
 

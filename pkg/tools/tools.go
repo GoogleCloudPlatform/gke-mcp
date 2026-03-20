@@ -22,6 +22,7 @@ import (
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/cluster"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/clustertoolkit"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/deploy"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/dropdown"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/giq"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/gkereleasenotes"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/k8schangelog"
@@ -45,6 +46,22 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 		recommendation.Install,
 		k8schangelog.Install,
 		gkereleasenotes.Install,
+	}
+
+	for _, installer := range installers {
+		if err := installer(ctx, s, c); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// InstallApps registers MCP tools that require a client host with 'apps' extension support.
+func InstallApps(ctx context.Context, s *mcp.Server, c *config.Config) error {
+	installers := []installer{
+		dropdown.Install,
+		monitoring.InstallApps,
 	}
 
 	for _, installer := range installers {
