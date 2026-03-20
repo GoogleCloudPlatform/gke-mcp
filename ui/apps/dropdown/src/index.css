@@ -1,0 +1,14 @@
+:root {
+  --font-sans: Roboto, sans-serif;
+  --color-background-primary: light-dark(#ffffff, #1e1e1e);
+
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+  background-color: var(--color-background-primary);
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}

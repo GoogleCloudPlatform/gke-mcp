@@ -171,12 +171,10 @@ func startMCPServer(ctx context.Context, opts startOptions) {
 			},
 			InitializedHandler: func(ctx context.Context, req *mcp.InitializedRequest) {
 				params := req.Session.InitializeParams()
-				if params.Capabilities != nil && params.Capabilities.Extensions != nil {
-					if _, ok := params.Capabilities.Extensions[mcpAppsExtensionID]; ok {
-						log.Println("Verified: Client host supports MCP Apps. Registering apps...")
-						if err := apps.InstallApps(ctx, s, c); err != nil {
-							log.Printf("Failed to install apps: %v\n", err)
-						}
+				if supportsMCPApps(params.Capabilities) {
+					log.Println("Verified: Client host supports MCP Apps. Registering apps...")
+					if err := apps.InstallApps(ctx, s, c); err != nil {
+						log.Printf("Failed to install apps: %v\n", err)
 					}
 				}
 			},
@@ -253,6 +251,15 @@ func startMCPServer(ctx context.Context, opts startOptions) {
 			log.Printf("Server error: %v\n", err)
 		}
 	}
+}
+
+// supportsMCPApps checks if the client host capabilities include the MCP Apps extension.
+func supportsMCPApps(capabilities *mcp.ClientCapabilities) bool {
+	if capabilities != nil && capabilities.Extensions != nil {
+		_, ok := capabilities.Extensions[mcpAppsExtensionID]
+		return ok
+	}
+	return false
 }
 
 func adcAuthCheck(ctx context.Context, c *config.Config) error {

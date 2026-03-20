@@ -44,7 +44,7 @@ install-ui: ## Install the UI npm packages
 
 test: ## Run tests
 	@echo "Running tests..."
-	go test -v ./...
+	go test -v $$(go list ./... | grep -v '/ui/')
 
 clean: ## Remove build artifacts
 	@echo "Cleaning up..."
