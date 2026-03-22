@@ -1,6 +1,6 @@
 # checkov:skip=CKV_DOCKER_2:Existing issue, suppressing to unblock presubmit
 # checkov:skip=CKV_DOCKER_3:Existing issue, suppressing to unblock presubmit
-FROM golang:1.25.7 AS build
+FROM golang:1.25.8 AS build
 
 WORKDIR /go/src/gke-mcp
 COPY go.mod go.sum ./
