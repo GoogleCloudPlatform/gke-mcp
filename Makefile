@@ -26,10 +26,10 @@ build-ui: ## Build the UI TypeScript code
 	@npm --prefix $(UI_DIR) run build
 	@echo "✓ UI built"
 
-run: build build-ui ## Build and run the server
+run: build-ui build ## Build and run the server
 	./$(BINARY_NAME)
 
-run-http: build build-ui
+run-http: build-ui build
 	./$(BINARY_NAME) --server-mode http --server-port 8080
 
 install: ## Install the binary to GOPATH/bin

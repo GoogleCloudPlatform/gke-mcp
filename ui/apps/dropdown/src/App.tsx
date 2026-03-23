@@ -1,11 +1,20 @@
-import { useState, useMemo } from "react";
-import { useApp, useDocumentTheme, useHostStyles } from "@modelcontextprotocol/ext-apps/react";
-import { z } from "zod";
-import { FormControl, InputLabel, Select, MenuItem, ThemeProvider, createTheme, type SelectChangeEvent } from "@mui/material";
+import { useState, useMemo, useCallback } from 'react';
+import { useApp, useDocumentTheme, useHostStyles } from '@modelcontextprotocol/ext-apps/react';
+import { z } from 'zod';
+import {
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  ThemeProvider,
+  createTheme,
+  Alert,
+  type SelectChangeEvent,
+} from '@mui/material';
 
 const appInfo = {
-  name: "dropdown-app",
-  version: "1.0.0",
+  name: 'dropdown-app',
+  version: '1.0.0',
 };
 
 const ToolInputSchema = z.object({
@@ -17,23 +26,25 @@ const MENU_ITEMS_MAX_HEIGHT = 150;
 
 export default function App() {
   const [options, setOptions] = useState<string[]>([]);
-  const [selected, setSelected] = useState<string>("");
-  const [submitted, setSubmitted] = useState<boolean>(false);
-  const [title, setTitle] = useState<string>("Select a value");
+  const [selected, setSelected] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [title, setTitle] = useState('Select a value');
+  const [error, setError] = useState('');
 
   const { app } = useApp({
     appInfo,
     capabilities: {},
-    onAppCreated: (app) => {
-      app.ontoolinput = (params) => {
+    onAppCreated: (appInstance) => {
+      appInstance.ontoolinput = (params) => {
         const parsed = ToolInputSchema.safeParse(params.arguments);
         if (parsed.success) {
+          setError('');
           setOptions(parsed.data.options);
           if (parsed.data.title) {
             setTitle(parsed.data.title);
           }
         } else {
-          console.error("Invalid tool input:", parsed.error);
+          setError(`Invalid tool input: ${parsed.error.message}`);
         }
       };
     },
@@ -42,28 +53,35 @@ export default function App() {
   useHostStyles(app, app?.getHostContext());
   const docTheme = useDocumentTheme();
 
-  const theme = useMemo(() => createTheme({
-    palette: {
-      mode: docTheme,
+  const theme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode: docTheme,
+        },
+        typography: {
+          fontFamily: 'var(--font-sans)',
+        },
+      }),
+    [docTheme]
+  );
+
+  const handleSelect = useCallback(
+    async (e: SelectChangeEvent<string>) => {
+      const value = e.target.value;
+      setSelected(value);
+      setSubmitted(true);
+
+      try {
+        await app?.sendMessage({ role: 'user', content: [{ type: 'text', text: value }] });
+        await app?.close();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+        setSubmitted(false);
+      }
     },
-    typography: {
-      fontFamily: "var(--font-sans)",
-    },
-  }), [docTheme]);
-
-  const handleSelect = async (e: SelectChangeEvent<string>) => {
-    const value = e.target.value;
-    setSelected(value);
-    setSubmitted(true);
-
-    try {
-      await app?.sendMessage({ role: "user", content: [{ type: "text", text: value }] })
-      await app?.close()
-    } catch (error) {
-      console.error("Failed to send message:", error);
-    }
-
-  };
+    [app]
+  );
 
   return (
     <ThemeProvider theme={theme}>
@@ -92,6 +110,11 @@ export default function App() {
             ))}
           </Select>
         </FormControl>
+        {error && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {error}
+          </Alert>
+        )}
       </div>
     </ThemeProvider>
   );

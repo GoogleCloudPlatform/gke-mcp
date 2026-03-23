@@ -18,6 +18,6 @@ for (const app of apps) {
   console.log(`\n--- Building app: ${app} ---\n`);
   execSync(`VITE_APP_NAME=${app} npx vite build`, {
     stdio: 'inherit',
-    cwd: uiDir
+    cwd: uiDir,
   });
 }

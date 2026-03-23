@@ -16,24 +16,22 @@ package dropdown
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"github.com/GoogleCloudPlatform/gke-mcp/ui"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 const (
-	// htmlFilePath is the absolute path to the UI index.html file.
-	// In a real production environment, this might be configurable or relative to the binary.
-	htmlFilePath = "ui/dist/apps/dropdown/index.html"
-	resourceURI  = "ui://dropdown/index.html"
-	mimeType     = "text/html;profile=mcp-app"
+	resourceURI = "ui://dropdown/index.html"
+	mimeType    = "text/html;profile=mcp-app"
+
+	StatusPendingUserInput = "PENDING_USER_INPUT"
 )
 
 type dropdownArgs struct {
 	Title   string   `json:"title,omitempty" jsonschema:"Title to display above the dropdown"`
-	Options []string `json:"options" jsonschema:"description=List of resources to display in the dropdown"`
+	Options []string `json:"options" jsonschema:"List of resources to display in the dropdown"`
 }
 
 type PendingResponse struct {
@@ -83,18 +81,12 @@ Do NOT list the options in your text response; the UI itself serves as the list 
 		URI:      resourceURI,
 		MIMEType: mimeType,
 	}, func(ctx context.Context, request *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
-		htmlContent, err := os.ReadFile(htmlFilePath)
-
-		if err != nil {
-			return nil, fmt.Errorf("failed to read UI file at %s: %w", htmlFilePath, err)
-		}
-
 		return &mcp.ReadResourceResult{
 			Contents: []*mcp.ResourceContents{
 				{
 					URI:      resourceURI,
 					MIMEType: mimeType,
-					Text:     string(htmlContent),
+					Text:     string(ui.DropdownHTML),
 				},
 			},
 		}, nil
@@ -105,7 +97,7 @@ Do NOT list the options in your text response; the UI itself serves as the list 
 
 func dropdownHandler(ctx context.Context, request *mcp.CallToolRequest, args *dropdownArgs) (*mcp.CallToolResult, any, error) {
 	payload := PendingResponse{
-		Status:  "PENDING_USER_INPUT",
+		Status:  StatusPendingUserInput,
 		Options: args.Options,
 		Message: "Present these options to the user. Wait until selection is made",
 	}

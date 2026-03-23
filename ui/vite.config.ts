@@ -1,12 +1,12 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { viteSingleFile } from 'vite-plugin-singlefile'
-import { resolve, dirname } from 'path'
-import { fileURLToPath } from 'url'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { viteSingleFile } from 'vite-plugin-singlefile';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const appName = process.env.VITE_APP_NAME || 'timeserieschart'
+const appName = process.env.VITE_APP_NAME || 'dropdown';
 
 export default defineConfig({
   plugins: [react(), viteSingleFile()],
@@ -15,8 +15,8 @@ export default defineConfig({
     emptyOutDir: false,
     rollupOptions: {
       input: {
-        [appName]: resolve(__dirname, `apps/${appName}/index.html`)
-      }
-    }
-  }
-})
+        [appName]: resolve(__dirname, `apps/${appName}/index.html`),
+      },
+    },
+  },
+});
