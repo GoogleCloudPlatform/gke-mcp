@@ -18,7 +18,7 @@ const appInfo = {
 };
 
 const ToolInputSchema = z.object({
-  options: z.array(z.string()),
+  options: z.array(z.string()).min(1),
   title: z.string().optional(),
 });
 

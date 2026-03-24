@@ -46,12 +46,8 @@ func TestDropdownHandler(t *testing.T) {
 				Title:   "Select a cluster",
 				Options: nil,
 			},
-			want: PendingResponse{
-				Status:  "PENDING_USER_INPUT",
-				Options: nil,
-				Message: "Present these options to the user. Wait until selection is made",
-			},
-			wantErr: false,
+			want:    PendingResponse{},
+			wantErr: true,
 		},
 	}
 

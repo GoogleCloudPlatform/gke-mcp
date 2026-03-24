@@ -156,7 +156,6 @@ func startMCPServer(ctx context.Context, opts startOptions) {
 	}
 
 	var s *mcp.Server
-
 	s = mcp.NewServer(
 		&mcp.Implementation{
 			Name:    "GKE MCP Server",

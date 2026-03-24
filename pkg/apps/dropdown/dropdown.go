@@ -16,6 +16,7 @@ package dropdown
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/GoogleCloudPlatform/gke-mcp/ui"
@@ -96,6 +97,10 @@ Do NOT list the options in your text response; the UI itself serves as the list 
 }
 
 func dropdownHandler(ctx context.Context, request *mcp.CallToolRequest, args *dropdownArgs) (*mcp.CallToolResult, any, error) {
+	if len(args.Options) == 0 {
+		return nil, nil, fmt.Errorf("Options cannot be empty")
+	}
+
 	payload := PendingResponse{
 		Status:  StatusPendingUserInput,
 		Options: args.Options,
