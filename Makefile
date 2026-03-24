@@ -1,7 +1,7 @@
 # Makefile for GKE MCP Server
 # Provides convenient shortcuts for common development tasks
 
-.PHONY: help build run install test clean presubmit update-version
+.PHONY: help build build-ui run run-http install install-ui test clean presubmit update-version
 
 # Default target - show help
 .DEFAULT_GOAL := help
@@ -16,7 +16,7 @@ help: ## Display available commands
 	@echo ""
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make \033[36m<target>\033[0m\n\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
-build: ## Build the binary
+build: build-ui ## Build the binary
 	@echo "Building $(BINARY_NAME)..."
 	go build -o $(BINARY_NAME) .
 	@echo "✓ Built $(BINARY_NAME)"
@@ -44,13 +44,14 @@ install-ui: ## Install the UI npm packages
 
 test: ## Run tests
 	@echo "Running tests..."
-	go test -v $$(go list ./... | grep -v '/ui/')
+	go test ./...
 
 clean: ## Remove build artifacts
 	@echo "Cleaning up..."
 	@rm -f $(BINARY_NAME)
 	@rm -f coverage.out coverage.html
 	@rm -rf dist/
+	@rm -rf ui/dist/
 	@echo "✓ Cleaned"
 
 presubmit: ## Run all presubmit checks (build, test, vet, format)

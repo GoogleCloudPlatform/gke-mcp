@@ -20,4 +20,4 @@ set -o pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "${REPO_ROOT}"
 
-go test -v $(go list ./... | grep -v '/ui/')
+go test ./...

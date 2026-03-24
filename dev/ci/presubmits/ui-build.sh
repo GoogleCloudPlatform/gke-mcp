@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2025 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,9 +20,4 @@ set -o pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "${REPO_ROOT}"
 
-find . -name "*.go" -print0 | xargs -0 go run github.com/google/addlicense@master -c "Google LLC" -l apache
-
-gofmt -w .
-
-npm --prefix ui run lint:fix
-npm --prefix ui run format
+npm --prefix ui run build
