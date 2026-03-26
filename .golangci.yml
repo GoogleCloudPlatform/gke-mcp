@@ -7,8 +7,6 @@ version: 2
 run:
   timeout: 5m
   tests: true
-  skip-dirs:
-    - ui/node_modules
 
 output:
   format: colored-line-number
@@ -54,11 +52,17 @@ linters:
     - revive
     - gosec
     - misspell
+  exclusions:
+    paths:
+      - ui/node_modules
 
 formatters:
   enable:
     - gofmt
     - goimports
+  exclusions:
+    paths:
+      - ui/node_modules
 
 formatters-settings:
   gofmt:
