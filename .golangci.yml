@@ -7,6 +7,8 @@ version: 2
 run:
   timeout: 5m
   tests: true
+  skip-dirs:
+    - ui/node_modules
 
 output:
   format: colored-line-number

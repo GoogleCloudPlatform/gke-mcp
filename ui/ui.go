@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package ui provides embedded UI static file assets for apps.
 package ui
 
 import _ "embed"
 
+// DropdownHTML is the embedded HTML content for the dropdown UI.
+//
 //go:embed dist/apps/dropdown/index.html
 var DropdownHTML []byte

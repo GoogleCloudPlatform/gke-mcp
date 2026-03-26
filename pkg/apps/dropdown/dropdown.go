@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package dropdown provides an interactive UI dropdown app.
 package dropdown
 
 import (
@@ -27,6 +28,7 @@ const (
 	resourceURI = "ui://dropdown/index.html"
 	mimeType    = "text/html;profile=mcp-app"
 
+	// StatusPendingUserInput indicates that the tool is waiting for user input.
 	StatusPendingUserInput = "PENDING_USER_INPUT"
 )
 
@@ -35,6 +37,7 @@ type dropdownArgs struct {
 	Options []string `json:"options" jsonschema:"List of resources to display in the dropdown"`
 }
 
+// PendingResponse represents the structured content returned when waiting for user input.
 type PendingResponse struct {
 	Status  string   `json:"status"`
 	Options []string `json:"options"`
@@ -42,7 +45,7 @@ type PendingResponse struct {
 }
 
 // Install registers the dropdown tool with the MCP server.
-func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
+func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 	mcp.AddTool(s, &mcp.Tool{
 		Name: "dropdown",
 		Description: `Renders an interactive UI dropdown for the user to select an item from a list.
@@ -81,7 +84,7 @@ Do NOT list the options in your text response; the UI itself serves as the list 
 		Name:     "GKE Resource Dropdown UI",
 		URI:      resourceURI,
 		MIMEType: mimeType,
-	}, func(ctx context.Context, request *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
+	}, func(_ context.Context, _ *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
 		return &mcp.ReadResourceResult{
 			Contents: []*mcp.ResourceContents{
 				{
@@ -96,9 +99,9 @@ Do NOT list the options in your text response; the UI itself serves as the list 
 	return nil
 }
 
-func dropdownHandler(ctx context.Context, request *mcp.CallToolRequest, args *dropdownArgs) (*mcp.CallToolResult, any, error) {
+func dropdownHandler(_ context.Context, _ *mcp.CallToolRequest, args *dropdownArgs) (*mcp.CallToolResult, any, error) {
 	if len(args.Options) == 0 {
-		return nil, nil, fmt.Errorf("Options cannot be empty")
+		return nil, nil, fmt.Errorf("options cannot be empty")
 	}
 
 	payload := PendingResponse{
