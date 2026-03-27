@@ -58,7 +58,6 @@ Do NOT list the options in your text response; the UI itself serves as the list 
 		Meta: mcp.Meta{
 			"ui": map[string]interface{}{
 				"resourceUri": resourceURI,
-				"visibility":  []string{"app"},
 			},
 		},
 		InputSchema: map[string]interface{}{
