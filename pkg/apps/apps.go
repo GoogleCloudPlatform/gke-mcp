@@ -19,6 +19,7 @@ import (
 	"context"
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/apps/dropdown"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/apps/timeserieschart"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -29,6 +30,7 @@ type installer func(ctx context.Context, s *mcp.Server, c *config.Config) error
 func InstallApps(ctx context.Context, s *mcp.Server, c *config.Config) error {
 	installers := []installer{
 		dropdown.Install,
+		timeserieschart.Install,
 	}
 
 	for _, installer := range installers {
