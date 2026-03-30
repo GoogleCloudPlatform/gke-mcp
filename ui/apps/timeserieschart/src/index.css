@@ -1,6 +1,4 @@
-:root {
-  --color-background-primary: light-dark(#ffffff, #1e1e1e);
-  
-  box-sizing: border-box;
-  background-color: var(--color-background-primary);
+body {
+  /* Handle overflow of tooltip */
+  overflow-y: hidden;
 }

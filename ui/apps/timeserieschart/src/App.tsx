@@ -3,8 +3,7 @@ import { useApp, useDocumentTheme, useHostStyles } from '@modelcontextprotocol/e
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { LineChart } from '@mui/x-charts/LineChart';
-import { ThemeProvider, createTheme, Alert, Box } from '@mui/material';
-import './App.css';
+import { ThemeProvider, createTheme, Alert, Box, Typography } from '@mui/material';
 import { getCssVar } from '@gke-mcp/ui/shared/utils/styles';
 
 export const MCP_TOOL = {
@@ -87,7 +86,7 @@ const MonitoringChart = ({
   const { data, seriesKeys } = transformGCPData(rawData);
 
   if (data.length === 0) {
-    return <p>No data available for the specified time range.</p>;
+    return <Typography>No data available for the specified time range.</Typography>;
   }
 
   const series = seriesKeys.map((key) => ({
@@ -98,6 +97,7 @@ const MonitoringChart = ({
 
   return (
     <LineChart
+      height={300}
       dataset={data}
       xAxis={[
         {
@@ -118,22 +118,12 @@ const MonitoringChart = ({
       series={series}
       slotProps={{
         legend: {
-          direction: 'horizontal',
           position: { vertical: 'bottom', horizontal: 'center' },
-          classes: {
-            root: 'chart-legend-root',
+          sx: {
+            height: '100%',
+            maxHeight: '10vh',
+            overflow: 'auto',
           },
-        },
-      }}
-      sx={{
-        '& .MuiChartsAxis-label': {
-          fill: getCssVar('--color-text-primary'),
-        },
-        '& .MuiChartsAxis-tickLabel': {
-          fill: getCssVar('--color-text-primary'),
-        },
-        '& .MuiChartsLegend-label': {
-          fill: getCssVar('--color-text-primary'),
         },
       }}
     />
@@ -221,6 +211,11 @@ function App() {
       createTheme({
         palette: {
           mode: docTheme,
+          text: {
+            primary: getCssVar('--color-text-primary'),
+            secondary: getCssVar('--color-text-secondary'),
+            disabled: getCssVar('--color-text-disabled'),
+          },
         },
         typography: {
           fontFamily: getCssVar('--font-sans'),
@@ -231,9 +226,14 @@ function App() {
 
   if (loading) {
     return (
-      <div className="app-wrapper">
-        <h2>Loading Time Series Data...</h2>
-      </div>
+      <Box
+        sx={{
+          padding: '24px',
+          height: 400,
+        }}
+      >
+        <Typography textAlign="center">Loading Time Series Data...</Typography>
+      </Box>
     );
   }
 
@@ -244,15 +244,12 @@ function App() {
       ) : (
         <Box
           sx={{
-            width: '100%',
-            minHeight: 400,
+            padding: '24px',
             display: 'flex',
-            flex: 1,
             flexDirection: 'column',
-            alignItems: 'center',
           }}
         >
-          <p>{title}</p>
+          <Typography textAlign="center">{title}</Typography>
           <MonitoringChart rawData={mcpData} xLegend={xLegend} yLegend={yLegend} />
         </Box>
       )}
