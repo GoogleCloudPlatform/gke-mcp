@@ -1,9 +1,22 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // Package timeserieschart provides an MCP app for rendering Google Cloud Monitoring charts.
 package timeserieschart
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -14,7 +27,6 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -40,6 +52,10 @@ type queryTimeSeriesArgs struct {
 	Query     string `json:"query" jsonschema:"Required. The query in the Monitoring Query Language (MQL) format."`
 }
 
+type queryTimeSeriesResponse struct {
+	Data []appTimeSeries `json:"data"`
+}
+
 type mqlValidatorArgs struct {
 	ProjectID string `json:"project_id,omitempty" jsonschema:"GCP project ID. Use the default if the user doesn't provide it."`
 	Query     string `json:"query" jsonschema:"Required. The test query in the MQL format to validate."`
@@ -49,6 +65,16 @@ type validationResult struct {
 	Status       string `json:"status"`
 	Query        string `json:"query"`
 	ErrorMessage string `json:"errorMessage,omitempty"`
+}
+
+type appTimeSeries struct {
+	Label  string                   `json:"label,omitempty"`
+	Points []appTimeSeriesDataPoint `json:"points,omitempty"`
+}
+
+type appTimeSeriesDataPoint struct {
+	Timestamp int64   `json:"timestamp,omitempty"`
+	Value     float64 `json:"value,omitempty"`
 }
 
 // Install registers monitoring tools that require 'apps' extension support.
@@ -220,7 +246,7 @@ func (h *handlers) queryTimeSeries(ctx context.Context, _ *mcp.CallToolRequest, 
 	}
 
 	it := c.QueryTimeSeries(ctx, req)
-	var series []json.RawMessage
+	var series []appTimeSeries
 	for {
 		resp, err := it.Next()
 		if err == iterator.Done {
@@ -230,24 +256,41 @@ func (h *handlers) queryTimeSeries(ctx context.Context, _ *mcp.CallToolRequest, 
 			return nil, nil, err
 		}
 
-		b, err := protojson.Marshal(resp)
-		if err != nil {
-			return nil, nil, err
+		label := "Unknown Series"
+		if len(resp.GetLabelValues()) > 0 {
+			label = resp.GetLabelValues()[0].GetStringValue()
 		}
-		series = append(series, b)
-	}
 
-	resBytes, err := json.Marshal(series)
-
-	if err != nil {
-		return nil, nil, err
+		series = append(series, appTimeSeries{
+			Label:  label,
+			Points: mapPoints(resp.GetPointData()),
+		})
 	}
 
 	return &mcp.CallToolResult{
-		Content: []mcp.Content{
-			&mcp.TextContent{Text: string(resBytes)},
+		StructuredContent: queryTimeSeriesResponse{
+			Data: series,
 		},
 	}, nil, nil
+}
+
+func mapPoints(pointData []*monitoringpb.TimeSeriesData_PointData) []appTimeSeriesDataPoint {
+	var pts []appTimeSeriesDataPoint
+	for _, p := range pointData {
+		val := 0.0
+		if len(p.GetValues()) > 0 {
+			val = p.GetValues()[0].GetDoubleValue()
+		}
+		ts := int64(0)
+		if p.GetTimeInterval().GetEndTime() != nil {
+			ts = p.GetTimeInterval().GetEndTime().AsTime().UnixMilli()
+		}
+		pts = append(pts, appTimeSeriesDataPoint{
+			Timestamp: ts,
+			Value:     val,
+		})
+	}
+	return pts
 }
 
 func (h *handlers) mqlValidator(ctx context.Context, _ *mcp.CallToolRequest, args *mqlValidatorArgs) (*mcp.CallToolResult, any, error) {

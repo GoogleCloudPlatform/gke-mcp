@@ -5,10 +5,13 @@ import { z } from 'zod';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { ThemeProvider, createTheme, Alert, Box, Typography } from '@mui/material';
 import { getCssVar } from '@gke-mcp/ui/shared/utils/styles';
+import type { DatasetElementType } from '@mui/x-charts/internals';
 
 export const MCP_TOOL = {
   QUERY_TIME_SERIES: 'query_time_series',
 } as const;
+
+const TIMESTAMP_KEY = 'timestamp' as const;
 
 const timeSeriesChartArgsSchema = z.object({
   project_id: z.string().optional(),
@@ -20,71 +23,63 @@ const timeSeriesChartArgsSchema = z.object({
   y_legend: z.string().optional(),
 });
 
-interface GCPPointData {
-  timeInterval?: { endTime?: string };
-  values?: Array<{ doubleValue?: number; int64Value?: number }>;
+interface AppTimeSeriesDataPoint {
+  timestamp?: number;
+  value?: number;
 }
 
-interface GCPLabelValue {
-  stringValue?: string;
-  int64Value?: number;
-  boolValue?: boolean;
+interface AppTimeSeries {
+  label?: string;
+  points?: AppTimeSeriesDataPoint[];
 }
 
-interface GCPSeries {
-  labelValues?: GCPLabelValue[];
-  pointData?: GCPPointData[];
-}
+type ChartDataPoint = DatasetElementType<number | Date> & {
+  [TIMESTAMP_KEY]: Date;
+};
 
-const transformGCPData = (apiResponse: unknown) => {
-  if (!apiResponse || !Array.isArray(apiResponse) || apiResponse.length === 0) {
+function transformGCPData(apiResponse: AppTimeSeries[]) {
+  if (!apiResponse || apiResponse.length === 0) {
     return { data: [], seriesKeys: [] };
   }
 
-  const timeMap = new Map<number, Record<string, unknown>>();
+  const timeMap = new Map<number, Record<string, number>>();
   const lineKeys = new Set<string>();
 
-  (apiResponse as GCPSeries[]).forEach((series, index) => {
-    let seriesName = `series-${index + 1}`;
-    if (series.labelValues && Array.isArray(series.labelValues) && series.labelValues.length > 0) {
-      seriesName = series.labelValues
-        .map((lv) => lv.stringValue ?? lv.int64Value ?? lv.boolValue ?? 'unknown')
-        .join('-');
-    }
-
+  apiResponse.forEach((series) => {
+    const seriesName = series.label || '';
     lineKeys.add(seriesName);
 
-    if (series.pointData && Array.isArray(series.pointData)) {
-      series.pointData.forEach((point) => {
-        const timestamp = new Date(point.timeInterval?.endTime || 0).getTime();
-        const valueObj = point.values?.[0] || {};
-        const value = valueObj.doubleValue ?? valueObj.int64Value ?? 0;
+    if (series.points && Array.isArray(series.points)) {
+      series.points.forEach((point) => {
+        const timestamp = new Date(point.timestamp || 0).getTime();
+        const value = point.value ?? 0;
 
         if (!timeMap.has(timestamp)) {
-          timeMap.set(timestamp, { timestamp });
+          timeMap.set(timestamp, {});
         }
         timeMap.get(timestamp)![seriesName] = value;
       });
     }
   });
 
-  const data = Array.from(timeMap.values())
-    .sort((a, b) => (a.timestamp as number) - (b.timestamp as number))
-    .map((d) => ({ ...d, timestamp: new Date(d.timestamp as number) }));
+  const data: ChartDataPoint[] = Array.from(timeMap.entries())
+    .sort(([timestampA], [timestampB]) => timestampA - timestampB)
+    .map(([timestamp, point]) => ({ ...point, [TIMESTAMP_KEY]: new Date(timestamp) }));
+
   return { data, seriesKeys: Array.from(lineKeys) };
-};
+}
 
 const MonitoringChart = ({
-  rawData,
+  data,
+  seriesKeys,
   xLegend,
   yLegend,
 }: {
-  rawData: unknown;
+  data: ChartDataPoint[];
+  seriesKeys: string[];
   xLegend: string;
   yLegend: string;
 }) => {
-  const { data, seriesKeys } = transformGCPData(rawData);
-
   if (data.length === 0) {
     return <Typography>No data available for the specified time range.</Typography>;
   }
@@ -101,12 +96,15 @@ const MonitoringChart = ({
       dataset={data}
       xAxis={[
         {
-          dataKey: 'timestamp',
+          dataKey: TIMESTAMP_KEY,
           scaleType: 'time',
-          valueFormatter: (value: unknown) =>
-            value instanceof Date
-              ? value.toLocaleTimeString()
-              : new Date(value as string | number).toLocaleTimeString(),
+          valueFormatter: (value: Date) => {
+            const dateStr = value.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            });
+            return `${dateStr} ${value.toLocaleTimeString()}`;
+          },
           label: xLegend,
         },
       ]}
@@ -131,12 +129,12 @@ const MonitoringChart = ({
 };
 
 function App() {
-  const [mcpData, setMcpData] = useState<unknown>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [errorMsg, setErrorMsg] = useState<string>('');
-  const [title, setTitle] = useState<string>('Timeseries Data Viewer');
-  const [xLegend, setXLegend] = useState<string>('Time');
-  const [yLegend, setYLegend] = useState<string>('Value');
+  const [data, setData] = useState<AppTimeSeries[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [title, setTitle] = useState('Timeseries Data Viewer');
+  const [xLegend, setXLegend] = useState('Time');
+  const [yLegend, setYLegend] = useState('Value');
 
   const { app } = useApp({
     appInfo: {
@@ -180,15 +178,13 @@ function App() {
           if (response.isError) {
             const errorText =
               response.content?.[0]?.type === 'text' ? response.content[0].text : 'Unknown Error';
-            const msg = `Error fetching time series: ${errorText}`;
-            setErrorMsg(msg);
-            appInstance
-              .updateModelContext({ content: [{ type: 'text', text: msg }] })
-              .catch(console.error);
+            throw new Error(errorText);
           } else {
-            const contentText =
-              response.content?.[0]?.type === 'text' ? response.content[0].text : '[]';
-            setMcpData(JSON.parse(contentText));
+            if (response.structuredContent?.data) {
+              setData(response.structuredContent.data as AppTimeSeries[]);
+            } else {
+              setData([]);
+            }
           }
         } catch (err: unknown) {
           const msg = `Failed to call time series API: ${err instanceof Error ? err.message : String(err)}`;
@@ -224,6 +220,8 @@ function App() {
     [docTheme]
   );
 
+  const transformedData = useMemo(() => transformGCPData(data), [data]);
+
   if (loading) {
     return (
       <Box
@@ -250,7 +248,12 @@ function App() {
           }}
         >
           <Typography textAlign="center">{title}</Typography>
-          <MonitoringChart rawData={mcpData} xLegend={xLegend} yLegend={yLegend} />
+          <MonitoringChart
+            data={transformedData.data}
+            seriesKeys={transformedData.seriesKeys}
+            xLegend={xLegend}
+            yLegend={yLegend}
+          />
         </Box>
       )}
     </ThemeProvider>
