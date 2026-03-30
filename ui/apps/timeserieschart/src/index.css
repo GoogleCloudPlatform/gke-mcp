@@ -1,5 +1,6 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  --color-background-primary: light-dark(#ffffff, #1e1e1e);
+  
+  box-sizing: border-box;
+  background-color: var(--color-background-primary);
 }

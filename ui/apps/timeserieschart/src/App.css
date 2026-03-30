@@ -1,27 +1,11 @@
-#root {
-  width: 100%;
-  margin: 0 auto;
-  padding: 1rem;
-  text-align: center;
-  box-sizing: border-box;
-}
-
-
-.chart-wrapper {
-  height: 400px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
 .app-wrapper {
   display: flex;
   flex-direction: column;
 }
 
-.chart-title {
-  text-align: center;
-  margin-bottom: 10px;
+.chart-legend-root {
+  height: 50px;
+  overflow: auto;
 }
 
 .error-message {

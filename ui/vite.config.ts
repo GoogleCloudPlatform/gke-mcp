@@ -12,6 +12,11 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 
 export default defineConfig({
   plugins: [react(), viteSingleFile()],
+  resolve: {
+    alias: {
+      '@gke-mcp/ui/shared': resolve(__dirname, 'shared'),
+    },
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: false,
