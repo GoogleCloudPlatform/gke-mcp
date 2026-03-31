@@ -23,15 +23,21 @@ const timeSeriesChartArgsSchema = z.object({
   y_legend: z.string().optional(),
 });
 
-interface AppTimeSeriesDataPoint {
-  timestamp?: number;
-  value?: number;
-}
+const appTimeSeriesDataPointSchema = z.object({
+  timestamp: z.number().optional(),
+  value: z.number().optional(),
+});
 
-interface AppTimeSeries {
-  label?: string;
-  points?: AppTimeSeriesDataPoint[];
-}
+const appTimeSeriesSchema = z.object({
+  label: z.string().optional(),
+  points: z.array(appTimeSeriesDataPointSchema).optional(),
+});
+
+const queryTimeSeriesResponseSchema = z.object({
+  data: z.array(appTimeSeriesSchema),
+});
+
+type AppTimeSeries = z.infer<typeof appTimeSeriesSchema>;
 
 type ChartDataPoint = DatasetElementType<number | Date> & {
   [TIMESTAMP_KEY]: Date;
@@ -180,10 +186,13 @@ function App() {
               response.content?.[0]?.type === 'text' ? response.content[0].text : 'Unknown Error';
             throw new Error(errorText);
           } else {
-            if (response.structuredContent?.data) {
-              setData(response.structuredContent.data as AppTimeSeries[]);
+            const parseResult = queryTimeSeriesResponseSchema.safeParse(response.structuredContent);
+            if (!parseResult.success) {
+              throw new Error(
+                `Invalid structured data from time series API:\n${parseResult.error.message}`
+              );
             } else {
-              setData([]);
+              setData(parseResult.data.data);
             }
           }
         } catch (err: unknown) {
@@ -192,6 +201,7 @@ function App() {
           appInstance
             .updateModelContext({ content: [{ type: 'text', text: msg }] })
             .catch(console.error);
+          setData([]);
         } finally {
           setLoading(false);
         }
