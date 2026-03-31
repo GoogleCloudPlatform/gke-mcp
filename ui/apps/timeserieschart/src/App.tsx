@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { useApp, useDocumentTheme, useHostStyles } from '@modelcontextprotocol/ext-apps/react';
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { ThemeProvider, createTheme, Alert, Box, Typography } from '@mui/material';
@@ -16,25 +15,28 @@ const TIMESTAMP_KEY = 'timestamp' as const;
 const timeSeriesChartArgsSchema = z.object({
   project_id: z.string().optional(),
   query: z.string(),
-  start_time: z.string().optional(),
-  end_time: z.string().optional(),
   title: z.string().optional(),
   x_legend: z.string().optional(),
   y_legend: z.string().optional(),
 });
 
+const queryTimeSeriesRequestSchema = z.object({
+  project_id: z.string().optional(),
+  query: z.string(),
+});
+
 const appTimeSeriesDataPointSchema = z.object({
-  timestamp: z.number().optional(),
-  value: z.number().optional(),
+  timestamp: z.number(),
+  value: z.number(),
 });
 
 const appTimeSeriesSchema = z.object({
   label: z.string().optional(),
-  points: z.array(appTimeSeriesDataPointSchema).optional(),
+  points: z.array(appTimeSeriesDataPointSchema),
 });
 
 const queryTimeSeriesResponseSchema = z.object({
-  data: z.array(appTimeSeriesSchema),
+  data: z.array(appTimeSeriesSchema).nullable(),
 });
 
 type AppTimeSeries = z.infer<typeof appTimeSeriesSchema>;
@@ -43,7 +45,7 @@ type ChartDataPoint = DatasetElementType<number | Date> & {
   [TIMESTAMP_KEY]: Date;
 };
 
-function transformGCPData(apiResponse: AppTimeSeries[]) {
+function transformGCPData(apiResponse: AppTimeSeries[], originalQuery: string) {
   if (!apiResponse || apiResponse.length === 0) {
     return { data: [], seriesKeys: [] };
   }
@@ -52,18 +54,18 @@ function transformGCPData(apiResponse: AppTimeSeries[]) {
   const lineKeys = new Set<string>();
 
   apiResponse.forEach((series) => {
-    const seriesName = series.label || '';
-    lineKeys.add(seriesName);
+    const seriesName = series.label ?? originalQuery;
 
     if (series.points && Array.isArray(series.points)) {
       series.points.forEach((point) => {
-        const timestamp = new Date(point.timestamp || 0).getTime();
-        const value = point.value ?? 0;
+        const timestamp = new Date(point.timestamp).getTime();
 
         if (!timeMap.has(timestamp)) {
           timeMap.set(timestamp, {});
         }
-        timeMap.get(timestamp)![seriesName] = value;
+
+        lineKeys.add(seriesName);
+        timeMap.get(timestamp)![seriesName] = point.value;
       });
     }
   });
@@ -75,21 +77,27 @@ function transformGCPData(apiResponse: AppTimeSeries[]) {
   return { data, seriesKeys: Array.from(lineKeys) };
 }
 
-const MonitoringChart = ({
+function formatDate(value: Date) {
+  const dateStr = value.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+  return `${dateStr} ${value.toLocaleTimeString()}`;
+}
+
+function TimeSeriesChart({
   data,
   seriesKeys,
   xLegend,
   yLegend,
+  loading,
 }: {
   data: ChartDataPoint[];
   seriesKeys: string[];
   xLegend: string;
   yLegend: string;
-}) => {
-  if (data.length === 0) {
-    return <Typography>No data available for the specified time range.</Typography>;
-  }
-
+  loading: boolean;
+}) {
   const series = seriesKeys.map((key) => ({
     dataKey: key,
     label: key,
@@ -100,17 +108,12 @@ const MonitoringChart = ({
     <LineChart
       height={300}
       dataset={data}
+      loading={loading}
       xAxis={[
         {
           dataKey: TIMESTAMP_KEY,
           scaleType: 'time',
-          valueFormatter: (value: Date) => {
-            const dateStr = value.toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-            });
-            return `${dateStr} ${value.toLocaleTimeString()}`;
-          },
+          valueFormatter: formatDate,
           label: xLegend,
         },
       ]}
@@ -132,10 +135,11 @@ const MonitoringChart = ({
       }}
     />
   );
-};
+}
 
 function App() {
   const [data, setData] = useState<AppTimeSeries[]>([]);
+  const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [title, setTitle] = useState('Timeseries Data Viewer');
@@ -152,39 +156,36 @@ function App() {
       appInstance.ontoolinput = async (request) => {
         try {
           const parseResult = timeSeriesChartArgsSchema.safeParse(request.arguments);
+
           if (!parseResult.success) {
-            const msg = `Invalid time series parameters provided in tool input:\n${parseResult.error.message}`;
-            setErrorMsg(msg);
-            setLoading(false);
-            appInstance
-              .updateModelContext({ content: [{ type: 'text', text: msg }] })
-              .catch(console.error);
-            return;
+            throw new Error(
+              `Invalid time series parameters provided in tool input:\n${parseResult.error.message}`
+            );
           }
 
           const args = parseResult.data;
 
+          setQuery(args.query);
           if (args.title) {
             setTitle(args.title);
           }
-
           if (args.x_legend) {
             setXLegend(args.x_legend);
           }
-
           if (args.y_legend) {
             setYLegend(args.y_legend);
           }
 
-          const response = (await appInstance.callServerTool({
+          const toolArgs = queryTimeSeriesRequestSchema.parse(args);
+          const response = await appInstance.callServerTool({
             name: MCP_TOOL.QUERY_TIME_SERIES,
-            arguments: args,
-          })) as CallToolResult;
+            arguments: toolArgs,
+          });
 
           if (response.isError) {
             const errorText =
               response.content?.[0]?.type === 'text' ? response.content[0].text : 'Unknown Error';
-            throw new Error(errorText);
+            throw new Error(`Failed to call time series API: ${errorText}`);
           } else {
             const parseResult = queryTimeSeriesResponseSchema.safeParse(response.structuredContent);
             if (!parseResult.success) {
@@ -192,11 +193,16 @@ function App() {
                 `Invalid structured data from time series API:\n${parseResult.error.message}`
               );
             } else {
-              setData(parseResult.data.data);
+              const rawData = parseResult.data.data ?? [];
+              const mappedData = rawData.map((item) => ({
+                ...item,
+                originalQuery: args.query,
+              }));
+              setData(mappedData);
             }
           }
         } catch (err: unknown) {
-          const msg = `Failed to call time series API: ${err instanceof Error ? err.message : String(err)}`;
+          const msg = `${err instanceof Error ? err.message : String(err)}`;
           setErrorMsg(msg);
           appInstance
             .updateModelContext({ content: [{ type: 'text', text: msg }] })
@@ -230,20 +236,7 @@ function App() {
     [docTheme]
   );
 
-  const transformedData = useMemo(() => transformGCPData(data), [data]);
-
-  if (loading) {
-    return (
-      <Box
-        sx={{
-          padding: '24px',
-          height: 400,
-        }}
-      >
-        <Typography textAlign="center">Loading Time Series Data...</Typography>
-      </Box>
-    );
-  }
+  const transformedData = useMemo(() => transformGCPData(data, query), [data, query]);
 
   return (
     <ThemeProvider theme={theme}>
@@ -258,9 +251,10 @@ function App() {
           }}
         >
           <Typography textAlign="center">{title}</Typography>
-          <MonitoringChart
+          <TimeSeriesChart
             data={transformedData.data}
             seriesKeys={transformedData.seriesKeys}
+            loading={loading}
             xLegend={xLegend}
             yLegend={yLegend}
           />

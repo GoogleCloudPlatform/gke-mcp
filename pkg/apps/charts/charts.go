@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package timeserieschart provides an MCP app for rendering Google Cloud Monitoring charts.
-package timeserieschart
+// Package charts provides an MCP app for rendering Google Cloud Monitoring charts.
+package charts
 
 import (
 	"context"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
 	monitoringpb "cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
@@ -73,8 +74,8 @@ type appTimeSeries struct {
 }
 
 type appTimeSeriesDataPoint struct {
-	Timestamp int64   `json:"timestamp,omitempty"`
-	Value     float64 `json:"value,omitempty"`
+	Timestamp int64   `json:"timestamp"`
+	Value     float64 `json:"value"`
 }
 
 // Install registers monitoring tools that require 'apps' extension support.
@@ -88,11 +89,6 @@ func Install(_ context.Context, s *mcp.Server, c *config.Config) error {
 		Description: "Interactive tool to display time series data using a React Chart. ALWAYS favor using this tool to query metrics rather than outputting raw values so the user gets a visualization. MUST Call `mql_validator` FIRST to catch syntax issues or metric anomalies before running this tool.",
 		Annotations: &mcp.ToolAnnotations{
 			ReadOnlyHint: true,
-		},
-		Meta: mcp.Meta{
-			"ui": map[string]interface{}{
-				"resourceUri": resourceURI,
-			},
 		},
 		InputSchema: map[string]interface{}{
 			"type": "object",
@@ -118,7 +114,12 @@ func Install(_ context.Context, s *mcp.Server, c *config.Config) error {
 					"description": "Optional. The legend/label for the Y-axis (e.g., 'CPU Usage (%)', 'Memory (GiB)').",
 				},
 			},
-			"required": []string{"query", "title"},
+			"required": []string{"query"},
+		},
+		Meta: mcp.Meta{
+			"ui": map[string]interface{}{
+				"resourceUri": resourceURI,
+			},
 		},
 	}, h.timeSeriesChart)
 
@@ -127,11 +128,6 @@ func Install(_ context.Context, s *mcp.Server, c *config.Config) error {
 		Description: "Internal app tool. Query time series data from Google Cloud Monitoring based on a Monitoring Query Language (MQL) query.",
 		Annotations: &mcp.ToolAnnotations{
 			ReadOnlyHint: true,
-		},
-		Meta: mcp.Meta{
-			"ui": map[string]interface{}{
-				"visibility": []string{"app"},
-			},
 		},
 		InputSchema: map[string]interface{}{
 			"type": "object",
@@ -146,6 +142,11 @@ func Install(_ context.Context, s *mcp.Server, c *config.Config) error {
 				},
 			},
 			"required": []string{"query"},
+		},
+		Meta: mcp.Meta{
+			"ui": map[string]interface{}{
+				"visibility": []string{"app"},
+			},
 		},
 	}, h.queryTimeSeries)
 
@@ -230,41 +231,14 @@ func (h *handlers) queryTimeSeries(ctx context.Context, _ *mcp.CallToolRequest, 
 		return nil, nil, fmt.Errorf("query argument cannot be empty")
 	}
 
-	c, err := monitoring.NewQueryClient(ctx, option.WithUserAgent(h.c.UserAgent()), option.WithQuotaProject(args.ProjectID))
+	data, err := queryMonitoringData(ctx, h.c, args.ProjectID, args.Query)
 	if err != nil {
 		return nil, nil, err
 	}
-	defer func() {
-		if err := c.Close(); err != nil {
-			log.Printf("Failed to close monitoring query client: %v\n", err)
-		}
-	}()
 
-	req := &monitoringpb.QueryTimeSeriesRequest{
-		Name:  fmt.Sprintf("projects/%s", args.ProjectID),
-		Query: args.Query,
-	}
-
-	it := c.QueryTimeSeries(ctx, req)
 	var series []appTimeSeries
-	for {
-		resp, err := it.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			return nil, nil, err
-		}
-
-		label := "Unknown Series"
-		if len(resp.GetLabelValues()) > 0 {
-			label = resp.GetLabelValues()[0].GetStringValue()
-		}
-
-		series = append(series, appTimeSeries{
-			Label:  label,
-			Points: mapPoints(resp.GetPointData()),
-		})
+	for _, resp := range data {
+		series = append(series, mapTimeseriesDataPoints(resp))
 	}
 
 	return &mcp.CallToolResult{
@@ -274,23 +248,32 @@ func (h *handlers) queryTimeSeries(ctx context.Context, _ *mcp.CallToolRequest, 
 	}, nil, nil
 }
 
-func mapPoints(pointData []*monitoringpb.TimeSeriesData_PointData) []appTimeSeriesDataPoint {
-	var pts []appTimeSeriesDataPoint
-	for _, p := range pointData {
-		val := 0.0
-		if len(p.GetValues()) > 0 {
-			val = p.GetValues()[0].GetDoubleValue()
+func mapTimeseriesDataPoints(resp *monitoringpb.TimeSeriesData) appTimeSeries {
+	var labelParts []string
+	for _, lv := range resp.GetLabelValues() {
+		if v := lv.GetStringValue(); v != "" {
+			labelParts = append(labelParts, v)
 		}
-		ts := int64(0)
-		if p.GetTimeInterval().GetEndTime() != nil {
-			ts = p.GetTimeInterval().GetEndTime().AsTime().UnixMilli()
+	}
+	label := strings.Join(labelParts, " ")
+
+	var pts []appTimeSeriesDataPoint
+	for _, p := range resp.GetPointData() {
+		if len(p.GetValues()) == 0 {
+			continue // if values is not presented, should not be formed
+		}
+		if p.GetTimeInterval().GetEndTime() == nil {
+			continue // ignore if timestamp is not presented
 		}
 		pts = append(pts, appTimeSeriesDataPoint{
-			Timestamp: ts,
-			Value:     val,
+			Timestamp: p.GetTimeInterval().GetEndTime().AsTime().UnixMilli(),
+			Value:     p.GetValues()[0].GetDoubleValue(),
 		})
 	}
-	return pts
+	return appTimeSeries{
+		Label:  label,
+		Points: pts,
+	}
 }
 
 func (h *handlers) mqlValidator(ctx context.Context, _ *mcp.CallToolRequest, args *mqlValidatorArgs) (*mcp.CallToolResult, any, error) {
@@ -346,4 +329,35 @@ func (h *handlers) mqlValidator(ctx context.Context, _ *mcp.CallToolRequest, arg
 		IsError:           isError,
 		StructuredContent: result,
 	}, nil, nil
+}
+
+func queryMonitoringData(ctx context.Context, cfg *config.Config, projectID, query string) ([]*monitoringpb.TimeSeriesData, error) {
+	c, err := monitoring.NewQueryClient(ctx, option.WithUserAgent(cfg.UserAgent()), option.WithQuotaProject(projectID))
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := c.Close(); err != nil {
+			log.Printf("Failed to close monitoring query client: %v\n", err)
+		}
+	}()
+
+	req := &monitoringpb.QueryTimeSeriesRequest{
+		Name:  fmt.Sprintf("projects/%s", projectID),
+		Query: query,
+	}
+
+	it := c.QueryTimeSeries(ctx, req)
+	var data []*monitoringpb.TimeSeriesData
+	for {
+		resp, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		data = append(data, resp)
+	}
+	return data, nil
 }
