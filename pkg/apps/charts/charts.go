@@ -31,8 +31,9 @@ import (
 )
 
 const (
-	resourceURI = "ui://monitoring_time_series_chart/index.html"
-	mimeType    = "text/html;profile=mcp-app"
+	resourceURI    = "ui://monitoring_time_series_chart/index.html"
+	mimeType       = "text/html;profile=mcp-app"
+	maxSeriesLimit = 100
 )
 
 type handlers struct {
@@ -304,8 +305,11 @@ func (h *handlers) mqlValidator(ctx context.Context, _ *mcp.CallToolRequest, arg
 
 	it := c.QueryTimeSeries(ctx, req) //nolint:staticcheck
 
-	// Fetch the first page just to validate execution.
-	_, _, err = it.InternalFetch(1, "")
+	// Validate query execution.
+	_, err = it.Next()
+	if err == iterator.Done {
+		err = nil // iterator.Done is successful validation (valid query, no data)
+	}
 
 	var result validationResult
 	var isError bool
@@ -350,6 +354,9 @@ func queryMonitoringData(ctx context.Context, cfg *config.Config, projectID, que
 	it := c.QueryTimeSeries(ctx, req) //nolint:staticcheck
 	var data []*monitoringpb.TimeSeriesData
 	for {
+		if len(data) >= maxSeriesLimit {
+			break
+		}
 		resp, err := it.Next()
 		if err == iterator.Done {
 			break

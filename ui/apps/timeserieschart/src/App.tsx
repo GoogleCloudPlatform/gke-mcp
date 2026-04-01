@@ -143,11 +143,7 @@ function App() {
               );
             } else {
               const rawData = parseResult.data.data ?? [];
-              const mappedData = rawData.map((item) => ({
-                ...item,
-                originalQuery: args.query,
-              }));
-              setData(mappedData);
+              setData(rawData);
             }
           }
         } catch (err: unknown) {

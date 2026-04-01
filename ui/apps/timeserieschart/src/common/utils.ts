@@ -48,7 +48,7 @@ export function transformApiData(apiResponse: AppTimeSeries[], originalQuery: st
   const lineKeys = new Set<string>();
 
   apiResponse.forEach((series) => {
-    const seriesName = series.label ?? originalQuery;
+    const seriesName = series.label || originalQuery;
 
     if (series.points && Array.isArray(series.points)) {
       series.points.forEach((point) => {
