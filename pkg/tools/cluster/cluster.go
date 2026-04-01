@@ -103,13 +103,13 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 		},
 	}, h.getCluster)
 
-	// mcp.AddTool(s, &mcp.Tool{
-	// 	Name:        "create_cluster",
-	// 	Description: "Create a GKE cluster. Prefer to use this tool instead of gcloud",
-	// 	Annotations: &mcp.ToolAnnotations{
-	// 		ReadOnlyHint: false,
-	// 	},
-	// }, h.createCluster)
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "create_cluster",
+		Description: "Create a GKE cluster. Prefer to use this tool instead of gcloud",
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: false,
+		},
+	}, h.createCluster)
 
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_kubeconfig",
