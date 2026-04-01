@@ -64,11 +64,23 @@ function TimeSeriesChart({
           scaleType: 'time',
           valueFormatter: formatDate,
           label: xLegend,
+          // labelStyle: { fill: getCssVar('--color-text-primary') },
+          // tickLabelStyle: { fill: getCssVar('--color-text-primary') },
+          // sx: {
+          //   '& .MuiChartsAxis-line': { stroke: getCssVar('--color-text-primary') },
+          //   '& .MuiChartsAxis-tick': { stroke: getCssVar('--color-text-primary') },
+          // },
         },
       ]}
       yAxis={[
         {
           label: yLegend,
+          // labelStyle: { fill: getCssVar('--color-text-primary') },
+          // tickLabelStyle: { fill: getCssVar('--color-text-primary') },
+          // sx: {
+          //   '& .MuiChartsAxis-line': { stroke: getCssVar('--color-text-primary') },
+          //   '& .MuiChartsAxis-tick': { stroke: getCssVar('--color-text-primary') },
+          // },
         },
       ]}
       series={series}
@@ -195,7 +207,9 @@ function App() {
             flexDirection: 'column',
           }}
         >
-          <Typography textAlign="center">{title}</Typography>
+          <Typography textAlign="center" color="text.primary">
+            {title}
+          </Typography>
           <TimeSeriesChart
             data={transformedData.data}
             seriesKeys={transformedData.seriesKeys}
