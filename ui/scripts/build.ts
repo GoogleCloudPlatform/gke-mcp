@@ -3,7 +3,6 @@ import { uiDir, getApps } from './common/utils';
 
 const apps = getApps();
 
-
 console.log(`Found apps: ${apps.join(', ')}`);
 
 for (const app of apps) {
