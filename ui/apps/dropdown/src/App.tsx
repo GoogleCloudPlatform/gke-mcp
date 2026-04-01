@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useApp, useDocumentTheme, useHostStyles } from '@modelcontextprotocol/ext-apps/react';
 import { z } from 'zod';
 import {
+  Box,
   FormControl,
   InputLabel,
   Select,
@@ -85,7 +86,14 @@ export default function App() {
 
   return (
     <ThemeProvider theme={theme}>
-      <div className="container" style={{ minHeight: MENU_ITEMS_MAX_HEIGHT + 60 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '24px',
+          minHeight: MENU_ITEMS_MAX_HEIGHT + 60,
+        }}
+      >
         <FormControl fullWidth>
           <InputLabel id="resource-dropdown-label">{title}</InputLabel>
           <Select
@@ -115,7 +123,7 @@ export default function App() {
             {error}
           </Alert>
         )}
-      </div>
+      </Box>
     </ThemeProvider>
   );
 }

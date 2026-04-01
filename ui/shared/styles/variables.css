@@ -1,5 +1,9 @@
 :root {
+  /* Fall back values for MCP client host css style variables used inside the apps.
+     The full list of supported variables: https://apps.extensions.modelcontextprotocol.io/api/types/app.McpUiStyleVariableKey.html*/
   --font-sans: Roboto, system-ui, sans-serif;
   --color-text-primary: light-dark(#1e1e1e, #f0f0f0);
+  --color-text-secondary: light-dark(#555555, #aaaaaa);
+  --color-text-disabled: light-dark(#888888, #777777);
   --color-background-primary: light-dark(#ffffff, #1a1a1a);
 }
