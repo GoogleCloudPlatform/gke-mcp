@@ -18,7 +18,10 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+    "paths": {
+      "@gke-mcp/ui/shared/*": ["./shared/*"]
+    }
   },
-  "include": ["apps/dropdown/src"]
+  "include": ["apps", "shared"]
 }

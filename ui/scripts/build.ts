@@ -1,23 +1,7 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import { uiDir, getApps } from './common/utils';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const uiDir = path.join(__dirname, '..');
-const appsDir = path.join(uiDir, 'apps');
-
-const apps: string[] = fs.readdirSync(appsDir).filter((file: string) => {
-  if (file === '.' || file === '..') {
-    return false;
-  }
-  try {
-    return fs.statSync(path.join(appsDir, file)).isDirectory();
-  } catch {
-    return false;
-  }
-});
+const apps = getApps();
 
 console.log(`Found apps: ${apps.join(', ')}`);
 

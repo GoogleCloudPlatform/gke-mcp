@@ -6,12 +6,21 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const appName = process.env.VITE_APP_NAME || 'dropdown';
+const appName = process.env.VITE_APP_NAME;
+
+if (!appName) {
+  throw new Error('VITE_APP_NAME is not defined');
+}
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 export default defineConfig({
   plugins: [react(), viteSingleFile()],
+  resolve: {
+    alias: {
+      '@gke-mcp/ui/shared': resolve(__dirname, 'shared'),
+    },
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: false,

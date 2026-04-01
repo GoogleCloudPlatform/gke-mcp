@@ -1,0 +1,4 @@
+body {
+  /* Handle overflow of tooltip */
+  overflow-y: hidden;
+}

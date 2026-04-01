@@ -46,6 +46,10 @@ test: ## Run tests
 	@echo "Running tests..."
 	go test -v ./...
 
+test-ui: ## Run UI tests
+	@echo "Running UI tests..."
+	@npm --prefix $(UI_DIR) run test
+
 clean: ## Remove build artifacts
 	@echo "Cleaning up..."
 	@rm -f $(BINARY_NAME)

@@ -18,6 +18,7 @@ package apps
 import (
 	"context"
 
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/apps/charts"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/apps/dropdown"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -29,6 +30,7 @@ type installer func(ctx context.Context, s *mcp.Server, c *config.Config) error
 func InstallApps(ctx context.Context, s *mcp.Server, c *config.Config) error {
 	installers := []installer{
 		dropdown.Install,
+		charts.Install,
 	}
 
 	for _, installer := range installers {
