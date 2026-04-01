@@ -180,7 +180,7 @@ func Install(_ context.Context, s *mcp.Server, c *config.Config) error {
 		Name:     "Time Series Chart UI",
 		URI:      resourceURI,
 		MIMEType: mimeType,
-	}, func(ctx context.Context, request *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
+	}, func(_ context.Context, _ *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
 		return &mcp.ReadResourceResult{
 			Contents: []*mcp.ResourceContents{
 				{
@@ -195,7 +195,7 @@ func Install(_ context.Context, s *mcp.Server, c *config.Config) error {
 	return nil
 }
 
-func (h *handlers) timeSeriesChart(ctx context.Context, _ *mcp.CallToolRequest, args *timeSeriesChartArgs) (*mcp.CallToolResult, any, error) {
+func (h *handlers) timeSeriesChart(_ context.Context, _ *mcp.CallToolRequest, args *timeSeriesChartArgs) (*mcp.CallToolResult, any, error) {
 	if args.ProjectID == "" {
 		args.ProjectID = h.c.DefaultProjectID()
 	}
@@ -297,12 +297,12 @@ func (h *handlers) mqlValidator(ctx context.Context, _ *mcp.CallToolRequest, arg
 		}
 	}()
 
-	req := &monitoringpb.QueryTimeSeriesRequest{
+	req := &monitoringpb.QueryTimeSeriesRequest{ //nolint:staticcheck
 		Name:  fmt.Sprintf("projects/%s", args.ProjectID),
 		Query: args.Query,
 	}
 
-	it := c.QueryTimeSeries(ctx, req)
+	it := c.QueryTimeSeries(ctx, req) //nolint:staticcheck
 
 	// Fetch the first page just to validate execution.
 	_, _, err = it.InternalFetch(1, "")
@@ -318,7 +318,7 @@ func (h *handlers) mqlValidator(ctx context.Context, _ *mcp.CallToolRequest, arg
 		}
 		isError = true
 	} else {
-		// Succesful compilation and execution
+		// Successful compilation and execution
 		result = validationResult{
 			Status: "VALID",
 			Query:  args.Query,
@@ -342,12 +342,12 @@ func queryMonitoringData(ctx context.Context, cfg *config.Config, projectID, que
 		}
 	}()
 
-	req := &monitoringpb.QueryTimeSeriesRequest{
+	req := &monitoringpb.QueryTimeSeriesRequest{ //nolint:staticcheck
 		Name:  fmt.Sprintf("projects/%s", projectID),
 		Query: query,
 	}
 
-	it := c.QueryTimeSeries(ctx, req)
+	it := c.QueryTimeSeries(ctx, req) //nolint:staticcheck
 	var data []*monitoringpb.TimeSeriesData
 	for {
 		resp, err := it.Next()

@@ -74,7 +74,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - uses: ./.github/actions/build-ui
+      - name: "Install UI dependencies"
+        shell: bash
+        run: npm --prefix ui ci
       - name: "Run UI tests"
         run: |
           ./dev/ci/presubmits/ui-test.sh
