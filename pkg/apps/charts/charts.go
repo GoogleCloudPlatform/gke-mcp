@@ -353,10 +353,7 @@ func queryMonitoringData(ctx context.Context, cfg *config.Config, projectID, que
 
 	it := c.QueryTimeSeries(ctx, req) //nolint:staticcheck
 	var data []*monitoringpb.TimeSeriesData
-	for {
-		if len(data) >= maxSeriesLimit {
-			break
-		}
+	for len(data) < maxSeriesLimit {
 		resp, err := it.Next()
 		if err == iterator.Done {
 			break

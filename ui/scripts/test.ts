@@ -18,7 +18,7 @@ for (const app of apps) {
         VITE_APP_NAME: app,
       },
     });
-  } catch (error) {
+  } catch {
     console.error(`\n❌ Tests failed for app: ${app}\n`);
     failed = true;
   }
