@@ -21,3 +21,8 @@ import _ "embed"
 //
 //go:embed dist/apps/dropdown/index.html
 var DropdownHTML []byte
+
+// TimeSeriesChartHTML is the embedded HTML content for the time series chart UI.
+//
+//go:embed dist/apps/timeserieschart/index.html
+var TimeSeriesChartHTML []byte

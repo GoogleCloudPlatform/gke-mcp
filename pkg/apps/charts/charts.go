@@ -19,21 +19,20 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"strings"
 
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
 	monitoringpb "cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"github.com/GoogleCloudPlatform/gke-mcp/ui"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
 const (
-	htmlFilePath = "ui/dist/apps/timeserieschart/index.html"
-	resourceURI  = "ui://monitoring_time_series_chart/index.html"
-	mimeType     = "text/html;profile=mcp-app"
+	resourceURI = "ui://monitoring_time_series_chart/index.html"
+	mimeType    = "text/html;profile=mcp-app"
 )
 
 type handlers struct {
@@ -182,18 +181,12 @@ func Install(_ context.Context, s *mcp.Server, c *config.Config) error {
 		URI:      resourceURI,
 		MIMEType: mimeType,
 	}, func(ctx context.Context, request *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
-		htmlContent, err := os.ReadFile(htmlFilePath)
-
-		if err != nil {
-			return nil, fmt.Errorf("failed to read UI file at %s: %w", htmlFilePath, err)
-		}
-
 		return &mcp.ReadResourceResult{
 			Contents: []*mcp.ResourceContents{
 				{
 					URI:      resourceURI,
 					MIMEType: mimeType,
-					Text:     string(htmlContent),
+					Text:     string(ui.TimeSeriesChartHTML),
 				},
 			},
 		}, nil

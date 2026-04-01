@@ -18,8 +18,8 @@ package apps
 import (
 	"context"
 
-	"github.com/GoogleCloudPlatform/gke-mcp/pkg/apps/dropdown"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/apps/charts"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/apps/dropdown"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
