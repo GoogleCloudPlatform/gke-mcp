@@ -6,7 +6,8 @@
     "build": "tsc -b && tsx scripts/build.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
@@ -29,7 +30,8 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.57.1",
     "vite": "^7.3.1",
-    "vite-plugin-singlefile": "^2.3.0"
+    "vite-plugin-singlefile": "^2.3.0",
+    "vitest": "^3.0.4"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

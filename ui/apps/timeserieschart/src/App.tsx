@@ -4,13 +4,18 @@ import { z } from 'zod';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { ThemeProvider, createTheme, Alert, Box, Typography } from '@mui/material';
 import { getCssVar } from '@gke-mcp/ui/shared/utils/styles';
-import type { DatasetElementType } from '@mui/x-charts/internals';
+import {
+  type AppTimeSeries,
+  type ChartDataPoint,
+  transformApiData,
+  formatDate,
+  appTimeSeriesSchema,
+} from './common/utils';
+import { TIMESTAMP_KEY } from './common/const';
 
-export const MCP_TOOL = {
+const MCP_TOOL = {
   QUERY_TIME_SERIES: 'query_time_series',
 } as const;
-
-const TIMESTAMP_KEY = 'timestamp' as const;
 
 const timeSeriesChartArgsSchema = z.object({
   project_id: z.string().optional(),
@@ -25,65 +30,9 @@ const queryTimeSeriesRequestSchema = z.object({
   query: z.string(),
 });
 
-const appTimeSeriesDataPointSchema = z.object({
-  timestamp: z.number(),
-  value: z.number(),
-});
-
-const appTimeSeriesSchema = z.object({
-  label: z.string().optional(),
-  points: z.array(appTimeSeriesDataPointSchema),
-});
-
 const queryTimeSeriesResponseSchema = z.object({
   data: z.array(appTimeSeriesSchema).nullable(),
 });
-
-type AppTimeSeries = z.infer<typeof appTimeSeriesSchema>;
-
-type ChartDataPoint = DatasetElementType<number | Date> & {
-  [TIMESTAMP_KEY]: Date;
-};
-
-function transformGCPData(apiResponse: AppTimeSeries[], originalQuery: string) {
-  if (!apiResponse || apiResponse.length === 0) {
-    return { data: [], seriesKeys: [] };
-  }
-
-  const timeMap = new Map<number, Record<string, number>>();
-  const lineKeys = new Set<string>();
-
-  apiResponse.forEach((series) => {
-    const seriesName = series.label ?? originalQuery;
-
-    if (series.points && Array.isArray(series.points)) {
-      series.points.forEach((point) => {
-        const timestamp = new Date(point.timestamp).getTime();
-
-        if (!timeMap.has(timestamp)) {
-          timeMap.set(timestamp, {});
-        }
-
-        lineKeys.add(seriesName);
-        timeMap.get(timestamp)![seriesName] = point.value;
-      });
-    }
-  });
-
-  const data: ChartDataPoint[] = Array.from(timeMap.entries())
-    .sort(([timestampA], [timestampB]) => timestampA - timestampB)
-    .map(([timestamp, point]) => ({ ...point, [TIMESTAMP_KEY]: new Date(timestamp) }));
-
-  return { data, seriesKeys: Array.from(lineKeys) };
-}
-
-function formatDate(value: Date) {
-  const dateStr = value.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  });
-  return `${dateStr} ${value.toLocaleTimeString()}`;
-}
 
 function TimeSeriesChart({
   data,
@@ -236,7 +185,7 @@ function App() {
     [docTheme]
   );
 
-  const transformedData = useMemo(() => transformGCPData(data, query), [data, query]);
+  const transformedData = useMemo(() => transformApiData(data, query), [data, query]);
 
   return (
     <ThemeProvider theme={theme}>
