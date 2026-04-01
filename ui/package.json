@@ -8,7 +8,6 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "test": "tsx scripts/test.ts"
-
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
