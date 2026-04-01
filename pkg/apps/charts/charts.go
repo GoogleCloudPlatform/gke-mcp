@@ -262,12 +262,19 @@ func mapTimeseriesDataPoints(resp *monitoringpb.TimeSeriesData) appTimeSeries {
 		if len(p.GetValues()) == 0 {
 			continue // if values is not presented, should not be formed
 		}
-		if p.GetTimeInterval().GetEndTime() == nil {
-			continue // ignore if timestamp is not presented
+		var val float64
+		switch v := p.GetValues()[0].GetValue().(type) {
+		case *monitoringpb.TypedValue_DoubleValue:
+			val = v.DoubleValue
+		case *monitoringpb.TypedValue_Int64Value:
+			val = float64(v.Int64Value)
+		default:
+			continue // skip if value type is not supported by the time series chart
 		}
+
 		pts = append(pts, appTimeSeriesDataPoint{
 			Timestamp: p.GetTimeInterval().GetEndTime().AsTime().UnixMilli(),
-			Value:     p.GetValues()[0].GetDoubleValue(),
+			Value:     val,
 		})
 	}
 	return appTimeSeries{

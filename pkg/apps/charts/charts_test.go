@@ -20,9 +20,9 @@ import (
 	"testing"
 	"time"
 
+	monitoringpb "cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	monitoringpb "cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -104,6 +104,68 @@ func TestMapTimeseriesDataPoints(t *testing.T) {
 				PointData: []*monitoringpb.TimeSeriesData_PointData{
 					{
 						Values: []*monitoringpb.TypedValue{},
+						TimeInterval: &monitoringpb.TimeInterval{
+							EndTime: timestamppb.New(now),
+						},
+					},
+				},
+			},
+			expected: appTimeSeries{
+				Label:  "",
+				Points: []appTimeSeriesDataPoint{},
+			},
+		},
+		{
+			name: "more than 1 value provided to Values should use the first one",
+			input: &monitoringpb.TimeSeriesData{
+				PointData: []*monitoringpb.TimeSeriesData_PointData{
+					{
+						Values: []*monitoringpb.TypedValue{
+							{Value: &monitoringpb.TypedValue_DoubleValue{DoubleValue: 1.23}},
+							{Value: &monitoringpb.TypedValue_DoubleValue{DoubleValue: 4.56}},
+						},
+						TimeInterval: &monitoringpb.TimeInterval{
+							EndTime: timestamppb.New(now),
+						},
+					},
+				},
+			},
+			expected: appTimeSeries{
+				Label: "",
+				Points: []appTimeSeriesDataPoint{
+					{Timestamp: nowUnixMilli, Value: 1.23},
+				},
+			},
+		},
+		{
+			name: "value type is int64 should convert to float64",
+			input: &monitoringpb.TimeSeriesData{
+				PointData: []*monitoringpb.TimeSeriesData_PointData{
+					{
+						Values: []*monitoringpb.TypedValue{
+							{Value: &monitoringpb.TypedValue_Int64Value{Int64Value: 42}},
+						},
+						TimeInterval: &monitoringpb.TimeInterval{
+							EndTime: timestamppb.New(now),
+						},
+					},
+				},
+			},
+			expected: appTimeSeries{
+				Label: "",
+				Points: []appTimeSeriesDataPoint{
+					{Timestamp: nowUnixMilli, Value: 42.0},
+				},
+			},
+		},
+		{
+			name: "value type is different from int64 and double should skip the point",
+			input: &monitoringpb.TimeSeriesData{
+				PointData: []*monitoringpb.TimeSeriesData_PointData{
+					{
+						Values: []*monitoringpb.TypedValue{
+							{Value: &monitoringpb.TypedValue_StringValue{StringValue: "not-a-number"}},
+						},
 						TimeInterval: &monitoringpb.TimeInterval{
 							EndTime: timestamppb.New(now),
 						},
