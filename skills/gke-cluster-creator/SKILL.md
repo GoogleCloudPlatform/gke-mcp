@@ -126,7 +126,7 @@ Best for: Development, testing, non-critical workloads.
 - **ALWAYS** ask for the `project_id` if it is not in the context.
 - **ALWAYS** ask for the `location` (Region or Zone).
 - **ALWAYS** ask for a unique `cluster_name`.
-- **USE** `create_cluster` MCP tool to create the cluster.
+- **USE** create_cluster MCP tool to create the cluster. The parent argument is projects/{PROJECT_ID}/locations/{LOCATION} and the cluster argument is the JSON object. The cluster.name should be the short name (e.g., my-cluster), NOT the full resource path.
 
 ## example_usage
 
