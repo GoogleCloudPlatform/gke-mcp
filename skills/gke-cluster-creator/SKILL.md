@@ -96,7 +96,7 @@ Best for: High-performance AI/ML Inference. Uses secondary boot disks for faster
     "additionalBootDisks": [
       {
         "sourceImage": "projects/deeplearning-platform-release/global/images/family/common-cu121-v20240111",
-        "diskSizeGb": "100"
+        "diskSizeGb": 100
       }
     ],
     "oauthScopes": ["https://www.googleapis.com/auth/cloud-platform"]
