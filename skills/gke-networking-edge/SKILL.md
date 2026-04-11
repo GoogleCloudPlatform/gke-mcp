@@ -151,7 +151,7 @@ metadata:
 spec:
   iap:
     enabled: true
-    oauthclientCredentials:
+    oauthClientCredentials:
       secretName: my-iap-secret
 ```
 
