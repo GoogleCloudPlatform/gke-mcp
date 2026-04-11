@@ -94,10 +94,34 @@ gcloud container clusters update <cluster-name> \
     --maintenance-window-recurrence "FREQ=DAILY"
 ```
 
+### 7. Multi-cluster Services (MCS)
+
+For global availability and disaster recovery, use MCS to export and import services across clusters.
+
+**Enable MCS in the fleet:**
+
+```bash
+gcloud container fleet multi-cluster-services enable \
+    --project <project-id>
+```
+
+**Export a Service:**
+
+```yaml
+apiVersion: networking.gke.io/v1
+kind: ServiceExport
+metadata:
+  name: my-service
+  namespace: my-namespace
+```
+
+Applications in other clusters in the same fleet can then access this service using the `my-service.my-namespace.svc.clusterset.local` hostname.
+
 ## Best Practices
 
 1. **Regional Clusters**: Always use regional clusters for production workloads to survive zone failures.
 2. **Probes for All Containers**: Every container in a production pod should have at least a readiness probe.
 3. **PDBs for Critical Apps**: Use PDBs to prevent downtime during automated node upgrades.
-4. **Zone Spreading**: Always use `topologySpreadConstraints` to ensure pods are distributed across zones, even in regional clusters.
-5. **Schedule Maintenance**: Set maintenance windows to ensure upgrades happen during low-traffic periods.
+4. **Zone Spreading**: Always use `topologySpreadConstraints` to ensure pods are distributed across zones.
+5. **Multi-cluster for DR**: Use Multi-cluster Services (MCS) and Gateway API for global traffic management and disaster recovery across regions.
+6. **Schedule Maintenance**: Set maintenance windows to ensure upgrades happen during low-traffic periods.

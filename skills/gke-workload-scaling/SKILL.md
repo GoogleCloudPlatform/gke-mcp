@@ -66,32 +66,43 @@ gcloud container clusters update <cluster-name> --enable-vertical-pod-autoscalin
 - `Off`: Calculates recommendations but does not apply them. Good for "dry run" analysis.
 - `Initial`: Assigns resources only at pod creation time.
 - `Auto`: Updates running pods by restarting them if recommendations differ significantly from requests.
-- `InPlaceOrRecreate`: Attempts to update Pod resources without recreating the Pod. If in-place update is not possible, it reverts to `Auto` mode (requires GKE 1.34+).
+- `InPlaceOrRecreate`: Attempts to update Pod resources without recreating the Pod using **In-Place Pod Resizing** (requires GKE 1.34+).
 
-**Example:**
-See [assets/vpa-example.yaml](assets/vpa-example.yaml) for a configuration template.
+### 4. Multi-dimensional Pod Autoscaling (MPA)
 
-### 4. Cluster Autoscaler
+For workloads that need to scale both horizontally (more pods) and vertically (larger pods), use MPA. This is especially useful for workloads where CPU and memory usage are not perfectly correlated.
 
-While not a workload-level scaler, the Cluster Autoscaler is essential for ensuring your cluster has enough nodes to run the scaled pods.
+### 5. Cluster Autoscaler
 
-**Enable on a Node Pool:**
+While not a workload-level scaler, the Cluster Autoscaler is essential for ensuring your cluster has enough nodes to run the scaled pods. In **Autopilot**, this is handled automatically.
 
-```bash
-gcloud container clusters update <cluster-name> \
-    --enable-autoscaling \
-    --node-pool <node-pool-name> \
-    --min-nodes <min> \
-    --max-nodes <max> \
-    --zone <zone>
-```
+### 6. Karpenter for GKE (Standard Clusters)
+
+For high-velocity, multi-dimensional scaling in Standard clusters, use **Karpenter**. Karpenter observes unschedulable pods and quickly provisions the right-sized nodes for them.
+
+**Advantages:**
+- Faster node provisioning compared to Cluster Autoscaler.
+- Directly creates Compute Engine instances without node pool overhead.
+- Intelligent workload consolidation to reduce costs.
+
+### 7. Image Streaming for Faster Startup
+
+Reduce the time it takes for new pods to start (Cold Start) by streaming image data. This is particularly effective for large images (>1GB).
+
+**Usage:**
+- **Autopilot**: Enabled by default for images on AR/GCR.
+- **Standard**: Enable on the node pool.
+  ```bash
+  gcloud container node-pools update <pool-name> --cluster <cluster-name> --enable-image-streaming
+  ```
 
 ## Best Practices
 
-1. **Define Resource Requests:** HPA and VPA rely on accurate resource requests. Always define them in your container specs.
-2. **Avoid Metric Conflicts:** Do not configure HPA and VPA to use the same metric (e.g., both CPU). This causes thrashing.
+1. **Prefer Autopilot**: Use Autopilot to benefit from automatic node provisioning and built-in scaling optimizations.
+2. **Define Resource Requests**: HPA and VPA rely on accurate resource requests. Always define them in your container specs.
+3. **Avoid Metric Conflicts**: Do not configure HPA and VPA to use the same metric (e.g., both CPU). This causes thrashing.
    - _Typical Pattern:_ HPA on CPU, VPA on Memory.
-3. **Pod Disruption Budgets (PDBs):** Define PDBs to ensure application availability during scaling events or node upgrades.
-4. **HPA Lag:** HPA has a stabilization window (default 5 mins) to prevent rapid fluctuation.
-5. **VPA "Auto" Mode Risks:** In "Auto" mode, VPA restarts pods to change resources. Ensure your application handles restarts gracefully (e.g., handles SIGTERM).
+4. **Pod Disruption Budgets (PDBs)**: Define PDBs to ensure application availability during scaling events or node upgrades.
+5. **HPA Lag**: HPA has a stabilization window (default 5 mins) to prevent rapid fluctuation.
+6. **VPA "Auto" Mode Risks**: In "Auto" mode, VPA restarts pods to change resources. Ensure your application handles restarts gracefully (e.g., handles SIGTERM).
    - _Note:_ By default, VPA requires at least 2 replicas to perform evictions. In GKE 1.22+, you can override this by setting `minReplicas` in `PodUpdatePolicy`.
