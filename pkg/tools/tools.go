@@ -18,6 +18,7 @@ package tools
 import (
 	"context"
 
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/agents/manifestgen"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/cluster"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/clustertoolkit"
@@ -45,6 +46,7 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 		recommendation.Install,
 		k8schangelog.Install,
 		gkereleasenotes.Install,
+		manifestgen.Install,
 	}
 
 	for _, installer := range installers {
