@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package manifestgen provides an agent for generating Kubernetes manifests.
 package manifestgen
 
 import (
@@ -87,7 +88,7 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "generate_manifest",
 		Description: "Generates a Kubernetes manifest using Vertex AI based on a description.",
-	}, func(ctx context.Context, req *mcp.CallToolRequest, args *struct {
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, args *struct {
 		Prompt string `json:"prompt" jsonschema:"The description of the manifest to generate. e.g. 'nginx deployment with 3 replicas'"`
 	}) (*mcp.CallToolResult, any, error) {
 		manifest, err := agent.GenerateManifest(ctx, args.Prompt)
