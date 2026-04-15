@@ -8,7 +8,7 @@ RUN npm ci
 COPY ui/ ./
 RUN npm run build
 
-FROM golang:1.26.1 AS build
+FROM golang:1.26.2 AS build
 
 WORKDIR /go/src/gke-mcp
 COPY go.mod go.sum ./

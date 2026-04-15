@@ -1,8 +1,13 @@
 approvers:
+- adamparco
 - bradhoekstra
+- erain
+- GinnyJI
 - juli4n
 - krzyzacy
-- adamparco
-- GinnyJI
-- erain
 
+reviewers:
+- dshnayder
+- jayantid
+- stalhaali
+- toshiowang

@@ -1,5 +1,5 @@
 ---
-name: gke-creation
+name: gke-cluster-creator
 description: Guides the user through creating GKE clusters using pre-defined templates (Standard, Autopilot, GPU/AI).
 ---
 
