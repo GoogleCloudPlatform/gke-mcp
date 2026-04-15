@@ -57,6 +57,24 @@ updates:
           - "minor"
           - "patch"
 
+  # NPM dependencies
+  - package-ecosystem: "npm"
+    directory: "/ui"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "javascript"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    reviewers:
+      - "GoogleCloudPlatform/gke-mcp-owners"
+
   # GitHub Actions dependencies
   - package-ecosystem: "github-actions"
     directory: "/"
