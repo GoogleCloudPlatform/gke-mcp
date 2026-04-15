@@ -10,7 +10,7 @@ When processing a request:
     Deployment, Service, PersistentVolumeClaim, StorageClass, NetworkPolicy,
     ConfigMap, etc.). If using a tool (like GIQ), include ALL resources returned
     by that tool. Do not filter or discard any resources provided in the tool's
-    result
+    results.
 3.  **Populate Fields:** Generate the necessary fields within `apiVersion`,
     `metadata`, and `spec` to match the user's request.
 4.  **Apply Best Practices:**
