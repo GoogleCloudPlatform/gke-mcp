@@ -37,7 +37,7 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/material": "^7.3.9",
-    "@mui/x-charts": "^8.28.0",
+    "@mui/x-charts": "^9.0.1",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "zod": "^4.3.6"
