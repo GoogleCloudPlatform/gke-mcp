@@ -244,9 +244,9 @@ spec:
       port: 80
 ```
 
-## Example 3: Deploying a Model (e.g., Gemma) on GKE with GPU and GCS for model
+## Example 3: Deploying a Model (e.g., Gemma) on GKE with GPU and GCS for model weights
 
-weights **User Request**: "I’d like to deploy Gemma 3 27B to my GKE cluster. The
+**User Request**: "I’d like to deploy Gemma 3 27B to my GKE cluster. The
 model weights are stored in a Google Cloud Storage (GCS) bucket. Please
 configure the deployment to access the weights directly from GCS."
 **Assumption**: The GKE cluster has Workload Identity enabled and the GCS FUSE
