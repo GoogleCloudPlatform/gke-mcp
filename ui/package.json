@@ -10,7 +10,7 @@
     "test": "tsx scripts/test.ts"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
+    "@eslint/js": "^10.0.1",
     "@modelcontextprotocol/ext-apps": "^1.6.0",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@types/node": "^24.10.1",
