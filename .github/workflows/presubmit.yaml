@@ -41,7 +41,7 @@ jobs:
       contents: "read"
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: "go.mod"
       - uses: ./.github/actions/build-ui
@@ -56,7 +56,7 @@ jobs:
       contents: "read"
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: "go.mod"
       - uses: ./.github/actions/build-ui
@@ -88,7 +88,7 @@ jobs:
       contents: "read"
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: "go.mod"
       - uses: ./.github/actions/build-ui
@@ -104,7 +104,7 @@ jobs:
       checks: "write" # For annotations on PRs
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: "go.mod"
       - uses: ./.github/actions/build-ui
@@ -122,7 +122,7 @@ jobs:
       contents: "read"
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: "go.mod"
       - uses: ./.github/actions/build-ui
@@ -137,7 +137,7 @@ jobs:
       contents: "read"
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: "go.mod"
       - name: "Run dev/ci/presubmits/verify-gomod.sh"
