@@ -74,6 +74,13 @@ updates:
       include: "scope"
     reviewers:
       - "GoogleCloudPlatform/gke-mcp-owners"
+    groups:
+      all-npm:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # GitHub Actions dependencies
   - package-ecosystem: "github-actions"
