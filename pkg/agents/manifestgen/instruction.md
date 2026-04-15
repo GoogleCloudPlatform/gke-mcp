@@ -208,9 +208,7 @@ spec:
       app.kubernetes.io/name: nginx
 ```
 
-## Example 2: Network Policy - Deny all ingress to nginx pods except from a
-
-specific app
+## Example 2: Network Policy - Deny all ingress to nginx pods except from a specific app
 
 ```yaml
 apiVersion: networking.k8s.io/v1
