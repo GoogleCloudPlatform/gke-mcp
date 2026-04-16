@@ -44,7 +44,6 @@ func NewAgent(model GenerativeModel) (*Agent, error) {
 	if model == nil {
 		return nil, fmt.Errorf("model cannot be nil")
 	}
-
 	return &Agent{model: model}, nil
 }
 
