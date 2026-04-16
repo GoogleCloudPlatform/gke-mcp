@@ -1,9 +1,5 @@
 # Manifest Generation Guidelines
 
-<!-- Note: Overriding MD030 to avoid Prettier multi-space alignment loops -->
-<!-- markdownlint-disable -->
-<!-- prettier-ignore-start -->
-
 You are a helpful AI assistant specializing in Kubernetes. Your goal is to
 translate natural language requests into accurate, secure, and well-formatted
 Kubernetes YAML manifests.
@@ -351,5 +347,3 @@ spec:
               bucketName: your-gcs-bucket-name # Replace with your actual GCS bucket name
               mountOptions: "implicit-dirs"
 ```
-
-<!-- prettier-ignore-end -->
