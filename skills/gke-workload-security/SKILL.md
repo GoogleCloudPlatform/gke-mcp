@@ -120,9 +120,9 @@ gcloud container clusters update <cluster-name> \
 **Run a Sandboxed Pod:**
 Add `runtimeClassName: gvisor` to your Pod spec.
 
-### 6. Pod Security Standards
+### 6. Pod Security Standards (Admission)
 
-Enforce security policies on namespaces using labels.
+Enforce security policies on namespaces using labels. GKE Autopilot enforces the `baseline` profile by default.
 
 **Enforce Restricted Profile:**
 
@@ -132,10 +132,44 @@ kubectl label --overwrite ns <namespace> \
     pod-security.kubernetes.io/enforce-version=latest
 ```
 
-> [!NOTE]
-> Using `latest` ensures you use the policies corresponding to the cluster's current version. You can pin it to a specific version (e.g., `v1.30`) to lock down the namespace to policies of a specific release.
+**Audit a Namespace:**
 
-### 7. Secret Manager Integration (CSI Driver)
+```bash
+kubectl label --overwrite ns <namespace> \
+    pod-security.kubernetes.io/warn=restricted \
+    pod-security.kubernetes.io/warn-version=latest
+```
+
+### 7. Binary Authorization
+
+Ensure only trusted images are deployed to your cluster.
+
+**Enable Binary Authorization:**
+
+```bash
+gcloud container clusters update <cluster-name> \
+    --enable-binauthz \
+    --region <region>
+```
+
+**Configure Policy:**
+Edit the default policy to require attestation or whitelist specific registries.
+
+```bash
+gcloud container binauthz policy import policy.yaml
+```
+
+**Example policy.yaml:**
+```yaml
+admissionWhitelistPatterns:
+- namePattern: gcr.io/google-containers/*
+defaultAdmissionRule:
+  evaluationMode: ALWAYS_DENY
+  enforcementMode: ENFORCED_BLOCK_AND_AUDIT_LOG
+  matchingMode: ALWAYS_MATCH
+```
+
+### 8. Secret Manager Integration (CSI Driver)
 
 Mount secrets from Google Cloud Secret Manager directly as volumes in your pods.
 
@@ -175,7 +209,7 @@ spec:
           secretProviderClass: "my-secret-provider"
 ```
 
-### 8. Enable Network Policy Logging
+### 9. Enable Network Policy Logging
 
 If using GKE Dataplane V2, you can log allowed and denied connections.
 
@@ -202,11 +236,49 @@ spec:
 
 This will log connection details to Cloud Logging.
 
+### 10. Policy Controller (Gatekeeper)
+
+Enforce custom policies and compliance across your cluster using Policy Controller (based on Open Policy Agent Gatekeeper).
+
+**Enable Policy Controller:**
+
+```bash
+gcloud container clusters update <cluster-name> \
+    --enable-managed-anthos-identity \
+    --region <region>
+# Then enable the feature
+gcloud container fleet policy-controller enable --memberships=<membership-name>
+```
+
+**Example: Enforce 'No Privileged Containers' Policy**
+
+1. **Install a Template**: Use a pre-built constraint template.
+2. **Apply a Constraint**:
+
+```yaml
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sPSPPrivilegedContainer
+metadata:
+  name: psp-privileged-container
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    excludedNamespaces: ["kube-system"]
+```
+
+**Capabilities:**
+- **Audit**: Detect existing resources that violate policies.
+- **Enforce**: Block new resources that violate policies.
+- **Mutation**: Automatically modify resources (e.g., add default labels) at creation time.
+
 ## Best Practices
 
-1. **Least Privilege:** Always use Workload Identity with minimal IAM roles. Avoid using Node default service accounts.
-2. **Network Isolation:** Use Network Policies to restrict Pod-to-Pod communication. Enable Network Policy Logging for visibility.
-3. **Image Security:** Use Binary Authorization to ensure only trusted images are deployed.
-4. **Secret Management**: Use Secret Manager CSI driver instead of default Kubernetes secrets for sensitive data.
-5. **Pod Security**: Enforce `baseline` or `restricted` Pod Security Standards on all non-system namespaces.
-6. **Policy Enforcement**: Consider using **Policy Controller** (Gatekeeper) to enforce custom security and compliance policies across the cluster.
+1. **Autopilot First**: Use GKE Autopilot to benefit from managed node security, automatic patching, and pre-configured security defaults.
+2. **Least Privilege:** Always use Workload Identity with minimal IAM roles. Avoid using Node default service accounts.
+3. **Network Isolation:** Use Network Policies to restrict Pod-to-Pod communication. Enable Network Policy Logging for visibility.
+4. **Image Security:** Use Binary Authorization with attestations from your CI/CD pipeline.
+5. **Secret Management**: Use Secret Manager CSI driver instead of default Kubernetes secrets for sensitive data.
+6. **Pod Security**: Enforce `restricted` Pod Security Standards on all non-system namespaces.
+7. **Policy Enforcement**: Consider using **Policy Controller** (Gatekeeper) to enforce custom security and compliance policies across the cluster.

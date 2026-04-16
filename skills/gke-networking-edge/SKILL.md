@@ -122,9 +122,68 @@ spec:
 Reference it in Ingress annotations: `networking.gke.io/managed-certificates: my-certificate`.
 
 **Gateway API Approach:**
-Use the `gateway.networking.k8s.io` API with certificate management integration.
+Use the `gateway.networking.k8s.io` API with `CertificateManager` integration for more advanced certificate management.
 
-### 5. Enable Container-Native Load Balancing (Recommended)
+### 5. Secure with Identity-Aware Proxy (IAP)
+
+IAP provides identity-based access control for your applications.
+
+**Enable IAP via BackendConfig:**
+
+1. Configure OAuth Consent Screen and credentials in Google Cloud Console.
+2. Create a Kubernetes Secret containing your OAuth client ID and secret.
+
+```bash
+kubectl create secret generic my-iap-secret \
+    --from-literal=client_id=<client-id> \
+    --from-literal=client_secret=<client-secret>
+```
+
+3. Create a `BackendConfig` to enable IAP.
+
+**Example BackendConfig:**
+
+```yaml
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: my-iap-config
+spec:
+  iap:
+    enabled: true
+    oauthClientCredentials:
+      secretName: my-iap-secret
+```
+
+4. Associate with your `Service` via annotations.
+
+### 6. Service Mesh with Gateway API (GAMMA)
+
+Use the Gateway API to manage internal service-to-service traffic (GAMMA).
+
+**Example HTTPRoute for internal traffic:**
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: internal-route
+spec:
+  parentRefs:
+    - name: my-service # Reference the Service itself as the parent for internal routing
+      kind: Service
+      group: ""
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /v2
+      backendRefs:
+        - name: my-service-v2
+          port: 8080
+```
+
+### 7. Enable Container-Native Load Balancing (Recommended)
 
 Container-native load balancing allows load balancers to target Kubernetes Pods directly, rather than targeting nodes. This improves latency and distribution.
 
@@ -154,7 +213,7 @@ spec:
   type: ClusterIP
 ```
 
-### 6. Configure Private Service Connect (PSC)
+### 8. Configure Private Service Connect (PSC)
 
 Private Service Connect allows you to expose services in one VPC to consumers in another VPC securely, without VPC peering.
 
@@ -184,7 +243,8 @@ Share the `ServiceAttachment` URI with consumers to create a PSC endpoint in the
 
 ## Best Practices
 
-1. **Prefer Gateway API**: It offers more flexibility and role separation than Ingress.
+1. **Prefer Gateway API**: It offers more flexibility and role separation than Ingress. Use it for both external LBs and internal Service Mesh (GAMMA).
 2. **Enable Cloud Armor**: Always protect public-facing endpoints with Cloud Armor.
-3. **Use Managed Certificates**: Avoid managing certificate renewals manually.
-4. **Use Container-Native Load Balancing**: Always use NEGs for HTTP(S) load balancing to reduce latency and improve traffic distribution.
+3. **Use Identity-Aware Proxy (IAP)**: For internal tools or back-office apps, use IAP to enforce identity-based access control.
+4. **Use Certificate Manager**: Prefer Google Cloud Certificate Manager with Gateway API for scalable certificate management.
+5. **Use Container-Native Load Balancing**: Always use NEGs for HTTP(S) load balancing to reduce latency and improve traffic distribution.

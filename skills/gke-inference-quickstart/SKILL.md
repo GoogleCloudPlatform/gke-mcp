@@ -82,6 +82,12 @@ gcloud container ai profiles manifests create \
 - **Invalid Combination:** If the manifest creation fails with an invalid combination error, re-run the discovery commands in Step 1 to verify the tuple (model, server, accelerator).
 - **Quota Issues:** Ensure the target region has sufficient quota for the requested accelerator (e.g., `NVIDIA_L4_GPUS`).
 
+## Best Practices
+
+1. **Use Local SSDs**: Many AI models benefit from high-speed local storage for caching or as scratch space during inference.
+2. **Workload Identity**: Always use Workload Identity to grant your inference pods access to private Google Cloud Storage buckets for loading model weights.
+3. **Right-Size Accelerators**: Use benchmarks to ensure you are not over-provisioning GPUs (e.g., using an A100 when an L4 suffices).
+
 ## Reference
 
 - **Docs:** [GKE Inference Quickstart Documentation](https://docs.cloud.google.com/kubernetes-engine/docs/how-to/machine-learning/inference/inference-quickstart)

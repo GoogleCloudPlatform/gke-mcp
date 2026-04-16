@@ -89,11 +89,19 @@ Secure external access.
 
 #### H. Deployment & GitOps
 
-Adopt modern deployment practices.
+Adopt modern deployment and configuration management practices.
 
-- **Action**: Delegate to [gke-gitops-delivery](../gke-gitops-delivery/SKILL.md) for Config Sync or ArgoCD.
+- **Action**: Delegate to [gke-cluster-lifecycle](../gke-cluster-lifecycle/SKILL.md) for **Config Sync** (GitOps-driven configuration management) or [gke-gitops-delivery](../gke-gitops-delivery/SKILL.md) for application CD (e.g., Cloud Deploy).
 
-#### I. Cost Optimization
+#### I. Image Streaming (Advanced Optimization)
+
+Reduce startup times for large container images by streaming image data as needed.
+
+- **Action**: Enable Image Streaming on the cluster/node pool.
+  - **Standard**: `gcloud container node-pools update <pool-name> --cluster <cluster-name> --enable-image-streaming`
+  - **Autopilot**: Automatically enabled for eligible images (on Container Registry or Artifact Registry).
+
+#### J. Cost Optimization
 
 Ensure efficient use of resources.
 
@@ -102,6 +110,17 @@ Ensure efficient use of resources.
 ### 3. Production Readiness Scoring
 
 After the assessment, provide a summary report with a RAG (Red, Amber, Green) status for each area and an overall readiness score. This helps prioritize remediation efforts.
+
+## Production Readiness Checklist
+
+Before going live, verify the following:
+
+- [ ] **Cluster**: Regional cluster, Release Channel (Stable/Regular), Maintenance Window configured.
+- [ ] **Workloads**: Resource requests/limits set, Liveness/Readiness probes active, HPA/VPA enabled.
+- [ ] **Security**: Workload Identity used, Network Policies enforced, Private Cluster enabled.
+- [ ] **Reliability**: PDBs configured, Pods spread across zones (Topology Spread).
+- [ ] **Observability**: Logging enabled, Managed Prometheus active, Dashboards/Alerts set up.
+- [ ] **Storage**: CSI drivers used, Volume expansion enabled, Backups configured.
 
 ## Adaptability Guidelines
 

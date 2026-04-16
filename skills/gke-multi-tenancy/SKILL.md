@@ -89,9 +89,32 @@ spec:
     limits.memory: 8Gi
 ```
 
+### 4. Hierarchical Namespaces (HNC)
+
+HNC allows you to set up a hierarchy of namespaces, making it easier to manage policies and resource limits across multiple teams.
+
+**Install HNC:**
+
+```bash
+kubectl apply -f https://github.com/kubernetes-sigs/hierarchical-namespaces/releases/latest/download/hnc-manager.yaml
+```
+
+**Create a Hierarchy:**
+
+1. Create a parent namespace: `kubectl create ns parent-ns`
+2. Create a child namespace: `kubectl create ns child-ns`
+3. Set the parent:
+   ```bash
+   kubectl hnc set child-ns --parent parent-ns
+   ```
+
+**Propagate Resources:**
+HNC automatically propagates certain resources (like Roles and RoleBindings) from parent to child namespaces.
+
 ## Best Practices
 
 1. **Namespace Per Tenant**: Always use separate namespaces for different teams or applications.
-2. **Least Privilege RBAC**: Grant only the permissions necessary for users and service accounts to do their jobs.
-3. **Enforce Quotas**: Use Resource Quotas to ensure fair sharing of cluster resources.
-4. **Network Policies**: Combine namespaces with Network Policies (see [gke-workload-security](../gke-workload-security/SKILL.md)) to restrict cross-tenant traffic.
+2. **Hierarchical Namespaces (HNC)**: For complex organizations, use HNC to manage hierarchies of namespaces and propagate policies from parents to children.
+3. **Least Privilege RBAC**: Grant only the permissions necessary for users and service accounts. Use `ClusterRole` and `RoleBinding` for consistency.
+4. **Enforce Quotas**: Use Resource Quotas at both the namespace and (if using HNC) the parent level.
+5. **Network Isolation**: Use Network Policies to enforce isolation between namespaces.

@@ -43,11 +43,15 @@ Generate Kubernetes manifests for the application:
 - **Deployment**: Create a `Deployment` manifest.
   - Include resource requests and limits.
   - Configure liveness and readiness probes.
+- **Compute Classes (Autopilot)**: If your app has specific hardware requirements (e.g., high memory, GPU), use `nodeSelector` to target the appropriate **Compute Class** in GKE Autopilot.
 - **Service**: Create a Service manifest (e.g., ClusterIP for internal apps, LoadBalancer for external access). For advanced L7 routing, consider using the [Gateway API](../gke-networking-edge/SKILL.md).
+- **Security & Identity**: 
+  - Use **Workload Identity** to map Kubernetes Service Accounts to Google Service Accounts for secure API access.
+  - Use the **Secret Manager CSI driver** to mount sensitive data directly from Secret Manager as volumes.
 
 ### 5. Initial Deployment
 
-Apply the manifests and verify the deployment:
+Apply the manifests and verify the deployment. **GKE Autopilot** is the recommended target for new applications due to its hands-off operations and security defaults.
 
 - **Apply**: Use `kubectl apply -f <manifest-file>`.
 - **Verify**: Check pod status with `kubectl get pods` and ensure the service is accessible.

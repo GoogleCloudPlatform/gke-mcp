@@ -47,33 +47,22 @@ When guiding the user or generating configurations, adhere to the following GKE 
 
 ## templates
 
-### 1. Standard Zonal (Cost-Effective Dev/Test)
+### 1. Autopilot (Recommended / Operations-Free)
 
-Best for: Development, testing, non-critical workloads.
+Best for: Most workloads where you don't want to manage nodes. Secure and cost-optimized by default.
 
 ```json
 {
-  "name": "projects/{PROJECT_ID}/locations/{ZONE}/clusters/{CLUSTER_NAME}",
-  "initialNodeCount": 1,
-  "nodeConfig": {
-    "machineType": "e2-medium",
-    "diskSizeGb": 50,
-    "oauthScopes": [
-      "https://www.googleapis.com/auth/devstorage.read_only",
-      "https://www.googleapis.com/auth/logging.write",
-      "https://www.googleapis.com/auth/monitoring",
-      "https://www.googleapis.com/auth/service.management.readonly",
-      "https://www.googleapis.com/auth/servicecontrol",
-      "https://www.googleapis.com/auth/trace.append"
-    ]
+  "name": "projects/{PROJECT_ID}/locations/{REGION}/clusters/{CLUSTER_NAME}",
+  "autopilot": {
+    "enabled": true
   }
 }
 ```
 
 ### 2. Standard Regional (High Availability)
 
-Best for: Production workloads requiring high availability.
-_Note: Creates 3 nodes (one per zone in the region) by default._
+Best for: Production workloads requiring specific node configurations or control over node versioning.
 
 ```json
 {
@@ -87,23 +76,9 @@ _Note: Creates 3 nodes (one per zone in the region) by default._
 }
 ```
 
-### 3. Autopilot (Operations-Free)
+### 3. AI Inference (L4 with Model Caching)
 
-Best for: Most workloads where you don't want to manage nodes.
-
-```json
-{
-  "name": "projects/{PROJECT_ID}/locations/{REGION}/clusters/{CLUSTER_NAME}",
-  "autopilot": {
-    "enabled": true
-  }
-}
-```
-
-### 4. GPU Inference (L4)
-
-Best for: AI/ML Inference, small model serving.
-_Note: Requires `g2-standard-4` quota._
+Best for: High-performance AI/ML Inference. Uses secondary boot disks for faster model loading.
 
 ```json
 {
@@ -117,30 +92,29 @@ _Note: Requires `g2-standard-4` quota._
         "acceleratorType": "nvidia-l4"
       }
     ],
-    "diskSizeGb": 100,
+    "bootDiskKmsKey": "{KMS_KEY}",
+    "additionalBootDisks": [
+      {
+        "sourceImage": "projects/deeplearning-platform-release/global/images/family/common-cu121-v20240111",
+        "diskSizeGb": 100
+      }
+    ],
     "oauthScopes": ["https://www.googleapis.com/auth/cloud-platform"]
   }
 }
 ```
 
-### 5. AI Hypercompute (A3 HighGPU)
+### 4. Standard Zonal (Cost-Effective Dev/Test)
 
-Best for: Large Model Training/Inference.
-_Note: High cost and strict quota requirements._
+Best for: Development, testing, non-critical workloads.
 
 ```json
 {
-  "name": "projects/{PROJECT_ID}/locations/{REGION}/clusters/{CLUSTER_NAME}",
+  "name": "projects/{PROJECT_ID}/locations/{ZONE}/clusters/{CLUSTER_NAME}",
   "initialNodeCount": 1,
   "nodeConfig": {
-    "machineType": "a3-highgpu-8g",
-    "accelerators": [
-      {
-        "acceleratorCount": "8",
-        "acceleratorType": "nvidia-h100-80gb-hbm3"
-      }
-    ],
-    "diskSizeGb": 200,
+    "machineType": "e2-medium",
+    "diskSizeGb": 50,
     "oauthScopes": ["https://www.googleapis.com/auth/cloud-platform"]
   }
 }
@@ -148,13 +122,11 @@ _Note: High cost and strict quota requirements._
 
 ## instructions
 
+- **PRIORITIZE** Autopilot for almost all user requests. Only suggest Standard if they need specific node-level features (e.g., specific kernel versions, local SSD customizations beyond what Autopilot offers).
 - **ALWAYS** ask for the `project_id` if it is not in the context.
 - **ALWAYS** ask for the `location` (Region or Zone).
 - **ALWAYS** ask for a unique `cluster_name`.
-- **CHECK** if the user wants `Access to Google Cloud APIs` (default `cloud-platform` scope is usually best for modern GKE).
-- **WARN** the user about cost if they select GPU or Reginal clusters.
-- **USE** `create_cluster` MCP tool to create the cluster. The `parent` argument is `projects/{PROJECT_ID}/locations/{LOCATION}` and the `cluster` argument is the JSON object. The `cluster.name` is just the short name (e.g. "my-cluster").
-- **IMPORTANT**: When calling `create_cluster`, the `cluster.name` should be the **short name** (e.g., `my-cluster`), NOT the full resource path, because the `parent` argument defines the scope.
+- **USE** create_cluster MCP tool to create the cluster. The parent argument is projects/{PROJECT_ID}/locations/{LOCATION} and the cluster argument is the JSON object. The cluster.name should be the short name (e.g., my-cluster), NOT the full resource path.
 
 ## example_usage
 
