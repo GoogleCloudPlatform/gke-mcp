@@ -42,6 +42,7 @@ func New(ctx context.Context, cfg *config.Config) (*Client, error) {
 	if instance != nil {
 		return instance, nil
 	}
+
 	projectID := cfg.DefaultProjectID()
 	if projectID == "" {
 		return nil, fmt.Errorf("projectID is required in shared connection config")
