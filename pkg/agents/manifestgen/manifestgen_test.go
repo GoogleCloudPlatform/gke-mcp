@@ -16,17 +16,53 @@ package manifestgen
 
 import (
 	"context"
+	"strings"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"cloud.google.com/go/vertexai/genai"
 )
 
-func TestNewAgent_MissingProject(t *testing.T) {
-	ctx := context.Background()
-	cfg := &config.Config{} // Empty config
+type mockGenerativeModel struct {
+	res string
+	err error
+}
 
-	_, err := NewAgent(ctx, cfg)
+func (m *mockGenerativeModel) GenerateContent(_ context.Context, _ ...genai.Part) (*genai.GenerateContentResponse, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	return &genai.GenerateContentResponse{
+		Candidates: []*genai.Candidate{
+			{
+				Content: &genai.Content{
+					Parts: []genai.Part{
+						genai.Text(m.res),
+					},
+				},
+			},
+		},
+	}, nil
+}
+
+func TestNewAgent_NilClient(t *testing.T) {
+	ctx := context.Background()
+	_, err := NewAgent(ctx, nil)
 	if err == nil {
-		t.Errorf("Expected error for missing project, got nil")
+		t.Errorf("Expected error for nil connection module, got nil")
+	}
+}
+
+func TestGenerateManifest_Success(t *testing.T) {
+	agent := &Agent{
+		model: &mockGenerativeModel{res: "apiVersion: apps/v1\nkind: Deployment"},
+	}
+
+	manifest, err := agent.GenerateManifest(context.Background(), "nginx")
+	if err != nil {
+		t.Fatalf("GenerateManifest returned unexpected error: %v", err)
+	}
+
+	if !strings.Contains(manifest, "Deployment") {
+		t.Errorf("Expected simulated YAML response, got %v", manifest)
 	}
 }
