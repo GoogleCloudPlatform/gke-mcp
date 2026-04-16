@@ -46,8 +46,8 @@ func NewAgent(ctx context.Context, cfg *config.Config) (*Agent, error) {
 		return nil, fmt.Errorf("failed to create vertex client: %w", err)
 	}
 
-	// Using gemini-2.5-flash as it worked well in tests and is fast
-	model := client.GenerativeModel("gemini-2.5-flash")
+	// Use a default model, e.g., gemini-2.5-pro
+	model := client.GenerativeModel("gemini-2.5-pro")
 
 	return &Agent{
 		client: client,
