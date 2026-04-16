@@ -18,13 +18,15 @@ package manifestgen
 import (
 	"context"
 	"fmt"
+	"os"
 
-	"cloud.google.com/go/vertexai/genai"
+	"github.com/google/generative-ai-go/genai"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"google.golang.org/api/option"
 )
 
-// Agent handles manifest generation using Vertex AI.
+// Agent handles manifest generation using standard Google Gen AI SDK.
 type Agent struct {
 	client *genai.Client
 	model  *genai.GenerativeModel
@@ -32,22 +34,18 @@ type Agent struct {
 
 // NewAgent creates a new Agent.
 func NewAgent(ctx context.Context, cfg *config.Config) (*Agent, error) {
-	projectID := cfg.DefaultProjectID()
-	if projectID == "" {
-		return nil, fmt.Errorf("default project ID not set in config")
-	}
-	location := cfg.DefaultLocation()
-	if location == "" {
-		location = "us-central1" // Default fallback
+	apiKey := os.Getenv("GEMINI_API_KEY")
+	if apiKey == "" {
+		return nil, fmt.Errorf("GEMINI_API_KEY environment variable not set")
 	}
 
-	client, err := genai.NewClient(ctx, projectID, location)
+	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create vertex client: %w", err)
+		return nil, fmt.Errorf("failed to create genai client: %w", err)
 	}
 
-	// Use a default model, e.g., gemini-2.5-pro
-	model := client.GenerativeModel("gemini-2.5-pro")
+	// Use gemini-2.5-flash as requested by user
+	model := client.GenerativeModel("gemini-2.5-flash")
 
 	return &Agent{
 		client: client,
@@ -87,7 +85,7 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "generate_manifest",
-		Description: "Generates a Kubernetes manifest using Vertex AI based on a description.",
+		Description: "Generates a Kubernetes manifest using Gemini based on a description.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, args *struct {
 		Prompt string `json:"prompt" jsonschema:"The description of the manifest to generate. e.g. 'nginx deployment with 3 replicas'"`
 	}) (*mcp.CallToolResult, any, error) {
