@@ -44,11 +44,10 @@ func (m *mockGenerativeModel) GenerateContent(_ context.Context, _ ...genai.Part
 	}, nil
 }
 
-func TestNewAgent_NilClient(t *testing.T) {
-	ctx := context.Background()
-	_, err := NewAgent(ctx, nil)
+func TestNewAgent_NilModel(t *testing.T) {
+	_, err := NewAgent(nil)
 	if err == nil {
-		t.Errorf("Expected error for nil connection module, got nil")
+		t.Errorf("Expected error for nil model, got nil")
 	}
 }
 

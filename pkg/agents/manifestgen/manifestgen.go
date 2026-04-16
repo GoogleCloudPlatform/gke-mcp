@@ -39,14 +39,11 @@ type Agent struct {
 	model GenerativeModel
 }
 
-// NewAgent creates a new Agent attached to the centralized vertex pool.
-func NewAgent(_ context.Context, c *vertex.Client) (*Agent, error) {
-	if c == nil {
-		return nil, fmt.Errorf("vertex connection provider cannot be nil")
+// NewAgent creates a new Agent attached to a specific text generator model.
+func NewAgent(model GenerativeModel) (*Agent, error) {
+	if model == nil {
+		return nil, fmt.Errorf("model cannot be nil")
 	}
-
-	// Retrieve optimized flash text template model
-	model := c.Model("gemini-2.5-flash")
 
 	return &Agent{model: model}, nil
 }
@@ -81,7 +78,8 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 		return fmt.Errorf("failed initializing backend connection pool: %w", err)
 	}
 
-	agent, err := NewAgent(ctx, vClient)
+	model := vClient.Model("gemini-2.5-flash")
+	agent, err := NewAgent(model)
 	if err != nil {
 		return err
 	}
