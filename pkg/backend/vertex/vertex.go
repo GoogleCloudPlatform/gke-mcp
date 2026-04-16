@@ -18,6 +18,7 @@ package vertex
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"cloud.google.com/go/vertexai/genai"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
@@ -28,8 +29,20 @@ type Client struct {
 	underlying *genai.Client
 }
 
+var (
+	mu       sync.Mutex
+	instance *Client
+)
+
 // New initialized a singleton instance of the Google Cloud GenAI client.
 func New(ctx context.Context, cfg *config.Config) (*Client, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if instance != nil {
+		return instance, nil
+	}
+
 	projectID := cfg.DefaultProjectID()
 	if projectID == "" {
 		return nil, fmt.Errorf("projectID is required in shared connection config")
@@ -45,7 +58,8 @@ func New(ctx context.Context, cfg *config.Config) (*Client, error) {
 		return nil, fmt.Errorf("failed to establish top-level vertex AI pool: %w", err)
 	}
 
-	return &Client{underlying: client}, nil
+	instance = &Client{underlying: client}
+	return instance, nil
 }
 
 // Model returns a shared or localized instance of a specific text generator.
