@@ -18,15 +18,13 @@ package manifestgen
 import (
 	"context"
 	"fmt"
-	"os"
 
-	"github.com/google/generative-ai-go/genai"
+	"cloud.google.com/go/vertexai/genai"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"google.golang.org/api/option"
 )
 
-// Agent handles manifest generation using standard Google Gen AI SDK.
+// Agent handles manifest generation using Vertex AI.
 type Agent struct {
 	client *genai.Client
 	model  *genai.GenerativeModel
@@ -34,17 +32,21 @@ type Agent struct {
 
 // NewAgent creates a new Agent.
 func NewAgent(ctx context.Context, cfg *config.Config) (*Agent, error) {
-	apiKey := os.Getenv("GEMINI_API_KEY")
-	if apiKey == "" {
-		return nil, fmt.Errorf("GEMINI_API_KEY environment variable not set")
+	projectID := cfg.DefaultProjectID()
+	if projectID == "" {
+		return nil, fmt.Errorf("default project ID not set in config")
+	}
+	location := cfg.DefaultLocation()
+	if location == "" {
+		location = "us-central1" // Default fallback
 	}
 
-	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
+	client, err := genai.NewClient(ctx, projectID, location)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create genai client: %w", err)
+		return nil, fmt.Errorf("failed to create vertex client: %w", err)
 	}
 
-	// Use gemini-2.5-flash as requested by user
+	// Using gemini-2.5-flash as it worked well in tests and is fast
 	model := client.GenerativeModel("gemini-2.5-flash")
 
 	return &Agent{
@@ -85,7 +87,7 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "generate_manifest",
-		Description: "Generates a Kubernetes manifest using Gemini based on a description.",
+		Description: "Generates a Kubernetes manifest using Vertex AI based on a description.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, args *struct {
 		Prompt string `json:"prompt" jsonschema:"The description of the manifest to generate. e.g. 'nginx deployment with 3 replicas'"`
 	}) (*mcp.CallToolResult, any, error) {

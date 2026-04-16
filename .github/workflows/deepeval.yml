@@ -33,6 +33,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install pytest pyyaml deepeval langchain-google-genai
 
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
     - name: Run DeepEval Tests
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
