@@ -19,7 +19,8 @@ import (
 	"strings"
 	"testing"
 
-	"cloud.google.com/go/vertexai/genai"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"google.golang.org/genai"
 )
 
 type mockGenerativeModel struct {
@@ -27,7 +28,7 @@ type mockGenerativeModel struct {
 	err error
 }
 
-func (m *mockGenerativeModel) GenerateContent(_ context.Context, _ ...genai.Part) (*genai.GenerateContentResponse, error) {
+func (m *mockGenerativeModel) GenerateContent(_ context.Context, _ string, _ []*genai.Content, _ *genai.GenerateContentConfig) (*genai.GenerateContentResponse, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -35,8 +36,8 @@ func (m *mockGenerativeModel) GenerateContent(_ context.Context, _ ...genai.Part
 		Candidates: []*genai.Candidate{
 			{
 				Content: &genai.Content{
-					Parts: []genai.Part{
-						genai.Text(m.res),
+					Parts: []*genai.Part{
+						{Text: m.res},
 					},
 				},
 			},
@@ -45,20 +46,22 @@ func (m *mockGenerativeModel) GenerateContent(_ context.Context, _ ...genai.Part
 }
 
 func TestNewAgent_NilModel(t *testing.T) {
-	_, err := NewAgent(nil)
+	_, err := NewAgent(nil, nil)
 	if err == nil {
 		t.Errorf("Expected error for nil model, got nil")
 	}
 }
 
 func TestGenerateManifest_Success(t *testing.T) {
-	agent := &Agent{
-		model: &mockGenerativeModel{res: "apiVersion: apps/v1\nkind: Deployment"},
+	mockModel := &mockGenerativeModel{res: "apiVersion: apps/v1\nkind: Deployment"}
+	agent, err := NewAgent(mockModel, &config.Config{})
+	if err != nil {
+		t.Fatalf("Failed to create agent: %v", err)
 	}
 
-	manifest, err := agent.GenerateManifest(context.Background(), "nginx")
+	manifest, err := agent.Run(context.Background(), "nginx")
 	if err != nil {
-		t.Fatalf("GenerateManifest returned unexpected error: %v", err)
+		t.Fatalf("Run returned unexpected error: %v", err)
 	}
 
 	if !strings.Contains(manifest, "Deployment") {
