@@ -19,6 +19,7 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"strings"
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/google/uuid"
@@ -101,19 +102,19 @@ func (a *Agent) Run(ctx context.Context, prompt string, sessionID string) (strin
 
 	events := a.adkRunner.Run(ctx, "default-user", sessionID, msg, agent.RunConfig{})
 
-	var result string
+	var builder strings.Builder
 	for event, err := range events {
 		if err != nil {
 			return "", err
 		}
 		if event.Content != nil {
 			for _, part := range event.Content.Parts {
-				result += part.Text
+				builder.WriteString(part.Text)
 			}
 		}
 	}
 
-	return result, nil
+	return builder.String(), nil
 }
 
 // Install registers the tool with the MCP server.
