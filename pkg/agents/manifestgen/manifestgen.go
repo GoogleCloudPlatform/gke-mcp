@@ -20,6 +20,7 @@ import (
 	_ "embed"
 	"fmt"
 	"iter"
+	"log"
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -85,7 +86,7 @@ func NewAgent(model GenerativeModel, cfg *config.Config) (*Agent, error) {
 // adkRun handles the agent invocation in ADK framework.
 func (a *Agent) adkRun(ctx agent.InvocationContext) iter.Seq2[*session.Event, error] {
 	return func(yield func(*session.Event, error) bool) {
-		systemInstruction := "You are the Manifest Agent. Your role is to generate, analyze, and optimize Kubernetes YAML manifests for GKE.\n"
+		systemInstruction := instructionTemplate
 		
 		userPrompt := ""
 		if ctx.UserContent() != nil && len(ctx.UserContent().Parts) > 0 {
@@ -98,6 +99,7 @@ func (a *Agent) adkRun(ctx agent.InvocationContext) iter.Seq2[*session.Event, er
 
 		resp, err := a.model.GenerateContent(ctx, "gemini-2.5-pro", []*genai.Content{genai.NewContentFromText(userPrompt, "")}, config)
 		if err != nil {
+			log.Printf("ERROR in adkRun GenerateContent: %v", err)
 			yield(nil, fmt.Errorf("failed to generate content: %w", err))
 			return
 		}
