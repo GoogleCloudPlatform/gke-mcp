@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"google.golang.org/adk/agent"
 	"google.golang.org/adk/agent/llmagent"
@@ -29,7 +30,6 @@ import (
 	"google.golang.org/adk/runner"
 	"google.golang.org/adk/session"
 	"google.golang.org/genai"
-	"github.com/google/uuid"
 )
 
 //go:embed instruction.md
@@ -49,7 +49,7 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 	}
 
 	sessSvc := session.InMemoryService()
-	
+
 	adkAgent, err := llmagent.New(llmagent.Config{
 		Name:        "manifest_agent",
 		Description: "Agent specialized in generating and validating Kubernetes manifests.",
@@ -75,8 +75,6 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 		sessionService: sessSvc,
 	}, nil
 }
-
-
 
 // Run executes the agent using the ADK runner.
 func (a *Agent) Run(ctx context.Context, prompt string, sessionID string) (string, error) {
