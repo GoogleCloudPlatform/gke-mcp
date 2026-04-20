@@ -29,6 +29,7 @@ import (
 	"google.golang.org/adk/runner"
 	"google.golang.org/adk/session"
 	"google.golang.org/genai"
+	"github.com/google/uuid"
 )
 
 //go:embed instruction.md
@@ -78,9 +79,7 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 
 
 // Run executes the agent using the ADK runner.
-func (a *Agent) Run(ctx context.Context, prompt string) (string, error) {
-	sessionID := "default-session"
-	
+func (a *Agent) Run(ctx context.Context, prompt string, sessionID string) (string, error) {
 	// Ensure session exists
 	_, err := a.sessionService.Get(ctx, &session.GetRequest{
 		AppName:   "gke-mcp",
@@ -140,9 +139,14 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 		Name:        "generate_manifest",
 		Description: "Generates a Kubernetes manifest using Vertex AI based on a description.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, args *struct {
-		Prompt string `json:"prompt" jsonschema:"The description of the manifest to generate. e.g. 'nginx deployment with 3 replicas'"`
+		Prompt    string `json:"prompt" jsonschema:"The description of the manifest to generate. e.g. 'nginx deployment with 3 replicas'"`
+		SessionID string `json:"session_id,omitempty" jsonschema:"Optional. A unique identifier to maintain conversation history across multiple tool calls. If not provided, a new random ID will be generated."`
 	}) (*mcp.CallToolResult, any, error) {
-		manifest, err := agent.Run(ctx, args.Prompt)
+		sessID := args.SessionID
+		if sessID == "" {
+			sessID = uuid.New().String()
+		}
+		manifest, err := agent.Run(ctx, args.Prompt, sessID)
 		if err != nil {
 			return nil, nil, err
 		}

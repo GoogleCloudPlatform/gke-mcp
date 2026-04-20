@@ -65,7 +65,7 @@ func TestGenerateManifest_Success(t *testing.T) {
 		t.Fatalf("Failed to create agent: %v", err)
 	}
 
-	manifest, err := agent.Run(context.Background(), "nginx")
+	manifest, err := agent.Run(context.Background(), "nginx", "test-session")
 	if err != nil {
 		t.Fatalf("Run returned unexpected error: %v", err)
 	}
