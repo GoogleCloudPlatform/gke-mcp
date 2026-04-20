@@ -16,10 +16,12 @@ package manifestgen
 
 import (
 	"context"
+	"iter"
 	"strings"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"google.golang.org/adk/model"
 	"google.golang.org/genai"
 )
 
@@ -28,21 +30,25 @@ type mockGenerativeModel struct {
 	err error
 }
 
-func (m *mockGenerativeModel) GenerateContent(_ context.Context, _ string, _ []*genai.Content, _ *genai.GenerateContentConfig) (*genai.GenerateContentResponse, error) {
-	if m.err != nil {
-		return nil, m.err
-	}
-	return &genai.GenerateContentResponse{
-		Candidates: []*genai.Candidate{
-			{
-				Content: &genai.Content{
-					Parts: []*genai.Part{
-						{Text: m.res},
-					},
+func (m *mockGenerativeModel) Name() string {
+	return "mock-model"
+}
+
+func (m *mockGenerativeModel) GenerateContent(_ context.Context, _ *model.LLMRequest, _ bool) iter.Seq2[*model.LLMResponse, error] {
+	return func(yield func(*model.LLMResponse, error) bool) {
+		if m.err != nil {
+			yield(nil, m.err)
+			return
+		}
+		resp := &model.LLMResponse{
+			Content: &genai.Content{
+				Parts: []*genai.Part{
+					{Text: m.res},
 				},
 			},
-		},
-	}, nil
+		}
+		yield(resp, nil)
+	}
 }
 
 func TestNewAgent_NilModel(t *testing.T) {
