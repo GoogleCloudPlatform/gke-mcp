@@ -107,6 +107,29 @@ To connect Gemini CLI to the `gke-mcp` HTTP server, you need to configure the CL
 
 This configuration tells Gemini CLI how to reach the gke-mcp server running on your local machine at port 8080.
 
+## Skills
+
+Skills provide specialized capabilities and workflows to your AI agent, such as cost analysis, cluster lifecycle management, and security auditing.
+
+### Installation
+
+There are several ways to install these skills:
+
+1. **Automatic Detection**: When you install the MCP server as a [Gemini CLI Extension](#use-as-a-gemini-cli-extension), the CLI automatically detects and enables all ski
+lls located in the `skills/` folder.
+
+2. **Standalone Individual Skill**: Install a specific skill without the full MCP extension:
+   ```sh
+   gemini skills install https://github.com/GoogleCloudPlatform/gke-mcp --path skills/<skill-name>
+   ```
+   Replace `<skill-name>` with the name of a skill from the `skills/` directory (e.g., `gke-cost-analysis`).
+
+3. **Standalone Bulk Link**: To enable all skills at once without installing the full MCP extension:
+   ```sh
+   git clone https://github.com/GoogleCloudPlatform/gke-mcp.git
+   gemini skills link ./gke-mcp/skills
+   ```
+
 ## Development
 
 To compile the binary and update the `gemini-cli` extension with your local changes, follow these steps:
