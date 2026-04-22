@@ -36,6 +36,8 @@ import (
 //go:embed instruction.md
 var instructionTemplate string
 
+const defaultModel = "gemini-2.5-pro"
+
 // Agent handles manifest generation via ADK.
 type Agent struct {
 	cfg            *config.Config
@@ -120,7 +122,7 @@ func (a *Agent) Run(ctx context.Context, prompt string, sessionID string) (strin
 // Install registers the tool with the MCP server.
 func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 	// Create a new Gemini model backed by Vertex AI via ADK
-	llm, err := gemini.NewModel(ctx, "gemini-2.5-pro", &genai.ClientConfig{
+	llm, err := gemini.NewModel(ctx, defaultModel, &genai.ClientConfig{
 		Project:  c.DefaultProjectID(),
 		Backend:  genai.BackendVertexAI,
 		Location: c.DefaultLocation(),
