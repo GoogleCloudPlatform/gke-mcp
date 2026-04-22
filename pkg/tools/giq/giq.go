@@ -46,15 +46,16 @@ func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 	return nil
 }
 
-func giqGenerateManifest(_ context.Context, _ *mcp.CallToolRequest, args *giqGenerateManifestArgs) (*mcp.CallToolResult, any, error) {
+// GenerateInferenceManifest core logic for GKE Inference Quickstart manifest generation.
+func GenerateInferenceManifest(args *giqGenerateManifestArgs) (string, error) {
 	if args.Model == "" {
-		return nil, nil, fmt.Errorf("model argument cannot be empty")
+		return "", fmt.Errorf("model argument cannot be empty")
 	}
 	if args.ModelServer == "" {
-		return nil, nil, fmt.Errorf("model_server argument cannot be empty")
+		return "", fmt.Errorf("model_server argument cannot be empty")
 	}
 	if args.Accelerator == "" {
-		return nil, nil, fmt.Errorf("accelerator argument cannot be empty")
+		return "", fmt.Errorf("accelerator argument cannot be empty")
 	}
 
 	gcloudArgs := []string{
@@ -74,12 +75,19 @@ func giqGenerateManifest(_ context.Context, _ *mcp.CallToolRequest, args *giqGen
 	out, err := exec.Command("gcloud", gcloudArgs...).Output()
 	if err != nil {
 		log.Printf("Failed to generate manifest: %v", err)
+		return "", err
+	}
+	return string(out), nil
+}
 
+func giqGenerateManifest(_ context.Context, _ *mcp.CallToolRequest, args *giqGenerateManifestArgs) (*mcp.CallToolResult, any, error) {
+	manifest, err := GenerateInferenceManifest(args)
+	if err != nil {
 		return nil, nil, err
 	}
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
-			&mcp.TextContent{Text: string(out)},
+			&mcp.TextContent{Text: manifest},
 		},
 	}, nil, nil
 }
