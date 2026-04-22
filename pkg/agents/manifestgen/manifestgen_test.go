@@ -16,10 +16,13 @@ package manifestgen
 
 import (
 	"context"
+	"iter"
 	"strings"
 	"testing"
 
-	"cloud.google.com/go/vertexai/genai"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"google.golang.org/adk/model"
+	"google.golang.org/genai"
 )
 
 type mockGenerativeModel struct {
@@ -27,38 +30,44 @@ type mockGenerativeModel struct {
 	err error
 }
 
-func (m *mockGenerativeModel) GenerateContent(_ context.Context, _ ...genai.Part) (*genai.GenerateContentResponse, error) {
-	if m.err != nil {
-		return nil, m.err
-	}
-	return &genai.GenerateContentResponse{
-		Candidates: []*genai.Candidate{
-			{
-				Content: &genai.Content{
-					Parts: []genai.Part{
-						genai.Text(m.res),
-					},
+func (m *mockGenerativeModel) Name() string {
+	return "mock-model"
+}
+
+func (m *mockGenerativeModel) GenerateContent(_ context.Context, _ *model.LLMRequest, _ bool) iter.Seq2[*model.LLMResponse, error] {
+	return func(yield func(*model.LLMResponse, error) bool) {
+		if m.err != nil {
+			yield(nil, m.err)
+			return
+		}
+		resp := &model.LLMResponse{
+			Content: &genai.Content{
+				Parts: []*genai.Part{
+					{Text: m.res},
 				},
 			},
-		},
-	}, nil
+		}
+		yield(resp, nil)
+	}
 }
 
 func TestNewAgent_NilModel(t *testing.T) {
-	_, err := NewAgent(nil)
+	_, err := NewAgent(nil, nil)
 	if err == nil {
 		t.Errorf("Expected error for nil model, got nil")
 	}
 }
 
 func TestGenerateManifest_Success(t *testing.T) {
-	agent := &Agent{
-		model: &mockGenerativeModel{res: "apiVersion: apps/v1\nkind: Deployment"},
+	mockModel := &mockGenerativeModel{res: "apiVersion: apps/v1\nkind: Deployment"}
+	agent, err := NewAgent(mockModel, &config.Config{})
+	if err != nil {
+		t.Fatalf("Failed to create agent: %v", err)
 	}
 
-	manifest, err := agent.GenerateManifest(context.Background(), "nginx")
+	manifest, err := agent.Run(context.Background(), "nginx", "test-session")
 	if err != nil {
-		t.Fatalf("GenerateManifest returned unexpected error: %v", err)
+		t.Fatalf("Run returned unexpected error: %v", err)
 	}
 
 	if !strings.Contains(manifest, "Deployment") {

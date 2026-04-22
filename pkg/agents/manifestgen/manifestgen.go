@@ -19,67 +19,119 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"strings"
 
-	"cloud.google.com/go/vertexai/genai"
-	"github.com/GoogleCloudPlatform/gke-mcp/pkg/backend/vertex"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"google.golang.org/adk/agent"
+	"google.golang.org/adk/agent/llmagent"
+	"google.golang.org/adk/model"
+	"google.golang.org/adk/model/gemini"
+	"google.golang.org/adk/runner"
+	"google.golang.org/adk/session"
+	"google.golang.org/genai"
 )
 
 //go:embed instruction.md
 var instructionTemplate string
 
-// GenerativeModel interface defines mockable text generation capabilities.
-type GenerativeModel interface {
-	GenerateContent(ctx context.Context, parts ...genai.Part) (*genai.GenerateContentResponse, error)
-}
+const defaultModel = "gemini-2.5-pro"
 
-// Agent handles manifest generation via injected connection backend.
+// Agent handles manifest generation via ADK.
 type Agent struct {
-	model GenerativeModel
+	cfg            *config.Config
+	adkRunner      *runner.Runner
+	sessionService session.Service
 }
 
 // NewAgent creates a new Agent attached to a specific text generator model.
-func NewAgent(model GenerativeModel) (*Agent, error) {
-	if model == nil {
+func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
+	if llm == nil {
 		return nil, fmt.Errorf("model cannot be nil")
 	}
 
-	return &Agent{model: model}, nil
+	sessSvc := session.InMemoryService()
+
+	adkAgent, err := llmagent.New(llmagent.Config{
+		Name:        "manifest_agent",
+		Description: "Agent specialized in generating and validating Kubernetes manifests.",
+		Model:       llm,
+		Instruction: instructionTemplate,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ADK agent: %w", err)
+	}
+
+	adkRunner, err := runner.New(runner.Config{
+		AppName:        "gke-mcp",
+		Agent:          adkAgent,
+		SessionService: sessSvc,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ADK runner: %w", err)
+	}
+
+	return &Agent{
+		cfg:            cfg,
+		adkRunner:      adkRunner,
+		sessionService: sessSvc,
+	}, nil
 }
 
-// GenerateManifest generates a Kubernetes manifest based on the prompt.
-func (a *Agent) GenerateManifest(ctx context.Context, prompt string) (string, error) {
-	fullPrompt := fmt.Sprintf("%s\n\n---\n\nUser Request:\n%s", instructionTemplate, prompt)
-
-	resp, err := a.model.GenerateContent(ctx, genai.Text(fullPrompt))
+// Run executes the agent using the ADK runner.
+func (a *Agent) Run(ctx context.Context, prompt string, sessionID string) (string, error) {
+	// Ensure session exists
+	_, err := a.sessionService.Get(ctx, &session.GetRequest{
+		AppName:   "gke-mcp",
+		UserID:    "default-user",
+		SessionID: sessionID,
+	})
 	if err != nil {
-		return "", fmt.Errorf("failed to generate content: %w", err)
-	}
-
-	if len(resp.Candidates) == 0 || resp.Candidates[0].Content == nil || len(resp.Candidates[0].Content.Parts) == 0 {
-		return "", fmt.Errorf("empty response from model")
-	}
-
-	var result string
-	for _, part := range resp.Candidates[0].Content.Parts {
-		if text, ok := part.(genai.Text); ok {
-			result += string(text)
+		_, err = a.sessionService.Create(ctx, &session.CreateRequest{
+			AppName:   "gke-mcp",
+			UserID:    "default-user",
+			SessionID: sessionID,
+		})
+		if err != nil {
+			return "", fmt.Errorf("failed to create session: %w", err)
 		}
 	}
 
-	return result, nil
+	msg := &genai.Content{
+		Parts: []*genai.Part{{Text: prompt}},
+	}
+
+	events := a.adkRunner.Run(ctx, "default-user", sessionID, msg, agent.RunConfig{})
+
+	var builder strings.Builder
+	for event, err := range events {
+		if err != nil {
+			return "", err
+		}
+		if event.Content != nil {
+			for _, part := range event.Content.Parts {
+				builder.WriteString(part.Text)
+			}
+		}
+	}
+
+	return builder.String(), nil
 }
 
 // Install registers the tool with the MCP server.
 func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
-	vClient, err := vertex.New(ctx, c)
+	// Create a new Gemini model backed by Vertex AI via ADK
+	llm, err := gemini.NewModel(ctx, defaultModel, &genai.ClientConfig{
+		Project:  c.DefaultProjectID(),
+		Backend:  genai.BackendVertexAI,
+		Location: c.DefaultLocation(),
+	})
 	if err != nil {
-		return fmt.Errorf("failed initializing backend connection pool: %w", err)
+		return fmt.Errorf("failed to create gemini model: %w", err)
 	}
 
-	model := vClient.Model("gemini-2.5-flash")
-	agent, err := NewAgent(model)
+	agent, err := NewAgent(llm, c)
 	if err != nil {
 		return err
 	}
@@ -88,9 +140,14 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 		Name:        "generate_manifest",
 		Description: "Generates a Kubernetes manifest using Vertex AI based on a description.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, args *struct {
-		Prompt string `json:"prompt" jsonschema:"The description of the manifest to generate. e.g. 'nginx deployment with 3 replicas'"`
+		Prompt    string `json:"prompt" jsonschema:"The description of the manifest to generate. e.g. 'nginx deployment with 3 replicas'"`
+		SessionID string `json:"session_id,omitempty" jsonschema:"Optional. A unique identifier to maintain conversation history across multiple tool calls. If not provided, a new random ID will be generated."`
 	}) (*mcp.CallToolResult, any, error) {
-		manifest, err := agent.GenerateManifest(ctx, args.Prompt)
+		sessID := args.SessionID
+		if sessID == "" {
+			sessID = uuid.New().String()
+		}
+		manifest, err := agent.Run(ctx, args.Prompt, sessID)
 		if err != nil {
 			return nil, nil, err
 		}
