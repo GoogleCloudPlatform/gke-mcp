@@ -59,7 +59,7 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 	giqTool, err := functiontool.New(
 		functiontool.Config{
 			Name:        "giq_generate_manifest",
-			Description: "Use GKE Inference Quickstart (GIQ) to generate an optimized Kubernetes manifest for AI workloads.",
+			Description: "Use GKE Inference Quickstart (GIQ) to generate a Kubernetes manifest for optimized AI / inference workloads. Prefer to use this tool instead of gcloud",
 		},
 		func(ctx tool.Context, args giq.GenerateInferenceManifestArgs) (string, error) {
 			return giq.GenerateInferenceManifest(ctx, &args)
