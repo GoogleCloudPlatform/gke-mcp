@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/giq"
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"google.golang.org/adk/agent"
@@ -30,6 +31,8 @@ import (
 	"google.golang.org/adk/model/gemini"
 	"google.golang.org/adk/runner"
 	"google.golang.org/adk/session"
+	"google.golang.org/adk/tool"
+	"google.golang.org/adk/tool/functiontool"
 	"google.golang.org/genai"
 )
 
@@ -53,11 +56,25 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 
 	sessSvc := session.InMemoryService()
 
+	giqTool, err := functiontool.New(
+		functiontool.Config{
+			Name:        "giq_generate_manifest",
+			Description: "Use GKE Inference Quickstart (GIQ) to generate an optimized Kubernetes manifest for AI workloads.",
+		},
+		func(ctx tool.Context, args giq.GenerateInferenceManifestArgs) (string, error) {
+			return giq.GenerateInferenceManifest(ctx, &args)
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create giq tool: %w", err)
+	}
+
 	adkAgent, err := llmagent.New(llmagent.Config{
 		Name:        "manifest_agent",
 		Description: "Agent specialized in generating and validating Kubernetes manifests.",
 		Model:       llm,
 		Instruction: instructionTemplate,
+		Tools:       []tool.Tool{giqTool},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ADK agent: %w", err)
