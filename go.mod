@@ -7,7 +7,6 @@ require (
 	cloud.google.com/go/logging v1.16.0
 	cloud.google.com/go/monitoring v1.27.0
 	cloud.google.com/go/recommender v1.16.0
-	cloud.google.com/go/vertexai v0.19.0
 	github.com/PuerkitoBio/goquery v1.12.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
@@ -24,7 +23,6 @@ require (
 
 require (
 	cloud.google.com/go v0.123.0 // indirect
-	cloud.google.com/go/aiplatform v1.124.0 // indirect
 	cloud.google.com/go/auth v0.20.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
