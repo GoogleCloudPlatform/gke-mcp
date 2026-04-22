@@ -115,8 +115,7 @@ Skills provide specialized capabilities and workflows to your AI agent, such as 
 
 There are several ways to install these skills:
 
-1. **Automatic Detection**: When you install the MCP server as a [Gemini CLI Extension](#use-as-a-gemini-cli-extension), the CLI automatically detects and enables all ski
-lls located in the `skills/` folder.
+1. **Automatic Detection**: When you install the MCP server as a [Gemini CLI Extension](#use-as-a-gemini-cli-extension), the CLI automatically detects and enables all skills located in the `skills/` folder.
 
 2. **Standalone Individual Skill**: Install a specific skill without the full MCP extension:
    ```sh
