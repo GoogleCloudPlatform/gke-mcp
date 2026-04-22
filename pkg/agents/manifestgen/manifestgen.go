@@ -17,47 +17,40 @@ package manifestgen
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 
 	"cloud.google.com/go/vertexai/genai"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/backend/vertex"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-// Agent handles manifest generation using Vertex AI.
-type Agent struct {
-	client *genai.Client
-	model  *genai.GenerativeModel
+//go:embed instruction.md
+var instructionTemplate string
+
+// GenerativeModel interface defines mockable text generation capabilities.
+type GenerativeModel interface {
+	GenerateContent(ctx context.Context, parts ...genai.Part) (*genai.GenerateContentResponse, error)
 }
 
-// NewAgent creates a new Agent.
-func NewAgent(ctx context.Context, cfg *config.Config) (*Agent, error) {
-	projectID := cfg.DefaultProjectID()
-	if projectID == "" {
-		return nil, fmt.Errorf("default project ID not set in config")
-	}
-	location := cfg.DefaultLocation()
-	if location == "" {
-		location = "us-central1" // Default fallback
-	}
+// Agent handles manifest generation via injected connection backend.
+type Agent struct {
+	model GenerativeModel
+}
 
-	client, err := genai.NewClient(ctx, projectID, location)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create vertex client: %w", err)
+// NewAgent creates a new Agent attached to a specific text generator model.
+func NewAgent(model GenerativeModel) (*Agent, error) {
+	if model == nil {
+		return nil, fmt.Errorf("model cannot be nil")
 	}
 
-	// Use a default model, e.g., gemini-2.5-pro
-	model := client.GenerativeModel("gemini-2.5-pro")
-
-	return &Agent{
-		client: client,
-		model:  model,
-	}, nil
+	return &Agent{model: model}, nil
 }
 
 // GenerateManifest generates a Kubernetes manifest based on the prompt.
 func (a *Agent) GenerateManifest(ctx context.Context, prompt string) (string, error) {
-	fullPrompt := fmt.Sprintf("Generate a valid Kubernetes manifest for the following request. Return ONLY the YAML content, no markdown blocks or explanations.\n\nRequest: %s", prompt)
+	fullPrompt := fmt.Sprintf("%s\n\n---\n\nUser Request:\n%s", instructionTemplate, prompt)
 
 	resp, err := a.model.GenerateContent(ctx, genai.Text(fullPrompt))
 	if err != nil {
@@ -80,7 +73,13 @@ func (a *Agent) GenerateManifest(ctx context.Context, prompt string) (string, er
 
 // Install registers the tool with the MCP server.
 func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
-	agent, err := NewAgent(ctx, c)
+	vClient, err := vertex.New(ctx, c)
+	if err != nil {
+		return fmt.Errorf("failed initializing backend connection pool: %w", err)
+	}
+
+	model := vClient.Model("gemini-2.5-flash")
+	agent, err := NewAgent(model)
 	if err != nil {
 		return err
 	}

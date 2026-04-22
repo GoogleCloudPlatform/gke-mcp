@@ -45,7 +45,7 @@ If a specific application is targeted, discover its configuration:
 
 ### 2. Production Readiness Assessment
 
-Go through these areas and assess readiness. **You should proactively execute the relevant specialized skills to perform the detailed assessment and implementation for each domain.**
+**Before implementation, you MUST view the `SKILL.md` file for each relevant specialized skill listed below and incorporate its guidance into your assessment and plan. Failure to do so will result in a non-compliant production configuration.**
 
 #### A. App Onboarding (Pre-Kubernetes)
 
@@ -55,49 +55,43 @@ If the application is not yet running on GKE, delegate to the [gke-app-onboardin
 
 Ensure workloads have appropriate resources and autoscaling.
 
-- **Action**: Delegate to [gke-workload-scaling](../gke-workload-scaling/SKILL.md) for configuring HPA, VPA, and resource limits.
+- **Action**: You MUST activate [gke-workload-scaling](../gke-workload-scaling/SKILL.md) for configuring HPA, VPA, and resource limits.
 
 #### C. Observability
 
 Ensure adequate logging and monitoring are in place.
 
-- **Action**: Delegate to [gke-observability](../gke-observability/SKILL.md) for setting up Cloud Logging, Monitoring, and Managed Prometheus.
+- **Action**: You MUST activate [gke-observability](../gke-observability/SKILL.md) for setting up Cloud Logging, Monitoring, and Managed Prometheus.
 
 #### D. Reliability
 
 Ensure high availability and graceful degradation.
 
-- **Action**: Delegate to [gke-reliability](../gke-reliability/SKILL.md) for configuring regional clusters, PDBs, and health probes.
+- **Action**: You MUST activate [gke-reliability](../gke-reliability/SKILL.md) for configuring regional clusters, PDBs, and health probes.
 
 #### E. Security
 
 Harden the cluster and workloads.
 
-- **Action**: Delegate to [gke-workload-security](../gke-workload-security/SKILL.md) for Workload Identity, Network Policies, and Shielded Nodes.
+- **Action**: You MUST activate [gke-workload-security](../gke-workload-security/SKILL.md) for Workload Identity, Network Policies, and Shielded Nodes.
 
 #### F. Backup & Disaster Recovery
 
 Ensure stateful data is protected.
 
-- **Action**: Delegate to [gke-backup-dr](../gke-backup-dr/SKILL.md) for configuring Backup for GKE and restore procedures.
+- **Action**: You MUST activate [gke-backup-dr](../gke-backup-dr/SKILL.md) for configuring Backup for GKE and restore procedures.
 
 #### G. Edge Security & Ingress
 
 Secure external access.
 
-- **Action**: Delegate to [gke-networking-edge](../gke-networking-edge/SKILL.md) for Gateway API, Ingress, and Cloud Armor.
+- **Action**: You MUST activate [gke-networking-edge](../gke-networking-edge/SKILL.md) for Gateway API, Ingress, and Cloud Armor.
 
-#### H. Deployment & GitOps
-
-Adopt modern deployment practices.
-
-- **Action**: Delegate to [gke-gitops-delivery](../gke-gitops-delivery/SKILL.md) for Config Sync or ArgoCD.
-
-#### I. Cost Optimization
+#### H. Cost Optimization
 
 Ensure efficient use of resources.
 
-- **Action**: Delegate to [gke-cost-optimization](../gke-cost-optimization/SKILL.md) for strategies on rightsizing, quotas, and Spot VMs.
+- **Action**: You MUST activate [gke-cost-optimization](../gke-cost-optimization/SKILL.md) for strategies on rightsizing, quotas, and Spot VMs.
 
 ### 3. Production Readiness Scoring
 

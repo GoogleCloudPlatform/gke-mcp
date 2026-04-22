@@ -27,7 +27,7 @@ script.
 **Command:**
 
 ```bash
-./.agent/skills/gke-workload-security/scripts/audit_cluster.sh <cluster-name> <region> <project-id>
+./scripts/audit_cluster.sh <cluster-name> <region> <project-id>
 ```
 
 ### 2. Configure Workload Identity
@@ -67,7 +67,7 @@ access Google Cloud APIs.
    configuration. Update the `<ksa-name>` in the file first.
 
    ```bash
-   kubectl apply -f .agent/skills/gke-workload-security/assets/workload-identity-pod.yaml
+   kubectl apply -f ./assets/workload-identity-pod.yaml -n workload-identity-test-ns
    ```
 
 ### 3. Implement Network Policies
@@ -91,7 +91,9 @@ Isolate namespaces by denying all ingress and egress traffic by default.
 
 **Replace <target-namespace> with the namespace you want to isolate.**
 
-kubectl apply -f .agent/skills/gke-workload-security/assets/default-deny-netpol.yaml -n <target-namespace>
+```bash
+kubectl apply -f ./assets/default-deny-netpol.yaml -n <target-namespace>
+```
 
 ### 4. Enable Shielded Nodes
 
