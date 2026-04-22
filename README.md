@@ -122,9 +122,11 @@ There are several ways to install these skills:
 
 2. **Standalone Individual Skill**: Install a specific skill without the full
    MCP extension:
+
    ```sh
    gemini skills install https://github.com/GoogleCloudPlatform/gke-mcp --path skills/<skill-name>
    ```
+
    Replace `<skill-name>` with the name of a skill from the `skills/` directory
    (e.g., `gke-cost-analysis`).
 
