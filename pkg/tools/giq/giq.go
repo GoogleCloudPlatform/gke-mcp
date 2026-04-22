@@ -18,7 +18,6 @@ package giq
 import (
 	"context"
 	"fmt"
-	"log"
 	"os/exec"
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
@@ -77,8 +76,7 @@ func GenerateInferenceManifest(ctx context.Context, args *GenerateInferenceManif
 	// #nosec G204
 	out, err := exec.CommandContext(ctx, "gcloud", gcloudArgs...).Output()
 	if err != nil {
-		log.Printf("Failed to generate manifest: %v", err)
-		return "", err
+		return "", fmt.Errorf("failed to generate manifest: %w", err)
 	}
 	return string(out), nil
 }
