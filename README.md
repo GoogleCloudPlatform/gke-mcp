@@ -112,7 +112,7 @@ This configuration tells Gemini CLI how to reach the gke-mcp server running on y
 Skills provide specialized capabilities and workflows to your AI agent, such as
 cost analysis, cluster lifecycle management, and security auditing.
 
-### Installation
+### Installing Skills
 
 There are several ways to install these skills:
 
