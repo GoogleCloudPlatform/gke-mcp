@@ -25,7 +25,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-type giqGenerateManifestArgs struct {
+type GenerateInferenceManifestArgs struct {
 	Model                   string `json:"model" jsonschema:"The model to use. Get the list of valid models from 'gcloud container ai profiles models list' if the user doesn't provide it."`
 	ModelServer             string `json:"model_server" jsonschema:"The model server to use. Get the list of valid model servers from 'gcloud container ai profiles list --format='table(modelServerInfo.model,modelServerInfo.modelServer,modelServerInfo.modelServerVersion,acceleratorType)' if the user doesn't provide it. You can filter that gcloud command on '--model={model}' if the user provides the model."`
 	Accelerator             string `json:"accelerator" jsonschema:"The accelerator to use. Get the list of valid accelerators from 'gcloud container ai profiles list --format='table(modelServerInfo.model,modelServerInfo.modelServer,modelServerInfo.modelServerVersion,acceleratorType)' if the user doesn't provide it. You can filter that gcloud command on '--model={model}' and '--model-server={model-server}' if the user provides those values."`
@@ -47,7 +47,10 @@ func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 }
 
 // GenerateInferenceManifest core logic for GKE Inference Quickstart manifest generation.
-func GenerateInferenceManifest(args *giqGenerateManifestArgs) (string, error) {
+func GenerateInferenceManifest(ctx context.Context, args *GenerateInferenceManifestArgs) (string, error) {
+	if args == nil {
+		return "", fmt.Errorf("args cannot be nil")
+	}
 	if args.Model == "" {
 		return "", fmt.Errorf("model argument cannot be empty")
 	}
@@ -72,7 +75,7 @@ func GenerateInferenceManifest(args *giqGenerateManifestArgs) (string, error) {
 		gcloudArgs = append(gcloudArgs, "--target-ntpot-milliseconds", args.TargetNTPOTMilliseconds)
 	}
 	// #nosec G204
-	out, err := exec.Command("gcloud", gcloudArgs...).Output()
+	out, err := exec.CommandContext(ctx, "gcloud", gcloudArgs...).Output()
 	if err != nil {
 		log.Printf("Failed to generate manifest: %v", err)
 		return "", err
@@ -80,8 +83,8 @@ func GenerateInferenceManifest(args *giqGenerateManifestArgs) (string, error) {
 	return string(out), nil
 }
 
-func giqGenerateManifest(_ context.Context, _ *mcp.CallToolRequest, args *giqGenerateManifestArgs) (*mcp.CallToolResult, any, error) {
-	manifest, err := GenerateInferenceManifest(args)
+func giqGenerateManifest(ctx context.Context, _ *mcp.CallToolRequest, args *GenerateInferenceManifestArgs) (*mcp.CallToolResult, any, error) {
+	manifest, err := GenerateInferenceManifest(ctx, args)
 	if err != nil {
 		return nil, nil, err
 	}
