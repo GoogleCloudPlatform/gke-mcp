@@ -74,3 +74,9 @@ func TestGenerateManifest_Success(t *testing.T) {
 		t.Errorf("Expected simulated YAML response, got %v", manifest)
 	}
 }
+
+func TestInstruction_ContainsGIQGuidance(t *testing.T) {
+	if !strings.Contains(instructionTemplate, "giq_generate_manifest") {
+		t.Errorf("Expected instructionTemplate to contain 'giq_generate_manifest', but it did not")
+	}
+}
