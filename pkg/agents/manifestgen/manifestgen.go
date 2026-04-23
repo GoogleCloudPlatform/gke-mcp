@@ -20,6 +20,7 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 
@@ -79,7 +80,9 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 		Tools:       []tool.Tool{giqTool},
 		BeforeModelCallbacks: []llmagent.BeforeModelCallback{
 			func(ctx agent.CallbackContext, llmRequest *model.LLMRequest) (*model.LLMResponse, error) {
-				f, _ := os.OpenFile("/usr/local/google/home/ginnyji/.gemini/tmp/gke-mcp/model_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				home, _ := os.UserHomeDir()
+				logPath := filepath.Join(home, ".gemini", "tmp", "gke-mcp", "model_debug.log")
+				f, _ := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 				defer func() {
 					if f != nil {
 						f.Close()
@@ -167,7 +170,9 @@ func (a *Agent) Run(ctx context.Context, prompt string, sessionID string) (strin
 
 	var builder strings.Builder
 	// Debug logging
-	f, _ := os.OpenFile("/usr/local/google/home/ginnyji/.gemini/tmp/gke-mcp/model_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	home, _ := os.UserHomeDir()
+	logPath := filepath.Join(home, ".gemini", "tmp", "gke-mcp", "model_debug.log")
+	f, _ := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	defer func() {
 		if f != nil {
 			f.Close()
