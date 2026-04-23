@@ -20,6 +20,7 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
@@ -76,6 +77,38 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 		Model:       llm,
 		Instruction: instructionTemplate,
 		Tools:       []tool.Tool{giqTool},
+		BeforeModelCallbacks: []llmagent.BeforeModelCallback{
+			func(ctx agent.CallbackContext, llmRequest *model.LLMRequest) (*model.LLMResponse, error) {
+				f, _ := os.OpenFile("/usr/local/google/home/ginnyji/.gemini/tmp/gke-mcp/model_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				defer func() {
+					if f != nil {
+						f.Close()
+					}
+				}()
+				if f != nil {
+					fmt.Fprintf(f, "--- Before Model Call ---\n")
+					fmt.Fprintf(f, "Model: %s\n", llmRequest.Model)
+					if llmRequest.Config != nil {
+						v := reflect.ValueOf(*llmRequest.Config)
+						t := v.Type()
+						for i := 0; i < v.NumField(); i++ {
+							field := t.Field(i)
+							if field.IsExported() {
+								fmt.Fprintf(f, "Config Field %s: %+v\n", field.Name, v.Field(i).Interface())
+							}
+						}
+					}
+					fmt.Fprintf(f, "Contents count: %d\n", len(llmRequest.Contents))
+					for i, c := range llmRequest.Contents {
+						fmt.Fprintf(f, "Content %d (Role: %s):\n", i, c.Role)
+						for j, p := range c.Parts {
+							fmt.Fprintf(f, "  Part %d: %q\n", j, p.Text)
+						}
+					}
+				}
+				return nil, nil
+			},
+		},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ADK agent: %w", err)
