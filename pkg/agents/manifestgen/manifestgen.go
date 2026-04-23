@@ -90,6 +90,7 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 				if len(llmRequest.Contents) == 0 {
 					userContent := ctx.UserContent()
 					if userContent != nil {
+						userContent.Role = "user"
 						llmRequest.Contents = append(llmRequest.Contents, userContent)
 					}
 				}
