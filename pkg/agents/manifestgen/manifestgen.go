@@ -82,10 +82,10 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 			func(ctx agent.CallbackContext, llmRequest *model.LLMRequest) (*model.LLMResponse, error) {
 				home, _ := os.UserHomeDir()
 				logPath := filepath.Join(home, ".gemini", "tmp", "gke-mcp", "model_debug.log")
-				f, _ := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				f, _ := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 				defer func() {
 					if f != nil {
-						f.Close()
+						_ = f.Close()
 					}
 				}()
 
@@ -99,23 +99,23 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 				}
 
 				if f != nil {
-					fmt.Fprintf(f, "--- Before Model Call ---\n")
-					fmt.Fprintf(f, "Model: %s\n", llmRequest.Model)
+					_, _ = fmt.Fprintf(f, "--- Before Model Call ---\n")
+					_, _ = fmt.Fprintf(f, "Model: %s\n", llmRequest.Model)
 					if llmRequest.Config != nil {
 						v := reflect.ValueOf(*llmRequest.Config)
 						t := v.Type()
 						for i := 0; i < v.NumField(); i++ {
 							field := t.Field(i)
 							if field.IsExported() {
-								fmt.Fprintf(f, "Config Field %s: %+v\n", field.Name, v.Field(i).Interface())
+								_, _ = fmt.Fprintf(f, "Config Field %s: %+v\n", field.Name, v.Field(i).Interface())
 							}
 						}
 					}
-					fmt.Fprintf(f, "Contents count: %d\n", len(llmRequest.Contents))
+					_, _ = fmt.Fprintf(f, "Contents count: %d\n", len(llmRequest.Contents))
 					for i, c := range llmRequest.Contents {
-						fmt.Fprintf(f, "Content %d (Role: %s):\n", i, c.Role)
+						_, _ = fmt.Fprintf(f, "Content %d (Role: %s):\n", i, c.Role)
 						for j, p := range c.Parts {
-							fmt.Fprintf(f, "  Part %d: %q\n", j, p.Text)
+							_, _ = fmt.Fprintf(f, "  Part %d: %q\n", j, p.Text)
 						}
 					}
 				}
@@ -172,27 +172,27 @@ func (a *Agent) Run(ctx context.Context, prompt string, sessionID string) (strin
 	// Debug logging
 	home, _ := os.UserHomeDir()
 	logPath := filepath.Join(home, ".gemini", "tmp", "gke-mcp", "model_debug.log")
-	f, _ := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, _ := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	defer func() {
 		if f != nil {
-			f.Close()
+			_ = f.Close()
 		}
 	}()
 	if f != nil {
-		fmt.Fprintf(f, "=== New Run with prompt: %q ===\n", prompt)
+		_, _ = fmt.Fprintf(f, "=== New Run with prompt: %q ===\n", prompt)
 	}
 
 	for event, err := range events {
 		if err != nil {
 			if f != nil {
-				fmt.Fprintf(f, "Error event: %v\n", err)
+				_, _ = fmt.Fprintf(f, "Error event: %v\n", err)
 			}
 			return "", err
 		}
 		if event.Content != nil {
 			for _, part := range event.Content.Parts {
 				if f != nil {
-					fmt.Fprintf(f, "Model Part: %q\n", part.Text)
+					_, _ = fmt.Fprintf(f, "Model Part: %q\n", part.Text)
 				}
 				builder.WriteString(part.Text)
 			}
@@ -200,7 +200,7 @@ func (a *Agent) Run(ctx context.Context, prompt string, sessionID string) (strin
 	}
 
 	if f != nil {
-		fmt.Fprintf(f, "Final result: %q\n", builder.String())
+		_, _ = fmt.Fprintf(f, "Final result: %q\n", builder.String())
 	}
 
 	return builder.String(), nil
