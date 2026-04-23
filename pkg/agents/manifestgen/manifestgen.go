@@ -146,6 +146,7 @@ func (a *Agent) Run(ctx context.Context, prompt string, sessionID string) (strin
 	}
 
 	msg := &genai.Content{
+		Role: "user",
 		Parts: []*genai.Part{{Text: prompt}},
 	}
 
