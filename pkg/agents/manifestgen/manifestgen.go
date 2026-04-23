@@ -19,6 +19,7 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
@@ -122,15 +123,36 @@ func (a *Agent) Run(ctx context.Context, prompt string, sessionID string) (strin
 	events := a.adkRunner.Run(ctx, "default-user", sessionID, msg, agent.RunConfig{})
 
 	var builder strings.Builder
+	// Debug logging
+	f, _ := os.OpenFile("/usr/local/google/home/ginnyji/.gemini/tmp/gke-mcp/model_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	defer func() {
+		if f != nil {
+			f.Close()
+		}
+	}()
+	if f != nil {
+		fmt.Fprintf(f, "=== New Run with prompt: %q ===\n", prompt)
+	}
+
 	for event, err := range events {
 		if err != nil {
+			if f != nil {
+				fmt.Fprintf(f, "Error event: %v\n", err)
+			}
 			return "", err
 		}
 		if event.Content != nil {
 			for _, part := range event.Content.Parts {
+				if f != nil {
+					fmt.Fprintf(f, "Model Part: %q\n", part.Text)
+				}
 				builder.WriteString(part.Text)
 			}
 		}
+	}
+
+	if f != nil {
+		fmt.Fprintf(f, "Final result: %q\n", builder.String())
 	}
 
 	return builder.String(), nil
