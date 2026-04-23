@@ -93,11 +93,6 @@ Memory` if the framework requires it.
     explanations, no Markdown. If multiple resources are needed, separate them
     with `---`.
 
-    **CRITICAL:** If you call a tool (like `giq_generate_manifest`), you MUST
-    output the EXACT YAML content returned by the tool as your final response.
-    Do not summarize, do not say 'acknowledged' or 'Understood', and do not add
-    any conversational filler.
-
 **Few-Shot Examples:**
 
 ---
