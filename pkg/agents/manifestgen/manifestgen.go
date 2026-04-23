@@ -19,9 +19,8 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"log"
 	"os"
-	"path/filepath"
-	"reflect"
 	"strings"
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
@@ -43,19 +42,6 @@ import (
 var instructionTemplate string
 
 const defaultModel = "gemini-2.5-pro"
-
-func getDebugLogFile() (*os.File, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
-	}
-	logDir := filepath.Join(home, ".gemini", "tmp", "gke-mcp")
-	if err := os.MkdirAll(logDir, 0700); err != nil {
-		return nil, err
-	}
-	logPath := filepath.Join(logDir, "model_debug.log")
-	return os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-}
 
 // Agent handles manifest generation via ADK.
 type Agent struct {
@@ -102,31 +88,17 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 					}
 				}
 
-				f, err := getDebugLogFile()
-				if err == nil && f != nil {
-					defer func() {
-						_ = f.Close()
-					}()
-
-					_, _ = fmt.Fprintf(f, "--- Before Model Call ---\n")
-					_, _ = fmt.Fprintf(f, "Model: %s\n", llmRequest.Model)
+				if os.Getenv("GKE_MCP_DEBUG") == "true" {
+					log.Printf("--- Before Model Call ---")
+					log.Printf("Model: %s", llmRequest.Model)
 					if llmRequest.Config != nil {
-						v := reflect.Indirect(reflect.ValueOf(llmRequest.Config))
-						if v.Kind() == reflect.Struct {
-							t := v.Type()
-							for i := 0; i < v.NumField(); i++ {
-								field := t.Field(i)
-								if field.IsExported() {
-									_, _ = fmt.Fprintf(f, "Config Field %s: %+v\n", field.Name, v.Field(i).Interface())
-								}
-							}
-						}
+						log.Printf("Config: %+v", llmRequest.Config)
 					}
-					_, _ = fmt.Fprintf(f, "Contents count: %d\n", len(llmRequest.Contents))
+					log.Printf("Contents count: %d", len(llmRequest.Contents))
 					for i, c := range llmRequest.Contents {
-						_, _ = fmt.Fprintf(f, "Content %d (Role: %s):\n", i, c.Role)
+						log.Printf("Content %d (Role: %s):", i, c.Role)
 						for j, p := range c.Parts {
-							_, _ = fmt.Fprintf(f, "  Part %d: %q\n", j, p.Text)
+							log.Printf("  Part %d: %q", j, p.Text)
 						}
 					}
 				}
@@ -180,34 +152,29 @@ func (a *Agent) Run(ctx context.Context, prompt string, sessionID string) (strin
 	events := a.adkRunner.Run(ctx, "default-user", sessionID, msg, agent.RunConfig{})
 
 	var builder strings.Builder
-	// Debug logging
-	f, err := getDebugLogFile()
-	if err == nil && f != nil {
-		defer func() {
-			_ = f.Close()
-		}()
-		_, _ = fmt.Fprintf(f, "=== New Run with prompt: %q ===\n", prompt)
+	if os.Getenv("GKE_MCP_DEBUG") == "true" {
+		log.Printf("=== New Run with prompt: %q ===", prompt)
 	}
 
 	for event, err := range events {
 		if err != nil {
-			if f != nil {
-				_, _ = fmt.Fprintf(f, "Error event: %v\n", err)
+			if os.Getenv("GKE_MCP_DEBUG") == "true" {
+				log.Printf("Error event: %v", err)
 			}
 			return "", err
 		}
 		if event.Content != nil {
 			for _, part := range event.Content.Parts {
-				if f != nil {
-					_, _ = fmt.Fprintf(f, "Model Part: %q\n", part.Text)
+				if os.Getenv("GKE_MCP_DEBUG") == "true" {
+					log.Printf("Model Part: %q", part.Text)
 				}
 				builder.WriteString(part.Text)
 			}
 		}
 	}
 
-	if f != nil {
-		_, _ = fmt.Fprintf(f, "Final result: %q\n", builder.String())
+	if os.Getenv("GKE_MCP_DEBUG") == "true" {
+		log.Printf("Final result: %q", builder.String())
 	}
 
 	return builder.String(), nil
