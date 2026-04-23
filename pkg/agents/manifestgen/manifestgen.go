@@ -85,6 +85,15 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 						f.Close()
 					}
 				}()
+
+				// FIX: Manually inject user content if Contents is empty
+				if len(llmRequest.Contents) == 0 {
+					userContent := ctx.UserContent()
+					if userContent != nil {
+						llmRequest.Contents = append(llmRequest.Contents, userContent)
+					}
+				}
+
 				if f != nil {
 					fmt.Fprintf(f, "--- Before Model Call ---\n")
 					fmt.Fprintf(f, "Model: %s\n", llmRequest.Model)
