@@ -44,6 +44,19 @@ var instructionTemplate string
 
 const defaultModel = "gemini-2.5-pro"
 
+func getDebugLogFile() (*os.File, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+	logDir := filepath.Join(home, ".gemini", "tmp", "gke-mcp")
+	if err := os.MkdirAll(logDir, 0700); err != nil {
+		return nil, err
+	}
+	logPath := filepath.Join(logDir, "model_debug.log")
+	return os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+}
+
 // Agent handles manifest generation via ADK.
 type Agent struct {
 	cfg            *config.Config
@@ -80,15 +93,6 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 		Tools:       []tool.Tool{giqTool},
 		BeforeModelCallbacks: []llmagent.BeforeModelCallback{
 			func(ctx agent.CallbackContext, llmRequest *model.LLMRequest) (*model.LLMResponse, error) {
-				home, _ := os.UserHomeDir()
-				logPath := filepath.Join(home, ".gemini", "tmp", "gke-mcp", "model_debug.log")
-				f, _ := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-				defer func() {
-					if f != nil {
-						_ = f.Close()
-					}
-				}()
-
 				// FIX: Manually inject user content if Contents is empty
 				if len(llmRequest.Contents) == 0 {
 					userContent := ctx.UserContent()
@@ -98,16 +102,23 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 					}
 				}
 
-				if f != nil {
+				f, err := getDebugLogFile()
+				if err == nil && f != nil {
+					defer func() {
+						_ = f.Close()
+					}()
+
 					_, _ = fmt.Fprintf(f, "--- Before Model Call ---\n")
 					_, _ = fmt.Fprintf(f, "Model: %s\n", llmRequest.Model)
 					if llmRequest.Config != nil {
-						v := reflect.ValueOf(*llmRequest.Config)
-						t := v.Type()
-						for i := 0; i < v.NumField(); i++ {
-							field := t.Field(i)
-							if field.IsExported() {
-								_, _ = fmt.Fprintf(f, "Config Field %s: %+v\n", field.Name, v.Field(i).Interface())
+						v := reflect.Indirect(reflect.ValueOf(llmRequest.Config))
+						if v.Kind() == reflect.Struct {
+							t := v.Type()
+							for i := 0; i < v.NumField(); i++ {
+								field := t.Field(i)
+								if field.IsExported() {
+									_, _ = fmt.Fprintf(f, "Config Field %s: %+v\n", field.Name, v.Field(i).Interface())
+								}
 							}
 						}
 					}
@@ -170,15 +181,11 @@ func (a *Agent) Run(ctx context.Context, prompt string, sessionID string) (strin
 
 	var builder strings.Builder
 	// Debug logging
-	home, _ := os.UserHomeDir()
-	logPath := filepath.Join(home, ".gemini", "tmp", "gke-mcp", "model_debug.log")
-	f, _ := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-	defer func() {
-		if f != nil {
+	f, err := getDebugLogFile()
+	if err == nil && f != nil {
+		defer func() {
 			_ = f.Close()
-		}
-	}()
-	if f != nil {
+		}()
 		_, _ = fmt.Fprintf(f, "=== New Run with prompt: %q ===\n", prompt)
 	}
 
