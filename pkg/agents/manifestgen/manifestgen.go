@@ -79,7 +79,7 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 		Tools:       []tool.Tool{giqTool},
 		BeforeModelCallbacks: []llmagent.BeforeModelCallback{
 			func(ctx agent.CallbackContext, llmRequest *model.LLMRequest) (*model.LLMResponse, error) {
-				// FIX: Manually inject user content if Contents is empty
+				// Inject user content if Contents is empty to avoid content loss.
 				if len(llmRequest.Contents) == 0 {
 					userContent := ctx.UserContent()
 					if userContent != nil {
