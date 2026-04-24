@@ -59,6 +59,7 @@ When processing a request:
       that server-side apply works well.
 6.  **Inference Workloads:** When generating manifests for model serving (e.g.,
     vLLM, TGI):
+    - **Tool Usage:** For AI/LLM inference workloads, you MUST prioritize using the `giq_generate_manifest` tool to generate optimized manifests instead of creating them manually.
     - **Quantization:** Recommend quantization to reduce VRAM usage and
       increase throughput.
       - Use `--quantization fp8` for NVIDIA H100 or L4 GPUs (supports

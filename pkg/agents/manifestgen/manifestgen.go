@@ -19,9 +19,12 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"log"
+	"os"
 	"strings"
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/giq"
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"google.golang.org/adk/agent"
@@ -30,6 +33,8 @@ import (
 	"google.golang.org/adk/model/gemini"
 	"google.golang.org/adk/runner"
 	"google.golang.org/adk/session"
+	"google.golang.org/adk/tool"
+	"google.golang.org/adk/tool/functiontool"
 	"google.golang.org/genai"
 )
 
@@ -53,11 +58,53 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 
 	sessSvc := session.InMemoryService()
 
+	giqTool, err := functiontool.New(
+		functiontool.Config{
+			Name:        "giq_generate_manifest",
+			Description: "Use GKE Inference Quickstart (GIQ) to generate a Kubernetes manifest for optimized AI / inference workloads. Prefer to use this tool instead of gcloud",
+		},
+		func(ctx tool.Context, args giq.GenerateInferenceManifestArgs) (string, error) {
+			return giq.GenerateInferenceManifest(ctx, &args)
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create giq tool: %w", err)
+	}
+
 	adkAgent, err := llmagent.New(llmagent.Config{
 		Name:        "manifest_agent",
 		Description: "Agent specialized in generating and validating Kubernetes manifests.",
 		Model:       llm,
 		Instruction: instructionTemplate,
+		Tools:       []tool.Tool{giqTool},
+		BeforeModelCallbacks: []llmagent.BeforeModelCallback{
+			func(ctx agent.CallbackContext, llmRequest *model.LLMRequest) (*model.LLMResponse, error) {
+				// Inject user content if Contents is empty to avoid content loss.
+				if len(llmRequest.Contents) == 0 {
+					userContent := ctx.UserContent()
+					if userContent != nil {
+						userContent.Role = "user"
+						llmRequest.Contents = append(llmRequest.Contents, userContent)
+					}
+				}
+
+				if os.Getenv("GKE_MCP_DEBUG") == "true" {
+					log.Printf("--- Before Model Call ---")
+					log.Printf("Model: %s", llmRequest.Model)
+					if llmRequest.Config != nil {
+						log.Printf("Config: %+v", llmRequest.Config)
+					}
+					log.Printf("Contents count: %d", len(llmRequest.Contents))
+					for i, c := range llmRequest.Contents {
+						log.Printf("Content %d (Role: %s):", i, c.Role)
+						for j, p := range c.Parts {
+							log.Printf("  Part %d: %q", j, p.Text)
+						}
+					}
+				}
+				return nil, nil
+			},
+		},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ADK agent: %w", err)
@@ -99,21 +146,36 @@ func (a *Agent) Run(ctx context.Context, prompt string, sessionID string) (strin
 	}
 
 	msg := &genai.Content{
+		Role:  "user",
 		Parts: []*genai.Part{{Text: prompt}},
 	}
 
 	events := a.adkRunner.Run(ctx, "default-user", sessionID, msg, agent.RunConfig{})
 
 	var builder strings.Builder
+	if os.Getenv("GKE_MCP_DEBUG") == "true" {
+		log.Printf("=== New Run with prompt: %q ===", prompt)
+	}
+
 	for event, err := range events {
 		if err != nil {
+			if os.Getenv("GKE_MCP_DEBUG") == "true" {
+				log.Printf("Error event: %v", err)
+			}
 			return "", err
 		}
 		if event.Content != nil {
 			for _, part := range event.Content.Parts {
+				if os.Getenv("GKE_MCP_DEBUG") == "true" {
+					log.Printf("Model Part: %q", part.Text)
+				}
 				builder.WriteString(part.Text)
 			}
 		}
+	}
+
+	if os.Getenv("GKE_MCP_DEBUG") == "true" {
+		log.Printf("Final result: %q", builder.String())
 	}
 
 	return builder.String(), nil

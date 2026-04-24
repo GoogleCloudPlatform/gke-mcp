@@ -18,14 +18,14 @@ package giq
 import (
 	"context"
 	"fmt"
-	"log"
 	"os/exec"
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-type giqGenerateManifestArgs struct {
+// GenerateInferenceManifestArgs holds arguments for generating a GKE Inference Quickstart manifest.
+type GenerateInferenceManifestArgs struct {
 	Model                   string `json:"model" jsonschema:"The model to use. Get the list of valid models from 'gcloud container ai profiles models list' if the user doesn't provide it."`
 	ModelServer             string `json:"model_server" jsonschema:"The model server to use. Get the list of valid model servers from 'gcloud container ai profiles list --format='table(modelServerInfo.model,modelServerInfo.modelServer,modelServerInfo.modelServerVersion,acceleratorType)' if the user doesn't provide it. You can filter that gcloud command on '--model={model}' if the user provides the model."`
 	Accelerator             string `json:"accelerator" jsonschema:"The accelerator to use. Get the list of valid accelerators from 'gcloud container ai profiles list --format='table(modelServerInfo.model,modelServerInfo.modelServer,modelServerInfo.modelServerVersion,acceleratorType)' if the user doesn't provide it. You can filter that gcloud command on '--model={model}' and '--model-server={model-server}' if the user provides those values."`
@@ -46,15 +46,19 @@ func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 	return nil
 }
 
-func giqGenerateManifest(_ context.Context, _ *mcp.CallToolRequest, args *giqGenerateManifestArgs) (*mcp.CallToolResult, any, error) {
+// GenerateInferenceManifest core logic for GKE Inference Quickstart manifest generation.
+func GenerateInferenceManifest(ctx context.Context, args *GenerateInferenceManifestArgs) (string, error) {
+	if args == nil {
+		return "", fmt.Errorf("args cannot be nil")
+	}
 	if args.Model == "" {
-		return nil, nil, fmt.Errorf("model argument cannot be empty")
+		return "", fmt.Errorf("model argument cannot be empty")
 	}
 	if args.ModelServer == "" {
-		return nil, nil, fmt.Errorf("model_server argument cannot be empty")
+		return "", fmt.Errorf("model_server argument cannot be empty")
 	}
 	if args.Accelerator == "" {
-		return nil, nil, fmt.Errorf("accelerator argument cannot be empty")
+		return "", fmt.Errorf("accelerator argument cannot be empty")
 	}
 
 	gcloudArgs := []string{
@@ -71,15 +75,21 @@ func giqGenerateManifest(_ context.Context, _ *mcp.CallToolRequest, args *giqGen
 		gcloudArgs = append(gcloudArgs, "--target-ntpot-milliseconds", args.TargetNTPOTMilliseconds)
 	}
 	// #nosec G204
-	out, err := exec.Command("gcloud", gcloudArgs...).Output()
+	out, err := exec.CommandContext(ctx, "gcloud", gcloudArgs...).Output()
 	if err != nil {
-		log.Printf("Failed to generate manifest: %v", err)
+		return "", fmt.Errorf("failed to generate manifest: %w", err)
+	}
+	return string(out), nil
+}
 
+func giqGenerateManifest(ctx context.Context, _ *mcp.CallToolRequest, args *GenerateInferenceManifestArgs) (*mcp.CallToolResult, any, error) {
+	manifest, err := GenerateInferenceManifest(ctx, args)
+	if err != nil {
 		return nil, nil, err
 	}
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
-			&mcp.TextContent{Text: string(out)},
+			&mcp.TextContent{Text: manifest},
 		},
 	}, nil, nil
 }

@@ -19,7 +19,7 @@ import (
 )
 
 func TestGiqGenerateManifestArgs_Fields(t *testing.T) {
-	args := giqGenerateManifestArgs{
+	args := GenerateInferenceManifestArgs{
 		Model:                   "llama-3-1-405b",
 		ModelServer:             "tgi",
 		Accelerator:             "nvidia-a100-80gb",
@@ -41,7 +41,7 @@ func TestGiqGenerateManifestArgs_Fields(t *testing.T) {
 }
 
 func TestGiqGenerateManifestArgs_RequiredFields(t *testing.T) {
-	args := giqGenerateManifestArgs{
+	args := GenerateInferenceManifestArgs{
 		Model:       "llama-3-1-8b",
 		ModelServer: "vllm",
 		Accelerator: "nvidia-l4",
@@ -62,7 +62,7 @@ func TestGiqGenerateManifestArgs_RequiredFields(t *testing.T) {
 }
 
 func TestGiqGenerateManifestArgs_Empty(t *testing.T) {
-	args := giqGenerateManifestArgs{}
+	args := GenerateInferenceManifestArgs{}
 	if args.Model != "" {
 		t.Errorf("Expected empty Model, got %s", args.Model)
 	}
@@ -78,7 +78,7 @@ func TestGiqGenerateManifestArgs_Empty(t *testing.T) {
 }
 
 func TestGiqGenerateManifestArgs_WithTargetNTPOT(t *testing.T) {
-	args := giqGenerateManifestArgs{
+	args := GenerateInferenceManifestArgs{
 		Model:                   "mixtral-8x7b",
 		ModelServer:             "tgi",
 		Accelerator:             "nvidia-a100-80gb",
@@ -103,7 +103,7 @@ func TestGiqGenerateManifestArgs_MultipleAccelerators(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			args := giqGenerateManifestArgs{
+			args := GenerateInferenceManifestArgs{
 				Model:       "test-model",
 				ModelServer: "test-server",
 				Accelerator: tt.accelerator,
@@ -116,7 +116,7 @@ func TestGiqGenerateManifestArgs_MultipleAccelerators(t *testing.T) {
 }
 
 func TestGiqGenerateManifestArgs_JSONTags(t *testing.T) {
-	args := giqGenerateManifestArgs{
+	args := GenerateInferenceManifestArgs{
 		Model:       "test-model",
 		ModelServer: "test-server",
 		Accelerator: "test-accelerator",
@@ -130,7 +130,7 @@ func TestGiqGenerateManifestArgs_JSONTags(t *testing.T) {
 func TestGiqGenerateManifestArgs_DifferentModelServers(t *testing.T) {
 	servers := []string{"tgi", "vllm", "sglang"}
 	for _, server := range servers {
-		args := giqGenerateManifestArgs{
+		args := GenerateInferenceManifestArgs{
 			Model:       "test-model",
 			ModelServer: server,
 			Accelerator: "test-accelerator",
