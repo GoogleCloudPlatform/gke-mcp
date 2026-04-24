@@ -1,47 +1,26 @@
+---
+name: mvp-to-prod
+description: 'Standard workflow for promoting applications from MVP to production-grade deployments on GKE. Use when: (1) Setting up staging and production environments, (2) Implementing PR-based rollout gates, or (3) Configuring environment-specific parameters via Kustomize.'
+---
+
 # GKE MVP-to-Production Workflow
 
-This skill outlines a production-grade workflow for promoting applications from an MVP state to a reliable, multi-environment production deployment on GKE.
+## Overview
 
-## Core Principles
+This skill provides a standardized, production-grade workflow for managing application lifecycles on GKE, from initial build to production rollout.
 
-1.  **Environment Isolation**: Maintain strictly separate namespaces for `staging` and `prod`.
-2.  **GitOps & PR-Based Workflow**: All changes (code or infrastructure) must go through a Pull Request. No direct commits to the `main` branch.
-3.  **Standardized Builds**: Use Cloud Build for deterministic, reproducible container image builds.
-4.  **Kustomize for Configuration**: Use Kustomize to manage environment-specific parameters (hostnames, resource limits, replicas) while keeping the base manifests dry.
-5.  **Staging as a Quality Gate**: Applications must be stable in the `staging` namespace before promotion.
+## Workflow
 
-## Workflow Sequence
+1.  **Environment Setup**: Maintain separate `staging` and `prod` namespaces for isolation.
+2.  **GitOps & Review**: Ensure every change goes through a Pull Request. No direct commits to the `main` branch.
+3.  **Build**: Use Cloud Build to create versioned, immutable container images.
+4.  **Staging Deployment**: Use `kubectl apply -k k8s/overlays/staging` to deploy and validate changes.
+5.  **Quality Gate**: Monitor for stability in `staging` for a defined period (e.g., 6 hours) before promotion.
+6.  **Production Promotion**: Roll out to `prod` using `kubectl apply -k k8s/overlays/prod` within a maintenance window.
 
-### 1. Development & Build
-- Implement features/fixes in a feature branch.
-- Create a Pull Request (PR) to the `main` branch.
-- Once merged, trigger Cloud Build to create new versioned image tags.
-- **Rule**: Avoid `latest` tags. Use semantic versioning or commit SHA-based tags for traceability.
+## How to use
 
-### 2. Deployment to Staging
-- Update the Kustomize overlay for the `staging` namespace with the new image tag.
-- Apply the configuration: `kubectl apply -k k8s/overlays/staging`.
-- **Validation**: Monitor the rollout for success. Check for `CrashLoopBackOff`, `ImagePullBackOff`, or probe failures.
-
-### 3. Stability Monitoring
-- Monitor the application in `staging` for a defined "Crucible" period (e.g., 6 hours).
-- **Automation**: Use an automated agent or prober to verify health.
-- **Rule**: Ignore transient node churn (e.g., Spot node preemptions) if the application recovers automatically. Only application-level crashes should reset the stability clock.
-
-### 4. Promotion to Production
-- Only after successful verification in `staging`, promote the exact same image and configuration logic to `prod`.
-- Update the Kustomize overlay for the `prod` namespace: `kubectl apply -k k8s/overlays/prod`.
-- **Window Management**: Execute production rollouts only within defined maintenance windows to minimize impact.
-
-## Manifest Structure (Kustomize)
-
-Maintain a clear hierarchy in your repository:
-- `k8s/base/`: Contains generic resources (Deployment, Service, HPA).
-- `k8s/overlays/staging/`: Patches for staging (e.g., `staging.example.com`, lower resource requests).
-- `k8s/overlays/prod/`: Patches for production (e.g., `app.example.com`, high-availability replicas, higher resource requests).
-
-## Security Best Practices
-- **Restricted Profile**: Always run containers as non-root users.
-- **Privilege Escalation**: Explicitly disable `allowPrivilegeEscalation`.
-- **Capabilities**: Drop all default Linux capabilities (`drop: ["ALL"]`).
-- **Resources**: Always define CPU and Memory requests and limits to ensure predictable scheduling and prevent "noisy neighbor" issues.
+- "Set up a new staging environment for my application."
+- "Promote the current stable version from staging to production."
+- "Configure Kustomize overlays for separate staging and prod domains."
+- "Review my current rollout strategy against the mvp-to-prod best practices."
