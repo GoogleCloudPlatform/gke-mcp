@@ -171,9 +171,9 @@ gcloud container ai profiles list --model=meta-llama/Llama-4-Maverick-17B-128E-I
 gcloud container ai profiles list --model=Gemma-3-27B --target-ntpot-milliseconds=500
 ```
 
-4. Can you generate a manifest to deploy an application that uses Gemma-3-27B and requires 500ms latency?
+4. Can you generate a manifest to deploy an application that uses Gemma-3-27B using vLLM on NVIDIA L4 and requires 500ms latency?
 
-Use the `generate_manifest` tool with prompt: "Generate manifest for Gemma-3-27B with 500ms target ntpot".
+Use the `generate_manifest` tool with prompt: "Generate manifest for Gemma-3-27B using vLLM on NVIDIA L4 with 500ms target ntpot".
 
 5. Do I have a cluster available to deploy this manifest?
 
@@ -181,9 +181,9 @@ Use the `generate_manifest` tool with prompt: "Generate manifest for Gemma-3-27B
 gcloud container clusters list
 ```
 
-6. Can you generate a manifest to deploy an application that uses Gemma-3-27B and requires 500ms time to first token (ttft)?
+6. Can you generate a manifest to deploy an application that uses Gemma-3-27B using vLLM on NVIDIA L4 and requires 500ms time to first token (ttft)?
 
-Use the `generate_manifest` tool with prompt: "Generate manifest for Gemma-3-27B with 500ms target ttft".
+Use the `generate_manifest` tool with prompt: "Generate manifest for Gemma-3-27B using vLLM on NVIDIA L4 with 500ms target ttft".
 
 7. Can you give me all of the performance metrics you have on Gemma-3-27B on nvidia-l4?
 
