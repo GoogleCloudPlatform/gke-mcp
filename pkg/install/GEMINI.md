@@ -15,6 +15,15 @@ This document provides instructions for an AI agent on how to use the available 
 
 Some MCP tools required [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials). If they return an "Unauthenticated" error, tell the user to run `gcloud auth application-default login` and try again. This is an interactive command and must be run manually outside the AI.
 
+## Manifest Generation Agent
+
+The `generate_manifest` tool is a specialized agent for generating, analyzing, and optimizing Kubernetes YAML manifests for GKE. It uses advanced reasoning to translate natural language requests into secure, best-practice-adhering manifests.
+
+- **Intent:** It handles requests to create or modify Kubernetes resources (Deployments, Services, ConfigMaps, etc.).
+- **Best Practices:** It automatically applies health probes, high availability settings, and security contexts.
+- **Inference Workloads:** For AI/LLM inference workloads, it is configured to prioritize using the `giq_generate_manifest` capability to generate optimized serving manifests.
+- **Usage:** Provide a detailed prompt describing the desired workload, and the agent will return only the raw YAML manifest.
+
 ## GKE Logs
 
 - When searching for GKE logs, always use the `query_logs` tool to fetch them. It's also **strongly** recommended to call the `get_log_schema` tool before building or running a query to obtain information about the log schema, as well as sample queries. This information is useful when building Cloud Logging LQL queries.
@@ -122,7 +131,7 @@ The user should be made aware that token costs from GIQ are estimated equivalent
 - **To see what models have been benchmarked:** Use gcloud container ai profiles models list.
 - **To see the available hardware and performance benchmarks for a specific model:** Use gcloud container ai profiles list --model=<model-name>. You can also filter by normalized time per output token, time to first token, and cost targets, such as price per output token and price per input token.
 - **To get cost estimates for a specific configuration:** use the gcloud container ai profiles list command. You can also put in cost targets to filter based on price per output token and price per input token.
-- **To generate an optimized Kubernetes deployment manifest:** Use gcloud container ai profiles manifests create with your desired model and performance requirements.
+- **To generate an optimized Kubernetes deployment manifest:** Use the `generate_manifest` tool with your desired model and performance requirements.
 - **To list your available GKE clusters:** Use gcloud container clusters list.
 - **To get the cheapest models available:** use the gcloud container ai profiles list command with no input to compare all the costs for each model.
 - **To change the default input:output cost ratio:**
@@ -164,9 +173,7 @@ gcloud container ai profiles list --model=Gemma-3-27B --target-ntpot-millisecond
 
 4. Can you generate a manifest to deploy an application that uses Gemma-3-27B and requires 500ms latency?
 
-```sh
-gcloud container ai profiles manifests create --model=Gemma-3-27B --target-ntpot-milliseconds=500
-```
+Use the `generate_manifest` tool with prompt: "Generate manifest for Gemma-3-27B with 500ms target ntpot".
 
 5. Do I have a cluster available to deploy this manifest?
 
@@ -176,9 +183,7 @@ gcloud container clusters list
 
 6. Can you generate a manifest to deploy an application that uses Gemma-3-27B and requires 500ms time to first token (ttft)?
 
-```sh
-gcloud container ai profiles manifests create --model=Gemma-3-27B --target-ttft-milliseconds=500
-```
+Use the `generate_manifest` tool with prompt: "Generate manifest for Gemma-3-27B with 500ms target ttft".
 
 7. Can you give me all of the performance metrics you have on Gemma-3-27B on nvidia-l4?
 
