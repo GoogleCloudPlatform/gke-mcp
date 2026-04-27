@@ -67,7 +67,9 @@ func GenerateInferenceManifest(ctx context.Context, args *GenerateInferenceManif
 	if err != nil {
 		return "", fmt.Errorf("failed to create gkerecommender client: %w", err)
 	}
-	defer client.Close()
+	defer func() {
+		_ = client.Close()
+	}()
 
 	req := &gkerecommenderpb.GenerateOptimizedManifestRequest{
 		ModelServerInfo: &gkerecommenderpb.ModelServerInfo{
