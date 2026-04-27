@@ -205,24 +205,24 @@ def test_compare_agent_vs_baseline():
   gemini_ai_model = GoogleGeminiAI(model=chat_model)
 
   valid_yaml_metric = GEval(
-        name="Valid YAML Manifest",
-        criteria="The output is a valid Kubernetes manifest in YAML format and addresses the request.",
-        evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
-        model=gemini_ai_model
-    )
+      name="Valid YAML Manifest",
+      criteria="The output is a valid Kubernetes manifest in YAML format and addresses the request.",
+      evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
+      model=gemini_ai_model
+  )
 
   relevance_metric = AnswerRelevancyMetric(
-        threshold=0.5,
-        model=gemini_ai_model,
-        include_reason=True
-    )
+      threshold=0.5,
+      model=gemini_ai_model,
+      include_reason=True
+  )
 
   hallucination_geval_metric = GEval(
-        name="Hallucination Check",
-        criteria="The output should not invent or hallucinate non-existent model names, accelerator types, or GKE features. It should stick to the facts provided in the prompt or standard GKE documentation.",
-        evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
-        model=gemini_ai_model
-    )
+      name="Hallucination Check",
+      criteria="The output should not invent or hallucinate non-existent model names, accelerator types, or GKE features. It should stick to the facts provided in the prompt or standard GKE documentation.",
+      evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
+      model=gemini_ai_model
+  )
 
   agent_test_case = LLMTestCase(
         input=prompt,
