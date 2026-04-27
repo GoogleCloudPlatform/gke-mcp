@@ -18,8 +18,10 @@ package giq
 import (
 	"context"
 	"fmt"
-	"os/exec"
+	"strings"
 
+	gkerecommender "cloud.google.com/go/gkerecommender/apiv1"
+	gkerecommenderpb "cloud.google.com/go/gkerecommender/apiv1/gkerecommenderpb"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -61,25 +63,32 @@ func GenerateInferenceManifest(ctx context.Context, args *GenerateInferenceManif
 		return "", fmt.Errorf("accelerator argument cannot be empty")
 	}
 
-	gcloudArgs := []string{
-		"container",
-		"ai",
-		"profiles",
-		"manifests",
-		"create",
-		"--model", args.Model,
-		"--model-server", args.ModelServer,
-		"--accelerator-type", args.Accelerator,
-	}
-	if args.TargetNTPOTMilliseconds != "" {
-		gcloudArgs = append(gcloudArgs, "--target-ntpot-milliseconds", args.TargetNTPOTMilliseconds)
-	}
-	// #nosec G204
-	out, err := exec.CommandContext(ctx, "gcloud", gcloudArgs...).Output()
+	client, err := gkerecommender.NewGkeInferenceQuickstartClient(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate manifest: %w", err)
+		return "", fmt.Errorf("failed to create gkerecommender client: %w", err)
 	}
-	return string(out), nil
+	defer client.Close()
+
+	req := &gkerecommenderpb.GenerateOptimizedManifestRequest{
+		ModelServerInfo: &gkerecommenderpb.ModelServerInfo{
+			Model:       args.Model,
+			ModelServer: args.ModelServer,
+		},
+		AcceleratorType: args.Accelerator,
+	}
+
+	resp, err := client.GenerateOptimizedManifest(ctx, req)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate optimized manifest via SDK: %w", err)
+	}
+
+	var builder strings.Builder
+	for _, m := range resp.GetKubernetesManifests() {
+		builder.WriteString(m.GetContent())
+		builder.WriteString("\n---\n")
+	}
+
+	return builder.String(), nil
 }
 
 func giqGenerateManifest(ctx context.Context, _ *mcp.CallToolRequest, args *GenerateInferenceManifestArgs) (*mcp.CallToolResult, any, error) {
