@@ -84,13 +84,12 @@ func GenerateInferenceManifest(ctx context.Context, args *GenerateInferenceManif
 		return "", fmt.Errorf("failed to generate optimized manifest via SDK: %w", err)
 	}
 
-	var builder strings.Builder
+	var manifests []string
 	for _, m := range resp.GetKubernetesManifests() {
-		builder.WriteString(m.GetContent())
-		builder.WriteString("\n---\n")
+		manifests = append(manifests, m.GetContent())
 	}
 
-	return builder.String(), nil
+	return strings.Join(manifests, "\n---\n"), nil
 }
 
 func giqGenerateManifest(ctx context.Context, _ *mcp.CallToolRequest, args *GenerateInferenceManifestArgs) (*mcp.CallToolResult, any, error) {
