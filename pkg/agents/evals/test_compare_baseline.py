@@ -169,78 +169,90 @@ This report compares the performance of the **Agentic MCP Tool** against the **B
     print("Generated evals/JOB_SUMMARY.md")
 
 def test_compare_agent_vs_baseline():
-    prompt = "Generate a manifest for model google/gemma-2-2b-it, using vllm server on nvidia-l4 accelerator. Do not use giq_generate_manifest"
-    
-    # 1. Get Agent Output
-    server_process = start_mcp_server()
-    agent_output = ""
-    try:
-        mcp_initialize(server_process)
-        call_res = mcp_call_tool(server_process, "generate_manifest", {"prompt": prompt})
-        content = call_res["result"]["content"]
-        for c in content:
-            if c["type"] == "text":
-                agent_output += c["text"]
-        print("\n=== Raw Agent Output ===")
-        print(agent_output)
-        print("========================")
-    except Exception as e:
-        pytest.fail(f"Failed to communicate with MCP server: {e}")
-    finally:
-        server_process.terminate()
-        server_process.wait()
-        
-    agent_cleaned = clean_yaml(agent_output)
-    
-    # 2. Get Baseline Output
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        pytest.fail("GEMINI_API_KEY environment variable not set")
-        
-    chat_model = ChatGoogleGenerativeAI(model="gemini-2.5-pro", google_api_key=api_key)
-    baseline_output = chat_model.invoke(prompt).content
-    baseline_cleaned = clean_yaml(baseline_output)
-    
-    # 3. Evaluate both
-    gemini_ai_model = GoogleGeminiAI(model=chat_model)
-    
-    valid_yaml_metric = GEval(
+  prompt = "Generate a manifest for model google/gemma-2-2b-it, using vllm server on nvidia-l4 accelerator. Do not use giq_generate_manifest"
+
+  # 1. Get Agent Output
+  server_process = start_mcp_server()
+  agent_output = ""
+  try:
+    mcp_initialize(server_process)
+    call_res = mcp_call_tool(server_process, "generate_manifest", {"prompt": prompt})
+    content = call_res["result"]["content"]
+    for c in content:
+      if c["type"] == "text":
+        agent_output += c["text"]
+    print("\n=== Raw Agent Output ===")
+    print(agent_output)
+    print("========================")
+  except Exception as e:
+    pytest.fail(f"Failed to communicate with MCP server: {e}")
+  finally:
+    server_process.terminate()
+    server_process.wait()
+
+  agent_cleaned = clean_yaml(agent_output)
+
+  # 2. Get Baseline Output
+  api_key = os.getenv("GEMINI_API_KEY")
+  if not api_key:
+    pytest.fail("GEMINI_API_KEY environment variable not set")
+
+  chat_model = ChatGoogleGenerativeAI(model="gemini-2.5-pro", google_api_key=api_key)
+  baseline_output = chat_model.invoke(prompt).content
+  baseline_cleaned = clean_yaml(baseline_output)
+
+  # 3. Evaluate both
+  gemini_ai_model = GoogleGeminiAI(model=chat_model)
+
+  valid_yaml_metric = GEval(
         name="Valid YAML Manifest",
         criteria="The output is a valid Kubernetes manifest in YAML format and addresses the request.",
         evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
         model=gemini_ai_model
     )
-    
-    relevance_metric = AnswerRelevancyMetric(
+
+  relevance_metric = AnswerRelevancyMetric(
         threshold=0.5,
         model=gemini_ai_model,
         include_reason=True
     )
-    
-    hallucination_geval_metric = GEval(
+
+  hallucination_geval_metric = GEval(
         name="Hallucination Check",
         criteria="The output should not invent or hallucinate non-existent model names, accelerator types, or GKE features. It should stick to the facts provided in the prompt or standard GKE documentation.",
         evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
         model=gemini_ai_model
     )
-    
-    agent_test_case = LLMTestCase(
+
+  agent_test_case = LLMTestCase(
         input=prompt,
         actual_output=agent_cleaned
     )
-    
-    baseline_test_case = LLMTestCase(
+
+  baseline_test_case = LLMTestCase(
         input=prompt,
         actual_output=baseline_cleaned
     )
-    
-    # Run evaluation
-    results = evaluate([agent_test_case, baseline_test_case], [valid_yaml_metric, relevance_metric, hallucination_geval_metric])
-    
-    print(f"Results: {results}")
-    
-    # Generate report
-    generate_markdown_report(results, prompt)
+
+  # Run evaluation
+  results = evaluate(
+      [agent_test_case, baseline_test_case],
+      [valid_yaml_metric, relevance_metric, hallucination_geval_metric],
+  )
+
+  print(f"Results: {results}")
+
+  # Generate report
+  generate_markdown_report(results, prompt)
+
+  # Check for failures on the Agent to provide pass/fail status
+  agent_res = results.test_results[0]
+  for metric in agent_res.metrics_data:
+    if not metric.success:
+      pytest.fail(
+          f"Agent Metric '{metric.name}' failed with score {metric.score:.2f}."
+          f" Reason: {metric.reason}"
+      )
 
 if __name__ == '__main__':
     test_compare_agent_vs_baseline()

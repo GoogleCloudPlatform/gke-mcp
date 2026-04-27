@@ -77,36 +77,35 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 		Model:       llm,
 		Instruction: instructionTemplate,
 		Tools:       []tool.Tool{giqTool},
-	})
-	// 	BeforeModelCallbacks: []llmagent.BeforeModelCallback{
-	// 		func(ctx agent.CallbackContext, llmRequest *model.LLMRequest) (*model.LLMResponse, error) {
-	// 			// Inject user content if Contents is empty to avoid content loss.
-	// 			if len(llmRequest.Contents) == 0 {
-	// 				userContent := ctx.UserContent()
-	// 				if userContent != nil {
-	// 					userContent.Role = "user"
-	// 					llmRequest.Contents = append(llmRequest.Contents, userContent)
-	// 				}
-	// 			}
+		BeforeModelCallbacks: []llmagent.BeforeModelCallback{
+			func(ctx agent.CallbackContext, llmRequest *model.LLMRequest) (*model.LLMResponse, error) {
+				// Inject user content if Contents is empty to avoid content loss.
+				if len(llmRequest.Contents) == 0 {
+					userContent := ctx.UserContent()
+					if userContent != nil {
+						userContent.Role = "user"
+						llmRequest.Contents = append(llmRequest.Contents, userContent)
+					}
+				}
 
-	// 			if os.Getenv("GKE_MCP_DEBUG") == "true" {
-	// 				log.Printf("--- Before Model Call ---")
-	// 				log.Printf("Model: %s", llmRequest.Model)
-	// 				if llmRequest.Config != nil {
-	// 					log.Printf("Config: %+v", llmRequest.Config)
-	// 				}
-	// 				log.Printf("Contents count: %d", len(llmRequest.Contents))
-	// 				for i, c := range llmRequest.Contents {
-	// 					log.Printf("Content %d (Role: %s):", i, c.Role)
-	// 					for j, p := range c.Parts {
-	// 						log.Printf("  Part %d: %q", j, p.Text)
-	// 					}
-	// 				}
-	// 			}
-	// 			return nil, nil
-	// 		},
-	// 	},
-	// })
+				if os.Getenv("GKE_MCP_DEBUG") == "true" {
+					log.Printf("--- Before Model Call ---")
+					log.Printf("Model: %s", llmRequest.Model)
+					if llmRequest.Config != nil {
+						log.Printf("Config: %+v", llmRequest.Config)
+					}
+					log.Printf("Contents count: %d", len(llmRequest.Contents))
+					for i, c := range llmRequest.Contents {
+						log.Printf("Content %d (Role: %s):", i, c.Role)
+						for j, p := range c.Parts {
+							log.Printf("  Part %d: %q", j, p.Text)
+						}
+					}
+				}
+				return nil, nil
+			},
+		},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ADK agent: %w", err)
 	}
@@ -147,7 +146,7 @@ func (a *Agent) Run(ctx context.Context, prompt string, sessionID string) (strin
 	}
 
 	msg := &genai.Content{
-		// Role:  "user",
+		Role:  "user",
 		Parts: []*genai.Part{{Text: prompt}},
 	}
 
