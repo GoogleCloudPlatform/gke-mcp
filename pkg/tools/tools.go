@@ -23,7 +23,6 @@ import (
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/cluster"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/clustertoolkit"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/deploy"
-
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/gkereleasenotes"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/k8schangelog"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/logging"
