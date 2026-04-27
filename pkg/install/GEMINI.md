@@ -21,7 +21,7 @@ The `generate_manifest` tool is a specialized agent for generating, analyzing, a
 
 - **Intent:** It handles requests to create or modify Kubernetes resources (Deployments, Services, ConfigMaps, etc.).
 - **Best Practices:** It automatically applies health probes, high availability settings, and security contexts.
-- **Inference Workloads:** For AI/LLM inference workloads, it is configured to prioritize using the `giq_generate_manifest` capability to generate optimized serving manifests.
+- **Inference Workloads:** For AI/LLM inference workloads, it is configured to prioritize using the `giq_generate_manifest` function tool to generate optimized serving manifests.
 - **Usage:** Provide a detailed prompt describing the desired workload, and the agent will return only the raw YAML manifest.
 
 ## GKE Logs
