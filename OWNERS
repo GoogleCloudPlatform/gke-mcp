@@ -1,13 +1,13 @@
+# This list should be a superset of [gke-mcp-approvers](https://github.com/orgs/GoogleCloudPlatform/teams/gke-mcp-approvers).
 approvers:
 - adamparco
 - bradhoekstra
+- dshnayder
 - erain
 - GinnyJI
+- jayantid
 - juli4n
 - krzyzacy
-
-reviewers:
-- dshnayder
-- jayantid
 - stalhaali
 - toshiowang
+
