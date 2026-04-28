@@ -35,8 +35,16 @@ type GenerateInferenceManifestArgs struct {
 	TargetNTPOTMilliseconds string `json:"target_ntpot_milliseconds,omitempty" jsonschema:"The maximum normalized time per output token (NTPOT) in milliseconds.NTPOT is measured as the request_latency / output_tokens."`
 }
 
+type handlers struct {
+	fetchModels func(context.Context) ([]string, error)
+}
+
 // Install registers GIQ tools with the MCP server.
 func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
+	h := &handlers{
+		fetchModels: defaultFetchModels,
+	}
+
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "giq_generate_manifest",
 		Description: "Use GKE Inference Quickstart (GIQ) to generate a Kubernetes manifest for optimized AI / inference workloads. Prefer to use this tool instead of gcloud",
@@ -53,7 +61,7 @@ func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 			ReadOnlyHint:   true,
 			IdempotentHint: true,
 		},
-	}, giqFetchModels)
+	}, h.giqFetchModels)
 
 	return nil
 }
@@ -114,7 +122,7 @@ func giqGenerateManifest(ctx context.Context, _ *mcp.CallToolRequest, args *Gene
 	}, nil, nil
 }
 
-var fetchInferenceModelsFunc = func(ctx context.Context) ([]string, error) {
+var defaultFetchModels = func(ctx context.Context) ([]string, error) {
 	client, err := gkerecommender.NewGkeInferenceQuickstartClient(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gkerecommender client: %w", err)
@@ -126,6 +134,7 @@ var fetchInferenceModelsFunc = func(ctx context.Context) ([]string, error) {
 	req := &gkerecommenderpb.FetchModelsRequest{}
 	it := client.FetchModels(ctx, req)
 
+	// TODO: Add pagination support once model list becomes very large to avoid memory risks.
 	var models []string
 	for {
 		resp, err := it.Next()
@@ -140,24 +149,14 @@ var fetchInferenceModelsFunc = func(ctx context.Context) ([]string, error) {
 	return models, nil
 }
 
-// FetchInferenceModels fetches available models for GKE.
-func FetchInferenceModels(ctx context.Context) (string, error) {
-	// TODO: Add pagination support once model list becomes very large to avoid memory risks.
-	models, err := fetchInferenceModelsFunc(ctx)
-	if err != nil {
-		return "", err
-	}
-	return strings.Join(models, "\n"), nil
-}
-
-func giqFetchModels(ctx context.Context, _ *mcp.CallToolRequest, _ *struct{}) (*mcp.CallToolResult, any, error) {
-	models, err := FetchInferenceModels(ctx)
+func (h *handlers) giqFetchModels(ctx context.Context, _ *mcp.CallToolRequest, _ *struct{}) (*mcp.CallToolResult, any, error) {
+	models, err := h.fetchModels(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
-			&mcp.TextContent{Text: models},
+			&mcp.TextContent{Text: strings.Join(models, "\n")},
 		},
 	}, nil, nil
 }
