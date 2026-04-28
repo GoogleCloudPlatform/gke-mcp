@@ -1,3 +1,4 @@
+---
 name: "Build UI"
 description: "Sets up Node.js and builds the UI"
 runs:

@@ -1,3 +1,4 @@
+---
 # Global MarkdownLint Configuration
 # Disable strict list spacing to accommodate Prettier formatting standards
 MD030: false
