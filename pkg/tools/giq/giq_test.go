@@ -170,4 +170,3 @@ func TestFetchInferenceModels_Mock(t *testing.T) {
 		t.Errorf("FetchInferenceModels = %q, want %q", res, expected)
 	}
 }
-
