@@ -17,8 +17,6 @@ package giq
 import (
 	"context"
 	"testing"
-
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 func TestGiqGenerateManifestArgs_Fields(t *testing.T) {
@@ -144,31 +142,21 @@ func TestGiqGenerateManifestArgs_DifferentModelServers(t *testing.T) {
 	}
 }
 
-func TestGiqFetchModels_Handler_Mock(t *testing.T) {
-	h := &handlers{
-		fetchModels: func(_ context.Context) ([]string, error) {
-			return []string{"model-A", "model-B", "model-C"}, nil
-		},
+func TestFetchInferenceModels_Mock(t *testing.T) {
+	originalFunc := fetchInferenceModelsFunc
+	defer func() { fetchInferenceModelsFunc = originalFunc }()
+
+	fetchInferenceModelsFunc = func(_ context.Context) ([]string, error) {
+		return []string{"model-A", "model-B", "model-C"}, nil
 	}
 
-	res, _, err := h.giqFetchModels(context.Background(), nil, nil)
+	res, err := FetchInferenceModels(context.Background())
 	if err != nil {
-		t.Fatalf("giqFetchModels returned error: %v", err)
-	}
-
-	if res == nil {
-		t.Fatal("Expected non-nil result")
+		t.Fatalf("FetchInferenceModels returned error: %v", err)
 	}
 
 	expected := "model-A\nmodel-B\nmodel-C"
-	var actual string
-	if len(res.Content) > 0 {
-		if tc, ok := res.Content[0].(*mcp.TextContent); ok {
-			actual = tc.Text
-		}
-	}
-
-	if actual != expected {
-		t.Errorf("giqFetchModels = %q, want %q", actual, expected)
+	if res != expected {
+		t.Errorf("FetchInferenceModels = %q, want %q", res, expected)
 	}
 }
