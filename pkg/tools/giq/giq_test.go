@@ -151,3 +151,23 @@ func TestGiqFetchModels_Handler(t *testing.T) {
 		t.Logf("giqFetchModels returned expected error when unauthenticated: %v", err)
 	}
 }
+
+func TestFetchInferenceModels_Mock(t *testing.T) {
+	originalFunc := fetchInferenceModelsFunc
+	defer func() { fetchInferenceModelsFunc = originalFunc }()
+
+	fetchInferenceModelsFunc = func(ctx context.Context) ([]string, error) {
+		return []string{"model-A", "model-B", "model-C"}, nil
+	}
+
+	res, err := FetchInferenceModels(context.Background())
+	if err != nil {
+		t.Fatalf("FetchInferenceModels returned error: %v", err)
+	}
+
+	expected := "model-A\nmodel-B\nmodel-C"
+	if res != expected {
+		t.Errorf("FetchInferenceModels = %q, want %q", res, expected)
+	}
+}
+
