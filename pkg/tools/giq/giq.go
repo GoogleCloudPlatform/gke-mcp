@@ -105,7 +105,7 @@ func giqGenerateManifest(ctx context.Context, _ *mcp.CallToolRequest, args *Gene
 	}, nil, nil
 }
 
-var fetchInferenceModelsFunc = func(ctx context.Context) ([]string, error) {
+var fetchModelsFunc = func(ctx context.Context) ([]string, error) {
 	client, err := gkerecommender.NewGkeInferenceQuickstartClient(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gkerecommender client: %w", err)
@@ -131,10 +131,10 @@ var fetchInferenceModelsFunc = func(ctx context.Context) ([]string, error) {
 	return models, nil
 }
 
-// FetchInferenceModels fetches available models for GKE.
-func FetchInferenceModels(ctx context.Context) (string, error) {
+// FetchModels fetches available models for GKE.
+func FetchModels(ctx context.Context) (string, error) {
 	// TODO: Add pagination support once model list becomes very large to avoid memory risks.
-	models, err := fetchInferenceModelsFunc(ctx)
+	models, err := fetchModelsFunc(ctx)
 	if err != nil {
 		return "", err
 	}

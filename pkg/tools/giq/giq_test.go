@@ -142,21 +142,21 @@ func TestGiqGenerateManifestArgs_DifferentModelServers(t *testing.T) {
 	}
 }
 
-func TestFetchInferenceModels_Mock(t *testing.T) {
-	originalFunc := fetchInferenceModelsFunc
-	defer func() { fetchInferenceModelsFunc = originalFunc }()
+func TestFetchModels_Mock(t *testing.T) {
+	originalFunc := fetchModelsFunc
+	defer func() { fetchModelsFunc = originalFunc }()
 
-	fetchInferenceModelsFunc = func(_ context.Context) ([]string, error) {
+	fetchModelsFunc = func(_ context.Context) ([]string, error) {
 		return []string{"model-A", "model-B", "model-C"}, nil
 	}
 
-	res, err := FetchInferenceModels(context.Background())
+	res, err := FetchModels(context.Background())
 	if err != nil {
-		t.Fatalf("FetchInferenceModels returned error: %v", err)
+		t.Fatalf("FetchModels returned error: %v", err)
 	}
 
 	expected := "model-A\nmodel-B\nmodel-C"
 	if res != expected {
-		t.Errorf("FetchInferenceModels = %q, want %q", res, expected)
+		t.Errorf("FetchModels = %q, want %q", res, expected)
 	}
 }
