@@ -24,6 +24,7 @@ import (
 	gkerecommenderpb "cloud.google.com/go/gkerecommender/apiv1/gkerecommenderpb"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"google.golang.org/api/iterator"
 )
 
 // GenerateInferenceManifestArgs holds arguments for generating a GKE Inference Quickstart manifest.
@@ -44,6 +45,15 @@ func Install(_ context.Context, s *mcp.Server, _ *config.Config) error {
 			IdempotentHint: true,
 		},
 	}, giqGenerateManifest)
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "giq_fetch_models",
+		Description: "List all AI models available for GKE via GKE Inference Quickstart (GIQ). Prefer to use this tool instead of gcloud",
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint:   true,
+			IdempotentHint: true,
+		},
+	}, giqFetchModels)
 
 	return nil
 }
@@ -100,6 +110,46 @@ func giqGenerateManifest(ctx context.Context, _ *mcp.CallToolRequest, args *Gene
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
 			&mcp.TextContent{Text: manifest},
+		},
+	}, nil, nil
+}
+
+// FetchInferenceModels fetches available models for GKE.
+func FetchInferenceModels(ctx context.Context) (string, error) {
+	client, err := gkerecommender.NewGkeInferenceQuickstartClient(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to create gkerecommender client: %w", err)
+	}
+	defer func() {
+		_ = client.Close()
+	}()
+
+	req := &gkerecommenderpb.FetchModelsRequest{}
+	it := client.FetchModels(ctx, req)
+
+	var models []string
+	for {
+		resp, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return "", fmt.Errorf("failed to fetch next model: %w", err)
+		}
+		models = append(models, resp)
+	}
+
+	return strings.Join(models, "\n"), nil
+}
+
+func giqFetchModels(ctx context.Context, _ *mcp.CallToolRequest, _ *struct{}) (*mcp.CallToolResult, any, error) {
+	models, err := FetchInferenceModels(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: models},
 		},
 	}, nil, nil
 }
