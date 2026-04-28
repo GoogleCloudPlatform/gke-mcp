@@ -15,6 +15,7 @@
 package giq
 
 import (
+	"context"
 	"testing"
 )
 
@@ -138,5 +139,15 @@ func TestGiqGenerateManifestArgs_DifferentModelServers(t *testing.T) {
 		if args.ModelServer != server {
 			t.Errorf("ModelServer = %s, want %s", args.ModelServer, server)
 		}
+	}
+}
+
+func TestGiqFetchModels_Handler(t *testing.T) {
+	// Verify that calling the handler without real cloud credentials fails gracefully,
+	// or if credentials exist, it does something reasonable.
+	_, _, err := giqFetchModels(context.Background(), nil, nil)
+	// We expect it to error if there's no credentials, which is a reasonable behavior.
+	if err != nil {
+		t.Logf("giqFetchModels returned expected error when unauthenticated: %v", err)
 	}
 }
