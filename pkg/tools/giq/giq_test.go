@@ -156,7 +156,7 @@ func TestFetchInferenceModels_Mock(t *testing.T) {
 	originalFunc := fetchInferenceModelsFunc
 	defer func() { fetchInferenceModelsFunc = originalFunc }()
 
-	fetchInferenceModelsFunc = func(ctx context.Context) ([]string, error) {
+	fetchInferenceModelsFunc = func(_ context.Context) ([]string, error) {
 		return []string{"model-A", "model-B", "model-C"}, nil
 	}
 
