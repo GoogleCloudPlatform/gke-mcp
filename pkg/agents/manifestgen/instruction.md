@@ -390,19 +390,10 @@ model-as-a-service solutions.
     extract and provide the following parameters to
     `generate_optimized_manifest`:
     *   **MANDATORY**: `model` (e.g., `google/gemma-4-31B-it`)
-    *   **MANDATORY**: `accelerator_type` (MUST specify a valid
-        `accelerator_type` returned by `fetch_profiles`). The Agent CANNOT use
-        the user specified accelerator type directly in
-        `generate_optimized_manifest`. If the user is requesting a different
-        `accelerator_type` it can be modified AFTER the
-        `generate_optimized_manifest` call. `generate_optimized_manifest` CANNOT
-        create manifests for combinations that don't match a profile.
-    *   **MANDATORY**: `model_server_info` (which includes `model`,
-        `model_server` , and `model_server_version`).
-    *   **MANDATORY**: `use_case` (MUST specify the use case from the profile).
-    *   **OPTIONAL**: `performance_requirements` (NTPOT, TTFT), `storage_config`
-        (GCS bucket), `serving_stack`, and `kubernetes_namespace`.
-        When using this tool, include every Kubernetes resource returned in the
+    *   **MANDATORY**: `model_server` (e.g., `vllm`)
+    *   **MANDATORY**: `accelerator` (e.g., `nvidia-l4`)
+    *   **OPTIONAL**: `target_ntpot_milliseconds` (e.g., `500`). The maximum normalized time per output token (NTPOT) in milliseconds.
+    *   When using this tool, include every Kubernetes resource returned in the
         tool's output (e.g., HorizontalPodAutoscaler, PodMonitoring, Service,
         etc.) in your final response. Do NOT omit any resources provided by the
         tool, even if you are applying additional formatting or adding a
