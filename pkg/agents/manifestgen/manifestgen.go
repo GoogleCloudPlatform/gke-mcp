@@ -71,12 +71,25 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 		return nil, fmt.Errorf("failed to create giq tool: %w", err)
 	}
 
+	fetchModelsTool, err := functiontool.New(
+		functiontool.Config{
+			Name:        "giq_fetch_models",
+			Description: "List all AI models available for GKE via GKE Inference Quickstart (GIQ). Prefer to use this tool instead of gcloud",
+		},
+		func(ctx tool.Context, _ struct{}) (string, error) {
+			return giq.FetchModels(ctx)
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create giq fetch models tool: %w", err)
+	}
+
 	adkAgent, err := llmagent.New(llmagent.Config{
 		Name:        "manifest_agent",
 		Description: "Agent specialized in generating and validating Kubernetes manifests.",
 		Model:       llm,
 		Instruction: instructionTemplate,
-		Tools:       []tool.Tool{giqTool},
+		Tools:       []tool.Tool{giqTool, fetchModelsTool},
 		BeforeModelCallbacks: []llmagent.BeforeModelCallback{
 			func(ctx agent.CallbackContext, llmRequest *model.LLMRequest) (*model.LLMResponse, error) {
 				// Inject user content if Contents is empty to avoid content loss.
