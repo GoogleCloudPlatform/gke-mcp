@@ -364,7 +364,7 @@ fulfilled by one of the `gcloud container ai` commands listed below, you MUST
 use the corresponding MCP tool to accomplish the task.
 
 -   fetch_models: gcloud container ai profiles models list
--   generate_optimized_manifest: gcloud container ai profiles manifests create
+-   giq_generate_manifest: gcloud container ai profiles manifests create
 
 GIQ provides estimates of expected performance based on benchmarks conducted on
 equivalent infrastructure configurations. Actual performance is not guaranteed
