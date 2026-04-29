@@ -17,6 +17,7 @@ package config
 
 import (
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -26,6 +27,8 @@ type Config struct {
 	userAgent        string
 	defaultProjectID string
 	defaultLocation  string
+	agentProvider    string
+	agentModel       string
 }
 
 // UserAgent returns the user agent string for outbound API calls.
@@ -43,12 +46,33 @@ func (c *Config) DefaultLocation() string {
 	return c.defaultLocation
 }
 
+// AgentProvider returns the configured LLM provider for the agent.
+func (c *Config) AgentProvider() string {
+	return c.agentProvider
+}
+
+// AgentModel returns the configured LLM model for the agent.
+func (c *Config) AgentModel() string {
+	return c.agentModel
+}
+
 // New constructs a Config populated from gcloud and build version.
 func New(version string) *Config {
+	provider := os.Getenv("GKE_MCP_PROVIDER")
+	if provider == "" {
+		provider = "vertex-ai"
+	}
+	model := os.Getenv("GKE_MCP_MODEL")
+	if model == "" {
+		model = "gemini-2.5-pro"
+	}
+
 	return &Config{
 		userAgent:        "gke-mcp/" + version,
 		defaultProjectID: getDefaultProjectID(),
 		defaultLocation:  getDefaultLocation(),
+		agentProvider:    provider,
+		agentModel:       model,
 	}
 }
 

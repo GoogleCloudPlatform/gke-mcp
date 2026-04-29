@@ -25,6 +25,27 @@ func TestNew(t *testing.T) {
 	if cfg.UserAgent() != "gke-mcp/"+version {
 		t.Errorf("UserAgent() = %s, want %s", cfg.UserAgent(), "gke-mcp/"+version)
 	}
+	if cfg.AgentProvider() != "vertex-ai" {
+		t.Errorf("AgentProvider() = %s, want vertex-ai", cfg.AgentProvider())
+	}
+	if cfg.AgentModel() != "gemini-2.5-pro" {
+		t.Errorf("AgentModel() = %s, want gemini-2.5-pro", cfg.AgentModel())
+	}
+}
+
+func TestNewWithEnvVars(t *testing.T) {
+	t.Setenv("GKE_MCP_PROVIDER", "custom-provider")
+	t.Setenv("GKE_MCP_MODEL", "custom-model")
+
+	version := "1.0.0"
+	cfg := New(version)
+
+	if cfg.AgentProvider() != "custom-provider" {
+		t.Errorf("AgentProvider() = %s, want custom-provider", cfg.AgentProvider())
+	}
+	if cfg.AgentModel() != "custom-model" {
+		t.Errorf("AgentModel() = %s, want custom-model", cfg.AgentModel())
+	}
 }
 
 func TestConfigGetters(t *testing.T) {
