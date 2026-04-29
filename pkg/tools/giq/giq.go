@@ -29,7 +29,7 @@ import (
 
 // GenerateInferenceManifestArgs holds arguments for generating a GKE Inference Quickstart manifest.
 type GenerateInferenceManifestArgs struct {
-	Model                   string `json:"model" jsonschema:"The model to use. Get the list of valid models from 'gcloud container ai profiles models list' if the user doesn't provide it."`
+	Model                   string `json:"model" jsonschema:"The model to use. Get the list of valid models from the 'giq_fetch_models' tool if the user doesn't provide it."`
 	ModelServer             string `json:"model_server" jsonschema:"The model server to use. Get the list of valid model servers from 'gcloud container ai profiles list --format='table(modelServerInfo.model,modelServerInfo.modelServer,modelServerInfo.modelServerVersion,acceleratorType)' if the user doesn't provide it. You can filter that gcloud command on '--model={model}' if the user provides the model."`
 	Accelerator             string `json:"accelerator" jsonschema:"The accelerator to use. Get the list of valid accelerators from 'gcloud container ai profiles list --format='table(modelServerInfo.model,modelServerInfo.modelServer,modelServerInfo.modelServerVersion,acceleratorType)' if the user doesn't provide it. You can filter that gcloud command on '--model={model}' and '--model-server={model-server}' if the user provides those values."`
 	TargetNTPOTMilliseconds string `json:"target_ntpot_milliseconds,omitempty" jsonschema:"The maximum normalized time per output token (NTPOT) in milliseconds.NTPOT is measured as the request_latency / output_tokens."`
