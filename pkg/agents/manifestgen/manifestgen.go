@@ -74,7 +74,7 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 	fetchModelsTool, err := functiontool.New(
 		functiontool.Config{
 			Name:        "giq_fetch_models",
-			Description: "List all AI models available for GKE via GKE Inference Quickstart (GIQ). Prefer to use this tool instead of gcloud",
+			Description: "List all AI models available for GKE via GKE Inference Quickstart (GIQ). Open-source models follow the Huggingface Hub `owner/model_name` format.",
 		},
 		func(ctx tool.Context, _ struct{}) (string, error) {
 			return giq.FetchModels(ctx)
