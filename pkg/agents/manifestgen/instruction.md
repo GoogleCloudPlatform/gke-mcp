@@ -384,8 +384,8 @@ model-as-a-service solutions.
     is useful for mapping from natural language (e.g., "Gemma 4") to an exact
     model name (e.g., "google/gemma-4-31B-it"). The workflow should always call
     `fetch_models` unless the user provides an exact model name.
--   **To generate an optimized Kubernetes deployment manifest:** Use gcloud
-    container ai profiles manifests create. You MUST first call `fetch_profiles`
+-   **To generate an optimized Kubernetes deployment manifest:** Use
+    `giq_generate_manifest`. You MUST first call `fetch_profiles`
     to identify a valid configuration. From the chosen `Profile`, you MUST
     extract and provide the following parameters to
     `generate_optimized_manifest`:
