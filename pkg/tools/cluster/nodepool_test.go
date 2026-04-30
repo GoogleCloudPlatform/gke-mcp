@@ -21,15 +21,15 @@ import (
 func TestCreateNodePoolArgs_Fields(t *testing.T) {
 	args := createNodePoolArgs{}
 	args.ProjectID = "test-project"
-	args.Location.Location = "us-central1"
+	args.Location = "us-central1"
 	args.ClusterName = "my-cluster"
 	args.NodePool = `{"name": "my-pool"}`
 
 	if args.ProjectID != "test-project" {
 		t.Errorf("ProjectID = %s, want test-project", args.ProjectID)
 	}
-	if args.Location.Location != "us-central1" {
-		t.Errorf("Location = %s, want us-central1", args.Location.Location)
+	if args.Location != "us-central1" {
+		t.Errorf("Location = %s, want us-central1", args.Location)
 	}
 	if args.ClusterName != "my-cluster" {
 		t.Errorf("ClusterName = %s, want my-cluster", args.ClusterName)
@@ -42,14 +42,14 @@ func TestCreateNodePoolArgs_Fields(t *testing.T) {
 func TestListNodePoolsArgs_Fields(t *testing.T) {
 	args := listNodePoolsArgs{}
 	args.ProjectID = "test-project"
-	args.Location.Location = "us-central1"
+	args.Location = "us-central1"
 	args.ClusterName = "my-cluster"
 
 	if args.ProjectID != "test-project" {
 		t.Errorf("ProjectID = %s, want test-project", args.ProjectID)
 	}
-	if args.Location.Location != "us-central1" {
-		t.Errorf("Location = %s, want us-central1", args.Location.Location)
+	if args.Location != "us-central1" {
+		t.Errorf("Location = %s, want us-central1", args.Location)
 	}
 	if args.ClusterName != "my-cluster" {
 		t.Errorf("ClusterName = %s, want my-cluster", args.ClusterName)
@@ -59,15 +59,15 @@ func TestListNodePoolsArgs_Fields(t *testing.T) {
 func TestGetNodePoolArgs_Fields(t *testing.T) {
 	args := getNodePoolArgs{}
 	args.ProjectID = "test-project"
-	args.Location.Location = "us-central1"
+	args.Location = "us-central1"
 	args.ClusterName = "my-cluster"
 	args.NodePoolName = "my-pool"
 
 	if args.ProjectID != "test-project" {
 		t.Errorf("ProjectID = %s, want test-project", args.ProjectID)
 	}
-	if args.Location.Location != "us-central1" {
-		t.Errorf("Location = %s, want us-central1", args.Location.Location)
+	if args.Location != "us-central1" {
+		t.Errorf("Location = %s, want us-central1", args.Location)
 	}
 	if args.ClusterName != "my-cluster" {
 		t.Errorf("ClusterName = %s, want my-cluster", args.ClusterName)
@@ -80,7 +80,7 @@ func TestGetNodePoolArgs_Fields(t *testing.T) {
 func TestUpdateNodePoolArgs_Fields(t *testing.T) {
 	args := updateNodePoolArgs{}
 	args.ProjectID = "test-project"
-	args.Location.Location = "us-central1"
+	args.Location = "us-central1"
 	args.ClusterName = "my-cluster"
 	args.NodePoolName = "my-pool"
 	args.Update = `{"nodeCount": 5}`
@@ -88,8 +88,8 @@ func TestUpdateNodePoolArgs_Fields(t *testing.T) {
 	if args.ProjectID != "test-project" {
 		t.Errorf("ProjectID = %s, want test-project", args.ProjectID)
 	}
-	if args.Location.Location != "us-central1" {
-		t.Errorf("Location = %s, want us-central1", args.Location.Location)
+	if args.Location != "us-central1" {
+		t.Errorf("Location = %s, want us-central1", args.Location)
 	}
 	if args.ClusterName != "my-cluster" {
 		t.Errorf("ClusterName = %s, want my-cluster", args.ClusterName)
@@ -105,15 +105,15 @@ func TestUpdateNodePoolArgs_Fields(t *testing.T) {
 func TestDeleteNodePoolArgs_Fields(t *testing.T) {
 	args := deleteNodePoolArgs{}
 	args.ProjectID = "test-project"
-	args.Location.Location = "us-central1"
+	args.Location = "us-central1"
 	args.ClusterName = "my-cluster"
 	args.NodePoolName = "my-pool"
 
 	if args.ProjectID != "test-project" {
 		t.Errorf("ProjectID = %s, want test-project", args.ProjectID)
 	}
-	if args.Location.Location != "us-central1" {
-		t.Errorf("Location = %s, want us-central1", args.Location.Location)
+	if args.Location != "us-central1" {
+		t.Errorf("Location = %s, want us-central1", args.Location)
 	}
 	if args.ClusterName != "my-cluster" {
 		t.Errorf("ClusterName = %s, want my-cluster", args.ClusterName)
