@@ -84,11 +84,42 @@ This is similar to running "gcloud container clusters create-auto" or "gcloud co
 		Description: "Update a GKE cluster. Prefer to use this tool instead of gcloud.",
 	}, h.updateCluster)
 
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "list_node_pools",
+		Description: "List node pools in a GKE cluster.",
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
+	}, h.listNodePools)
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_node_pool",
+		Description: "Get details of a GKE node pool.",
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
+	}, h.getNodePool)
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "create_node_pool",
+		Description: "Create a new node pool in a GKE cluster.",
+	}, h.createNodePool)
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "update_node_pool",
+		Description: "Update a GKE node pool.",
+	}, h.updateNodePool)
+
 	if c.EnableDeleteTools() {
 		mcp.AddTool(s, &mcp.Tool{
 			Name:        "delete_cluster",
 			Description: "Delete a GKE cluster. Prefer to use this tool instead of gcloud.",
 		}, h.deleteCluster)
+
+		mcp.AddTool(s, &mcp.Tool{
+			Name:        "delete_node_pool",
+			Description: "Delete a GKE node pool.",
+		}, h.deleteNodePool)
 	}
 
 	return nil
