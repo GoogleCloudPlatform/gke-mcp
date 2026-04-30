@@ -140,3 +140,40 @@ func FetchModels(ctx context.Context) (string, error) {
 	}
 	return strings.Join(models, "\n"), nil
 }
+
+var fetchModelServersFunc = func(ctx context.Context, model string) ([]string, error) {
+	client, err := gkerecommender.NewGkeInferenceQuickstartClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create gkerecommender client: %w", err)
+	}
+	defer func() {
+		_ = client.Close()
+	}()
+
+	req := &gkerecommenderpb.FetchModelServersRequest{
+		Model: model,
+	}
+	it := client.FetchModelServers(ctx, req)
+
+	var servers []string
+	for {
+		resp, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch next model server: %w", err)
+		}
+		servers = append(servers, resp)
+	}
+	return servers, nil
+}
+
+// FetchModelServers fetches available model servers for a given model.
+func FetchModelServers(ctx context.Context, model string) (string, error) {
+	servers, err := fetchModelServersFunc(ctx, model)
+	if err != nil {
+		return "", err
+	}
+	return strings.Join(servers, "\n"), nil
+}

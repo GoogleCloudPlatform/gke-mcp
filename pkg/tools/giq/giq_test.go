@@ -160,3 +160,25 @@ func TestFetchModels_Mock(t *testing.T) {
 		t.Errorf("FetchModels = %q, want %q", res, expected)
 	}
 }
+
+func TestFetchModelServers_Mock(t *testing.T) {
+	originalFunc := fetchModelServersFunc
+	defer func() { fetchModelServersFunc = originalFunc }()
+
+	fetchModelServersFunc = func(_ context.Context, model string) ([]string, error) {
+		if model != "test-model" {
+			t.Errorf("Expected model 'test-model', got %q", model)
+		}
+		return []string{"server-A", "server-B"}, nil
+	}
+
+	res, err := FetchModelServers(context.Background(), "test-model")
+	if err != nil {
+		t.Fatalf("FetchModelServers returned error: %v", err)
+	}
+
+	expected := "server-A\nserver-B"
+	if res != expected {
+		t.Errorf("FetchModelServers = %q, want %q", res, expected)
+	}
+}
