@@ -24,13 +24,13 @@ import (
 	"strings"
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/llm"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/giq"
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"google.golang.org/adk/agent"
 	"google.golang.org/adk/agent/llmagent"
 	"google.golang.org/adk/model"
-	"google.golang.org/adk/model/gemini"
 	"google.golang.org/adk/runner"
 	"google.golang.org/adk/session"
 	"google.golang.org/adk/tool"
@@ -40,8 +40,6 @@ import (
 
 //go:embed instruction.md
 var instructionTemplate string
-
-const defaultModel = "gemini-2.5-pro"
 
 // Agent handles manifest generation via ADK.
 type Agent struct {
@@ -196,17 +194,12 @@ func (a *Agent) Run(ctx context.Context, prompt string, sessionID string) (strin
 
 // Install registers the tool with the MCP server.
 func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
-	// Create a new Gemini model backed by Vertex AI via ADK
-	llm, err := gemini.NewModel(ctx, defaultModel, &genai.ClientConfig{
-		Project:  c.DefaultProjectID(),
-		Backend:  genai.BackendVertexAI,
-		Location: c.DefaultLocation(),
-	})
+	llmClient, err := llm.NewClient(ctx, c)
 	if err != nil {
-		return fmt.Errorf("failed to create gemini model: %w", err)
+		return fmt.Errorf("failed to create llm client: %w", err)
 	}
 
-	agent, err := NewAgent(llm, c)
+	agent, err := NewAgent(llmClient, c)
 	if err != nil {
 		return err
 	}
@@ -225,6 +218,9 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 		manifest, err := agent.Run(ctx, args.Prompt, sessID)
 		if err != nil {
 			return nil, nil, err
+		}
+		if os.Getenv("GKE_MCP_DEBUG") == "true" {
+			log.Printf("Model Used: %s", c.AgentModel())
 		}
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{
