@@ -1,0 +1,18 @@
+# proto-file: learning/gemini/agents/evaluation/evalin/proto/eval_suite.proto
+# proto-message: EvalSuite
+# txtpbfmt: wrap_strings_after_newlines
+
+suite_name: "gke_ai_troubleshooting_tpu_connection_failure_vbar_oom"
+timeout_seconds: 300
+cases {
+  name: "diagnose_vbar_oom"
+  prompt:
+    "My GKE AI workload is failing to launch on TPU v6e nodes. I suspect a TPU connection failure or VBAR OOM. "
+    "Can you help me diagnose it?"
+  expectations:
+    "The agent must:\n"
+    "- Use the `gke-ai-troubleshooting-tpu-connection-failure-vbar-oom` skill\n"
+    "- Ask for context (Project ID, Cluster Name, Node Name, Issue Time, Workload\n"
+    "      Name, Workload Namespace)\n"
+    "- Suggest using `query_logs` with the appropriate filter for VBAR OOMs"
+}

@@ -77,8 +77,14 @@ EOF
 cat <<EOF > "$TARGET_DIR/scripts/validate_queries.sh"
 #!/bin/bash
 set -euo pipefail
-echo "Validating filters for $SKILL_NAME..."
-# gcloud logging read "YOUR_FILTER" --limit=1 > /dev/null
+
+# Allow PROJECT_ID to be passed as environment variable for CI/CD robustness
+PROJECT_ID=\${PROJECT_ID:-\$(gcloud config get-value project)}
+echo "Validating filters for $SKILL_NAME in project: \$PROJECT_ID..."
+
+# Example Validation:
+# FILTER_1="resource.type=\"k8s_container\" AND resource.labels.project_id=\"\$PROJECT_ID\" AND ..."
+# gcloud logging read "\$FILTER_1" --limit=1 > /dev/null
 EOF
 
 chmod +x "$TARGET_DIR/scripts/validate_queries.sh"
