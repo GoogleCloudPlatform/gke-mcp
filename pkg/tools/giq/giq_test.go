@@ -194,6 +194,12 @@ func TestFetchProfiles_Mock(t *testing.T) {
 		if model != "test-model" {
 			t.Errorf("Expected model 'test-model', got %q", model)
 		}
+		if modelServer != "" {
+			t.Errorf("Expected empty modelServer, got %q", modelServer)
+		}
+		if modelServerVersion != "" {
+			t.Errorf("Expected empty modelServerVersion, got %q", modelServerVersion)
+		}
 		return []*gkerecommenderpb.Profile{
 			{
 				AcceleratorType: "nvidia-l4",
