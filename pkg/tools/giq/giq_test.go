@@ -16,7 +16,10 @@ package giq
 
 import (
 	"context"
+	"strings"
 	"testing"
+
+	gkerecommenderpb "cloud.google.com/go/gkerecommender/apiv1/gkerecommenderpb"
 )
 
 func TestGiqGenerateManifestArgs_Fields(t *testing.T) {
@@ -180,5 +183,30 @@ func TestFetchModelServers_Mock(t *testing.T) {
 	expected := "server-A\nserver-B"
 	if res != expected {
 		t.Errorf("FetchModelServers = %q, want %q", res, expected)
+	}
+}
+
+func TestFetchProfiles_Mock(t *testing.T) {
+	originalFunc := fetchProfilesFunc
+	defer func() { fetchProfilesFunc = originalFunc }()
+
+	fetchProfilesFunc = func(_ context.Context, model, modelServer, modelServerVersion string) ([]*gkerecommenderpb.Profile, error) {
+		if model != "test-model" {
+			t.Errorf("Expected model 'test-model', got %q", model)
+		}
+		return []*gkerecommenderpb.Profile{
+			{
+				AcceleratorType: "nvidia-l4",
+			},
+		}, nil
+	}
+
+	res, err := FetchProfiles(context.Background(), "test-model", "", "")
+	if err != nil {
+		t.Fatalf("FetchProfiles returned error: %v", err)
+	}
+
+	if !strings.Contains(res, "nvidia-l4") {
+		t.Errorf("Expected result to contain 'nvidia-l4', got %q", res)
 	}
 }
