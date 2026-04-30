@@ -171,6 +171,9 @@ var fetchModelServersFunc = func(ctx context.Context, model string) ([]string, e
 
 // FetchModelServers fetches available model servers for a given model.
 func FetchModelServers(ctx context.Context, model string) (string, error) {
+	if model == "" {
+		return "", fmt.Errorf("model argument cannot be empty")
+	}
 	servers, err := fetchModelServersFunc(ctx, model)
 	if err != nil {
 		return "", err
