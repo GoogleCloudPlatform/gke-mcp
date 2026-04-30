@@ -33,7 +33,6 @@ type GenerateInferenceManifestArgs struct {
 	TargetNTPOTMilliseconds string `json:"target_ntpot_milliseconds,omitempty" jsonschema:"The maximum normalized time per output token (NTPOT) in milliseconds.NTPOT is measured as the request_latency / output_tokens."`
 }
 
-
 // GenerateInferenceManifest core logic for GKE Inference Quickstart manifest generation.
 func GenerateInferenceManifest(ctx context.Context, args *GenerateInferenceManifestArgs) (string, error) {
 	if args == nil {
