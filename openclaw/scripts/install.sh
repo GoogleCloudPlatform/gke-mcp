@@ -3,7 +3,7 @@ set -e
 
 # --- Configuration ---
 LOCAL_BIN="$HOME/.local/bin"
-TARBALL_URL="https://github.com/dshnayder/gke-mcp/archive/refs/heads/openclaw-install.tar.gz"
+TARBALL_URL="https://github.com/GoogleCloudPlatform/gke-mcp/archive/refs/heads/main.tar.gz"
 
 # --- Pre-flight Checks ---
 if ! command -v openclaw >/dev/null 2>&1; then
@@ -30,7 +30,7 @@ fi
 
 TMP_DIR=$(mktemp -d)
 REPO_TARBALL="$TMP_DIR/repo.tar.gz"
-REPO_NAME="gke-mcp-openclaw-install"
+REPO_NAME="gke-mcp-main"
 
 # Download repo tarball
 echo "[gke-agent] Downloading repository assets..."
