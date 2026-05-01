@@ -13,17 +13,17 @@ When you run the installation script, it enriches your OpenClaw environment with
    - The core binary is installed to your local system and automatically registered as an MCP server within OpenClaw.
    - It exposes a rich set of tools to read cluster states, inspect resources, view logs, deploy manifests, and run diagnostics directly against your GKE environment.
 
-2. **Specialized Subagents (e.g., `gke-sre`)**
+2. **Specialized Subagents (e.g., `operator`)**
    - The installer creates dedicated, isolated AI subagents tailored for specific GKE workflows.
-   - The primary agent, **GKE Expert SRE** (`gke-sre`), comes pre-configured with a custom identity (`IDENTITY.md`) and operational persona (`SOUL.md`), ensuring it acts as a knowledgeable, safety-conscious Site Reliability Engineer.
+   - The primary agent, **GKE Operator** (`operator`), comes pre-configured with a custom identity (`IDENTITY.md`) and operational persona (`SOUL.md`), ensuring it acts as a knowledgeable, safety-conscious cluster operator.
 
 3. **Domain-Specific Skills**
    - Agents are provisioned with targeted "Skills" (expert instructions and workflows) downloaded dynamically into their workspace. 
-   - For example, the `gke-sre` agent comes equipped with the `gke-observability` skill out-of-the-box, providing it with structured playbooks for monitoring, metric analysis, and log troubleshooting.
+   - For example, the `operator` agent comes equipped with the `gke-observability` skill out-of-the-box, providing it with structured playbooks for monitoring, metric analysis, and log troubleshooting.
 
 4. **Semantic Routing Configuration**
    - The integration automatically patches OpenClaw's configuration to allow seamless semantic routing.
-   - This means OpenClaw's main gateway can automatically detect GKE-related queries and route them directly to the `gke-sre` expert agent without manual intervention.
+   - This means OpenClaw's main gateway can automatically detect GKE-related queries and route them directly to the `operator` expert agent without manual intervention.
 
 ## Installation
 
@@ -39,10 +39,10 @@ curl -fsSL https://raw.githubusercontent.com/GoogleCloudPlatform/gke-mcp/main/op
 
 Once installation is complete, restart your OpenClaw gateway if it is already running. You can interact with your new GKE expert immediately through your standard OpenClaw TUI or configured channels.
 
-To start a session directly with a subagent (for example, the GKE SRE agent), use:
+To start a session directly with a subagent (for example, the GKE Operator agent), use:
 
 ```bash
-openclaw tui --session agent:gke-sre:main
+openclaw tui --session agent:operator:main
 ```
 
 ## References
