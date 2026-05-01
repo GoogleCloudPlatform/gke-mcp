@@ -18,6 +18,16 @@ Choose a way to install the MCP Server and then connect your AI to it.
 gemini extensions install https://github.com/GoogleCloudPlatform/gke-mcp.git
 ```
 
+### Use in OpenClaw
+
+Install the GKE MCP server, specialized agents, and skills directly into your [OpenClaw](https://openclaw.ai/) workspace with a single command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/GoogleCloudPlatform/gke-mcp/main/openclaw/scripts/install.sh | bash
+```
+
+For more details on the features provided by this integration, see the [OpenClaw Integration Guide](openclaw/README.md).
+
 ### Use in MCP Clients / Other AIs
 
 #### Quick Install (Linux & macOS only)

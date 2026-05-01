@@ -168,6 +168,5 @@ rm -rf "$TMP_DIR"
 
 echo "--- Installation Complete ---"
 if [ ${#AGENTS[@]} -gt 0 ]; then
-  echo "You can now start the gateway and chat with your agents using commands like:"
-  echo "  openclaw chat ${AGENTS[0]}"
+  echo "You can now start the gateway and interact with your new GKE agents."
 fi
