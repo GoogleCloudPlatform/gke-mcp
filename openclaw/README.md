@@ -36,6 +36,12 @@ curl -fsSL https://raw.githubusercontent.com/GoogleCloudPlatform/gke-mcp/main/op
 
 Once installation is complete, restart your OpenClaw gateway if it is already running. You can interact with your new GKE expert immediately through your standard OpenClaw TUI or configured channels.
 
+To start a session directly with a subagent (for example, the GKE SRE agent), use:
+
+```bash
+openclaw tui --session agent:gke-sre:main
+```
+
 ## References
 
 - [OpenClaw Documentation](https://docs.openclaw.ai/)
