@@ -41,6 +41,7 @@ echo "========================================================================"
 echo ""
 
 TMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TMP_DIR"' EXIT
 REPO_TARBALL="$TMP_DIR/repo.tar.gz"
 REPO_NAME="gke-mcp-main"
 
