@@ -184,7 +184,7 @@ fi
 
 # --- Phase 4: Configure Semantic Routing ---
 echo "--- Phase 4: Configuring Semantic Routing ---"
-if [ ${#AGENTS[@]} -gt 1 ]; then
+if [ ${#AGENTS[@]} -gt 0 ]; then
   # Get the current allowAgents array (defaulting to empty array if not set)
   CURRENT_ALLOW_AGENTS=$(openclaw config get agents.defaults.subagents.allowAgents 2>/dev/null || echo "[]")
 
