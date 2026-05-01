@@ -108,6 +108,7 @@ AGENTS=()
 # Discover agents
 if [ -d "$TMP_DIR/agents" ]; then
   for AGENT_DIR in "$TMP_DIR/agents"/*; do
+    [ -e "$AGENT_DIR" ] || continue
     if [ -d "$AGENT_DIR" ]; then
       AGENT_NAME=$(basename "$AGENT_DIR")
       AGENTS+=("$AGENT_NAME")
