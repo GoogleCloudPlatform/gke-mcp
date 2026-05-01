@@ -19,6 +19,15 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 
+SKIP_MCP=0
+echo "[gke-agent] Verifying Google Cloud SDK (gcloud) setup..."
+if ! gcloud container clusters list >/dev/null 2>&1; then
+  echo "Warning: 'gcloud container clusters list' failed." >&2
+  echo "         Please ensure 'gcloud' is installed and you are authenticated to a GCP project." >&2
+  echo "         Skipping gke-mcp binary installation and MCP server registration." >&2
+  SKIP_MCP=1
+fi
+
 TMP_DIR=$(mktemp -d)
 REPO_TARBALL="$TMP_DIR/repo.tar.gz"
 REPO_NAME="gke-mcp-openclaw-install"
@@ -44,31 +53,35 @@ tar -xzf "$REPO_TARBALL" -C "$TMP_DIR/agents" "$REPO_NAME/openclaw/agents" --str
 tar -xzf "$REPO_TARBALL" -C "$TMP_DIR/skills" "$REPO_NAME/skills" --strip-components=2 2>/dev/null || true
 
 # --- Phase 1: Install gke-mcp Binary ---
-echo "--- Phase 1: Installing gke-mcp ---"
+if [ "$SKIP_MCP" -eq 0 ]; then
+  echo "--- Phase 1: Installing gke-mcp ---"
 
-mkdir -p "$LOCAL_BIN"
+  mkdir -p "$LOCAL_BIN"
 
-if [ -f "$LOCAL_BIN/gke-mcp" ]; then
-  echo "[gke-agent] gke-mcp is already installed at $LOCAL_BIN/gke-mcp"
-else
-  echo "[gke-agent] Installing gke-mcp binary..."
-  if [ -f "$TMP_DIR/install.sh" ]; then
-    # Patch and execute the local install.sh
-    cat "$TMP_DIR/install.sh" | \
-         sed "s|/usr/local/bin|$LOCAL_BIN|g" | \
-         sed 's/|| sudo install .*//g' | \
-         sed 's/curl -fSL/curl -s -fSL/g' | \
-         (cd "$TMP_DIR" && bash) || {
-      echo "Error: Execution of gke-mcp install script failed." >&2
-      rm -rf "$TMP_DIR"
-      exit 1
-    }
-    echo "✅ gke-mcp binary installation complete."
+  if [ -f "$LOCAL_BIN/gke-mcp" ]; then
+    echo "[gke-agent] gke-mcp is already installed at $LOCAL_BIN/gke-mcp"
   else
-     echo "Error: Failed to extract root install.sh from tarball." >&2
-     rm -rf "$TMP_DIR"
-     exit 1
+    echo "[gke-agent] Installing gke-mcp binary..."
+    if [ -f "$TMP_DIR/install.sh" ]; then
+      # Patch and execute the local install.sh
+      cat "$TMP_DIR/install.sh" | \
+           sed "s|/usr/local/bin|$LOCAL_BIN|g" | \
+           sed 's/|| sudo install .*//g' | \
+           sed 's/curl -fSL/curl -s -fSL/g' | \
+           (cd "$TMP_DIR" && bash) || {
+        echo "Error: Execution of gke-mcp install script failed." >&2
+        rm -rf "$TMP_DIR"
+        exit 1
+      }
+      echo "✅ gke-mcp binary installation complete."
+    else
+       echo "Error: Failed to extract root install.sh from tarball." >&2
+       rm -rf "$TMP_DIR"
+       exit 1
+    fi
   fi
+else
+  echo "--- Phase 1: Skipped (gcloud not configured) ---"
 fi
 
 # --- Phase 2: Register Agents in OpenClaw ---
@@ -135,16 +148,20 @@ else
 fi
 
 # --- Phase 3: Register MCP Server ---
-echo "--- Phase 3: Registering MCP Server (gke-mcp) ---"
-if openclaw mcp list | grep -q "^- gke-mcp$"; then
-  echo "[gke-agent] MCP server 'gke-mcp' is already registered."
-else
-  echo "[gke-agent] Adding MCP server 'gke-mcp'..."
-  # Use JSON string for the server configuration
-  MCP_CONFIG="{\"command\":\"$LOCAL_BIN/gke-mcp\",\"args\":[],\"env\":{}}"
-  if ! openclaw mcp set gke-mcp "$MCP_CONFIG"; then
-    echo "Error: Failed to register MCP server." >&2
+if [ "$SKIP_MCP" -eq 0 ]; then
+  echo "--- Phase 3: Registering MCP Server (gke-mcp) ---"
+  if openclaw mcp list | grep -q "^- gke-mcp$"; then
+    echo "[gke-agent] MCP server 'gke-mcp' is already registered."
+  else
+    echo "[gke-agent] Adding MCP server 'gke-mcp'..."
+    # Use JSON string for the server configuration
+    MCP_CONFIG="{\"command\":\"$LOCAL_BIN/gke-mcp\",\"args\":[],\"env\":{}}"
+    if ! openclaw mcp set gke-mcp "$MCP_CONFIG"; then
+      echo "Error: Failed to register MCP server." >&2
+    fi
   fi
+else
+  echo "--- Phase 3: Skipped (gcloud not configured) ---"
 fi
 
 # --- Phase 4: Configure Semantic Routing ---
