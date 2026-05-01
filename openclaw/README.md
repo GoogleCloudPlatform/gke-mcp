@@ -4,7 +4,10 @@ This directory contains the integration components for bringing the power of the
 
 ## What is Installed?
 
-When you run the installation script, it enriches your OpenClaw environment with a complete suite of GKE management capabilities:
+> **🚀 UPCOMING FEATURE: Live MCP Server Integration**
+> *While the GKE subagents and skills install successfully today, direct integration with the `gke-mcp` MCP Server binary is an upcoming feature. Full real-time cluster interaction capabilities will be enabled in a future update. In the meantime, agents can still perform cluster operations using standard `gcloud` and `kubectl` shell commands.*
+
+When you run the installation script, it enriches your OpenClaw environment with a suite of GKE management capabilities:
 
 1. **GKE MCP Server (`gke-mcp`)**
    - The core binary is installed to your local system and automatically registered as an MCP server within OpenClaw.

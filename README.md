@@ -20,11 +20,13 @@ gemini extensions install https://github.com/GoogleCloudPlatform/gke-mcp.git
 
 ### Use in OpenClaw
 
-Install the GKE MCP server, specialized agents, and skills directly into your [OpenClaw](https://openclaw.ai/) workspace with a single command:
+Install the specialized GKE agents and skills directly into your [OpenClaw](https://openclaw.ai/) workspace with a single command:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/GoogleCloudPlatform/gke-mcp/main/openclaw/scripts/install.sh | bash
 ```
+
+*(Note: Live MCP server integration is an upcoming feature and will be enabled in a future release. In the meantime, agents can still perform cluster operations using standard `gcloud` and `kubectl` shell commands).*
 
 For more details on the features provided by this integration, see the [OpenClaw Integration Guide](openclaw/README.md).
 

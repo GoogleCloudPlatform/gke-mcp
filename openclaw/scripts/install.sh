@@ -28,6 +28,18 @@ if ! gcloud container clusters list >/dev/null 2>&1; then
   SKIP_MCP=1
 fi
 
+# TODO: Enable MCP installation in a future update.
+SKIP_MCP=1
+echo ""
+echo "========================================================================"
+echo " NOTICE: Live GKE MCP server integration is an upcoming feature!"
+echo "         Agents and skills are being installed now."
+echo "         Real-time cluster operations via the gke-mcp server will be"
+echo "         enabled in a future release. In the meantime, agents can still"
+echo "         perform operations using standard gcloud and kubectl commands."
+echo "========================================================================"
+echo ""
+
 TMP_DIR=$(mktemp -d)
 REPO_TARBALL="$TMP_DIR/repo.tar.gz"
 REPO_NAME="gke-mcp-main"
