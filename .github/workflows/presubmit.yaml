@@ -110,7 +110,7 @@ jobs:
       - uses: ./.github/actions/build-ui
       - name: "Install golangci-lint"
         run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+          curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b $(go env GOPATH)/bin
       - name: "Run golangci-lint"
         run: |
           ./dev/ci/presubmits/golangci-lint.sh
