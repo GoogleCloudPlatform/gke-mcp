@@ -3,7 +3,7 @@ set -e
 
 # --- Configuration ---
 LOCAL_BIN="$HOME/.local/bin"
-TARBALL_URL="${TARBALL_URL:-https://github.com/GoogleCloudPlatform/gke-mcp/archive/refs/heads/main.tar.gz}"
+TARBALL_URL="https://github.com/dshnayder/gke-mcp/archive/refs/heads/main.tar.gz"
 
 # --- Pre-flight Checks ---
 if ! command -v openclaw >/dev/null 2>&1; then
