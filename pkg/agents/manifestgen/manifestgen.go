@@ -50,6 +50,12 @@ type Agent struct {
 	sessionService session.Service
 }
 
+// FetchModelServerVersionsArgs holds arguments for fetching GIQ model server versions.
+type FetchModelServerVersionsArgs struct {
+	Model       string `json:"model" jsonschema:"The model for which to list model server versions. Required."`
+	ModelServer string `json:"model_server" jsonschema:"The model server for which to list versions. Required."`
+}
+
 // NewAgent creates a new Agent attached to a specific text generator model.
 func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 	if llm == nil {
@@ -84,12 +90,25 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 		return nil, fmt.Errorf("failed to create giq fetch models tool: %w", err)
 	}
 
+	fetchModelServerVersionsTool, err := functiontool.New(
+		functiontool.Config{
+			Name:        "fetch_model_server_versions",
+			Description: "Fetch available versions for a given model and model server in GKE Inference Quickstart (GIQ).",
+		},
+		func(ctx tool.Context, args FetchModelServerVersionsArgs) (string, error) {
+			return giq.FetchModelServerVersions(ctx, args.Model, args.ModelServer)
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create giq fetch model server versions tool: %w", err)
+	}
+
 	adkAgent, err := llmagent.New(llmagent.Config{
 		Name:        "manifest_agent",
 		Description: "Agent specialized in generating and validating Kubernetes manifests.",
 		Model:       llm,
 		Instruction: instructionTemplate,
-		Tools:       []tool.Tool{giqTool, fetchModelsTool},
+		Tools:       []tool.Tool{giqTool, fetchModelsTool, fetchModelServerVersionsTool},
 		BeforeModelCallbacks: []llmagent.BeforeModelCallback{
 			func(ctx agent.CallbackContext, llmRequest *model.LLMRequest) (*model.LLMResponse, error) {
 				// Inject user content if Contents is empty to avoid content loss.
