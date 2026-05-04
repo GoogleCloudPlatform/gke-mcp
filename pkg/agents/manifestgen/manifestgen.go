@@ -92,7 +92,7 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 
 	fetchModelServerVersionsTool, err := functiontool.New(
 		functiontool.Config{
-			Name:        "fetch_model_server_versions",
+			Name:        "giq_fetch_model_server_versions",
 			Description: "Fetch available versions for a given model and model server in GKE Inference Quickstart (GIQ).",
 		},
 		func(ctx tool.Context, args FetchModelServerVersionsArgs) (string, error) {
