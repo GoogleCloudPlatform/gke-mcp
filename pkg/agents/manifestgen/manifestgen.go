@@ -93,7 +93,7 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 
 	fetchProfilesTool, err := functiontool.New(
 		functiontool.Config{
-			Name:        "fetch_profiles",
+			Name:        "giq_fetch_profiles",
 			Description: "Fetch available performance profiles for models and servers in GKE Inference Quickstart (GIQ).",
 		},
 		func(ctx tool.Context, args FetchProfilesArgs) (string, error) {
