@@ -196,3 +196,47 @@ func FetchProfiles(ctx context.Context, model, modelServer, modelServerVersion s
 	}
 	return strings.Join(output, "\n---\n"), nil
 }
+
+var fetchModelServerVersionsFunc = func(ctx context.Context, model, modelServer string) ([]string, error) {
+	client, err := gkerecommender.NewGkeInferenceQuickstartClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create gkerecommender client: %w", err)
+	}
+	defer func() {
+		_ = client.Close()
+	}()
+
+	req := &gkerecommenderpb.FetchModelServerVersionsRequest{
+		Model:       model,
+		ModelServer: modelServer,
+	}
+	it := client.FetchModelServerVersions(ctx, req)
+
+	var versions []string
+	for {
+		resp, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch next model server version: %w", err)
+		}
+		versions = append(versions, resp)
+	}
+	return versions, nil
+}
+
+// FetchModelServerVersions fetches available model server versions for a given model and model server.
+func FetchModelServerVersions(ctx context.Context, model, modelServer string) (string, error) {
+	if model == "" {
+		return "", fmt.Errorf("model argument cannot be empty")
+	}
+	if modelServer == "" {
+		return "", fmt.Errorf("model_server argument cannot be empty")
+	}
+	versions, err := fetchModelServerVersionsFunc(ctx, model, modelServer)
+	if err != nil {
+		return "", err
+	}
+	return strings.Join(versions, "\n"), nil
+}

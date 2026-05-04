@@ -216,3 +216,39 @@ func TestFetchProfiles_Mock(t *testing.T) {
 		t.Errorf("Expected result to contain 'nvidia-l4', got %q", res)
 	}
 }
+
+func TestFetchModelServerVersions_Mock(t *testing.T) {
+	originalFunc := fetchModelServerVersionsFunc
+	defer func() { fetchModelServerVersionsFunc = originalFunc }()
+
+	fetchModelServerVersionsFunc = func(_ context.Context, model, modelServer string) ([]string, error) {
+		if model != "test-model" {
+			t.Errorf("Expected model 'test-model', got %q", model)
+		}
+		if modelServer != "test-server" {
+			t.Errorf("Expected modelServer 'test-server', got %q", modelServer)
+		}
+		return []string{"v1", "v2"}, nil
+	}
+
+	res, err := FetchModelServerVersions(context.Background(), "test-model", "test-server")
+	if err != nil {
+		t.Fatalf("FetchModelServerVersions returned error: %v", err)
+	}
+
+	expected := "v1\nv2"
+	if res != expected {
+		t.Errorf("FetchModelServerVersions = %q, want %q", res, expected)
+	}
+}
+
+func TestFetchModelServerVersions_Validation(t *testing.T) {
+	_, err := FetchModelServerVersions(context.Background(), "", "server")
+	if err == nil {
+		t.Error("Expected error for empty model, got nil")
+	}
+	_, err = FetchModelServerVersions(context.Background(), "model", "")
+	if err == nil {
+		t.Error("Expected error for empty modelServer, got nil")
+	}
+}
