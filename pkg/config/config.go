@@ -30,6 +30,7 @@ type Config struct {
 	agentProvider     string
 	agentModel        string
 	enableDeleteTools bool
+	anthropicAPIKey   string
 }
 
 // UserAgent returns the user agent string for outbound API calls.
@@ -62,6 +63,11 @@ func (c *Config) EnableDeleteTools() bool {
 	return c.enableDeleteTools
 }
 
+// AnthropicAPIKey returns the configured Anthropic API key.
+func (c *Config) AnthropicAPIKey() string {
+	return c.anthropicAPIKey
+}
+
 // New constructs a Config populated from gcloud and build version.
 func New(version string, enableDeleteTools bool) *Config {
 	provider := os.Getenv("GKE_MCP_PROVIDER")
@@ -70,8 +76,14 @@ func New(version string, enableDeleteTools bool) *Config {
 	}
 	model := os.Getenv("GKE_MCP_MODEL")
 	if model == "" {
-		model = "gemini-2.5-pro"
+		if provider == "anthropic" {
+			model = "claude-3-7-sonnet-20250219"
+		} else {
+			model = "gemini-2.5-pro"
+		}
 	}
+
+	anthropicKey := os.Getenv("ANTHROPIC_API_KEY")
 
 	return &Config{
 		userAgent:         "gke-mcp/" + version,
@@ -80,6 +92,7 @@ func New(version string, enableDeleteTools bool) *Config {
 		agentProvider:     provider,
 		agentModel:        model,
 		enableDeleteTools: enableDeleteTools,
+		anthropicAPIKey:   anthropicKey,
 	}
 }
 
