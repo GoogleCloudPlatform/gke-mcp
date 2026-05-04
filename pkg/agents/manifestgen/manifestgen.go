@@ -52,8 +52,8 @@ type Agent struct {
 
 // FetchProfilesArgs holds arguments for fetching GIQ profiles.
 type FetchProfilesArgs struct {
-	Model              string "json:\"model,omitempty\" jsonschema:\"Optional. Filter profiles by model name, e.g. 'gemini-2.5-pro'.\"" 
-	ModelServer        string "json:\"model_server,omitempty\" jsonschema:\"Optional. Filter profiles by model server, e.g. 'vllm'.\"" 
+	Model              string "json:\"model,omitempty\" jsonschema:\"Optional. Filter profiles by model name, e.g. 'gemini-2.5-pro'.\""
+	ModelServer        string "json:\"model_server,omitempty\" jsonschema:\"Optional. Filter profiles by model server, e.g. 'vllm'.\""
 	ModelServerVersion string "json:\"model_server_version,omitempty\" jsonschema:\"Optional. Filter profiles by model server version.\""
 }
 
@@ -93,7 +93,7 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 
 	fetchProfilesTool, err := functiontool.New(
 		functiontool.Config{
-Name:        "fetch_profiles",
+			Name:        "fetch_profiles",
 			Description: "Fetch available performance profiles for models and servers in GKE Inference Quickstart (GIQ).",
 		},
 		func(ctx tool.Context, args FetchProfilesArgs) (string, error) {
