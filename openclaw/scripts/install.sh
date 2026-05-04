@@ -10,6 +10,23 @@ if ! command -v openclaw >/dev/null 2>&1; then
   echo "Error: 'openclaw' CLI is required. Please install OpenClaw first." >&2
   exit 1
 fi
+
+# Check OpenClaw version
+OPENCLAW_VERSION=$(openclaw --version 2>/dev/null | awk '{print $3}')
+if [ -n "$OPENCLAW_VERSION" ]; then
+  # Simple version comparison using sort -V
+  if [ "$(printf '%s\n' "$REQUIRED_OPENCLAW_VERSION" "$OPENCLAW_VERSION" | sort -V | head -n1)" != "$REQUIRED_OPENCLAW_VERSION" ]; then
+    echo "========================================================================"
+    echo " WARNING: Installed OpenClaw version ($OPENCLAW_VERSION) is older than $REQUIRED_OPENCLAW_VERSION."
+    echo "          Some features (like automated heartbeat cronjobs) may not be"
+    echo "          fully supported."
+    echo "          It is highly recommended to upgrade OpenClaw to $REQUIRED_OPENCLAW_VERSION or"
+    echo "          newer and re-run this script."
+    echo "========================================================================"
+    echo ""
+  fi
+fi
+
 if ! command -v curl >/dev/null 2>&1; then
   echo "Error: 'curl' is required but not installed." >&2
   exit 1
