@@ -18,3 +18,5 @@ jobs:
           reviewers: ${{ vars.REVIEWERS }} # if draft, assigned when draft is released
           max-num-of-reviewers: 1
           draft-keyword: wip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
