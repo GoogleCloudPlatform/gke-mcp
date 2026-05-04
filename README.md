@@ -65,12 +65,14 @@ For detailed instructions on how to connect the GKE MCP Server to various AI cli
 - `get_gke_release_notes`: Get GKE release notes.
 - `generate_manifest`: Generate a Kubernetes manifest using Vertex AI.
 
-## MCP Commands
+## MCP Prompts
 
-Commands provide in-context domain specific functionality based on expert knowledge and best practices.
+Prompts provide guided workflows and expert knowledge templates.
 
-- `gke-upgrade-risk-report`: GKE control plane upgrade risk report, analyzing the potential risks of upgrading from its current version to the target version. Performs pre-upgrade checks, API deprecations scans, and more.
-- `gke-upgrades-best-practices-risk-report`: GKE control plane upgrade best practices, applied for the specified cluster. Helps making upgrades uneventful.
+- `gke:cost`: Answer natural language questions about GKE-related costs.
+- `gke:deploy`: Deploys a workload to a GKE cluster using a configuration file.
+- `gke:upgrade-risk-report`: GKE control plane upgrade risk report, analyzing the potential risks of upgrading from its current version to the target version. Performs pre-upgrade checks, API deprecations scans, and more.
+- `gke:upgrades-best-practices-risk-report`: GKE control plane upgrade best practices, applied for the specified cluster. Helps making upgrades uneventful.
 
 ## MCP Context
 
