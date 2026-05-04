@@ -152,3 +152,47 @@ func FetchModelServers(ctx context.Context, model string) (string, error) {
 	}
 	return strings.Join(servers, "\n"), nil
 }
+
+var fetchProfilesFunc = func(ctx context.Context, model, modelServer, modelServerVersion string) ([]*gkerecommenderpb.Profile, error) {
+	client, err := gkerecommender.NewGkeInferenceQuickstartClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create gkerecommender client: %w", err)
+	}
+	defer func() {
+		_ = client.Close()
+	}()
+
+	req := &gkerecommenderpb.FetchProfilesRequest{
+		Model:              model,
+		ModelServer:        modelServer,
+		ModelServerVersion: modelServerVersion,
+	}
+	it := client.FetchProfiles(ctx, req)
+
+	var profiles []*gkerecommenderpb.Profile
+	for {
+		resp, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch next profile: %w", err)
+		}
+		profiles = append(profiles, resp)
+	}
+	return profiles, nil
+}
+
+// FetchProfiles fetches available profiles for GKE.
+func FetchProfiles(ctx context.Context, model, modelServer, modelServerVersion string) (string, error) {
+	// TODO: Add pagination support once profile list becomes very large to avoid memory risks.
+	profiles, err := fetchProfilesFunc(ctx, model, modelServer, modelServerVersion)
+	if err != nil {
+		return "", err
+	}
+	var output []string
+	for _, p := range profiles {
+		output = append(output, p.String())
+	}
+	return strings.Join(output, "\n---\n"), nil
+}
