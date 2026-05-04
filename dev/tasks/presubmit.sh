@@ -38,10 +38,8 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "${REPO_ROOT}"
 
 run_task "./dev/tasks/gomod.sh"
+run_task "./dev/tasks/update-ui.sh"
 run_task "./dev/tasks/format.sh"
-run_task "./dev/ci/presubmits/update-ui.sh"
-
-run_task "./dev/tasks/super-linter.sh"
 
 run_task "./dev/ci/presubmits/ui-test.sh"
 run_task "./dev/ci/presubmits/go-build.sh"
@@ -49,6 +47,8 @@ run_task "./dev/ci/presubmits/go-test.sh"
 run_task "./dev/ci/presubmits/go-vet.sh"
 run_task "./dev/ci/presubmits/docker-build.sh"
 run_task "./dev/ci/presubmits/validate-skills.sh"
+
+run_task "./dev/tasks/super-linter.sh"
 
 # Run golangci-lint if available
 if command -v golangci-lint &> /dev/null; then
