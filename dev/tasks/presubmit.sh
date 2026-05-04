@@ -37,7 +37,12 @@ function run_task() {
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "${REPO_ROOT}"
 
-run_task "./dev/ci/presubmits/ui-build.sh"
+run_task "./dev/tasks/gomod.sh"
+run_task "./dev/tasks/format.sh"
+run_task "./dev/ci/presubmits/update-ui.sh"
+
+run_task "./dev/tasks/super-linter.sh"
+
 run_task "./dev/ci/presubmits/ui-test.sh"
 run_task "./dev/ci/presubmits/go-build.sh"
 run_task "./dev/ci/presubmits/go-test.sh"
@@ -53,8 +58,5 @@ else
     echo "  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b \$(go env GOPATH)/bin"
 fi
 
-run_task "./dev/tasks/format.sh"
-run_task "./dev/tasks/gomod.sh"
-run_task "./dev/tasks/super-linter.sh"
 
 echo -e "${GREEN}Local presubmit checks complete, commit any changed files.${NC}"
