@@ -12,7 +12,7 @@ else
     --name "$CRON_NAME" \
     --agent "$AGENT_NAME" \
     --every 5m \
-    --session main \
+    --session isolated \
     --message "Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply exactly NO_REPLY." \
     --announce \
     --channel last || echo "Warning: Failed to add cronjob for $AGENT_NAME." >&2
