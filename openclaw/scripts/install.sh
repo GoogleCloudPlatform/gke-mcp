@@ -198,6 +198,26 @@ else
   echo "No agents to configure for semantic routing."
 fi
 
+# --- Phase 5: Register Cronjobs ---
+echo "--- Phase 5: Registering Cronjobs ---"
+if [[ " ${AGENTS[*]} " =~ " operator " ]]; then
+  if openclaw cron list | grep -q "operator-heartbeat-5m"; then
+    echo "[gke-agent] Heartbeat cronjob for operator already exists. Skipping."
+  else
+    echo "[gke-agent] Adding heartbeat cronjob for operator..."
+    openclaw cron add \
+      --name "operator-heartbeat-5m" \
+      --agent operator \
+      --every 5m \
+      --session isolated \
+      --message "Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply exactly NO_REPLY." \
+      --announce \
+      --channel last || echo "Warning: Failed to add cronjob for operator." >&2
+  fi
+else
+  echo "Operator agent not found, skipping cronjob registration."
+fi
+
 # Cleanup
 rm -rf "$TMP_DIR"
 
