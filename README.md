@@ -48,15 +48,22 @@ For detailed instructions on how to connect the GKE MCP Server to various AI cli
 
 ## MCP Tools
 
-- `cluster_toolkit`: Creates AI optimized GKE Clusters.
-- `list_clusters`: List your GKE clusters.
-- `get_cluster`: Get detailed about a single GKE Cluster.
-- `create_cluster`: Create a new GKE Cluster.
-- `get_kubeconfig`: Config the kubeconfig to a single GKE Cluster.
-- `giq_generate_manifest`: Generate a GKE manifest for AI/ML inference workloads using Google Inference Quickstart.
-- `list_recommendations`: List recommendations for your GKE clusters.
+- `cluster_toolkit_download`: Download the Cluster Toolkit Git repository.
+- `list_clusters`: List GKE clusters.
+- `get_cluster`: Get detailed information about a single GKE cluster.
+- `create_cluster`: Create a new GKE cluster (defaults to Autopilot).
+- `get_kubeconfig`: Configure kubeconfig for a GKE cluster.
+- `update_cluster`: Update a GKE cluster.
+- `get_node_sos_report`: Generate and download an SOS report from a GKE node.
+- `delete_cluster`: Delete a GKE cluster (if enabled).
+- `gke_deploy`: Deploy a workload to a GKE cluster using a configuration file.
 - `query_logs`: Query Google Cloud Platform logs using Logging Query Language (LQL).
 - `get_log_schema`: Get the schema for a specific GKE log type.
+- `list_monitored_resource_descriptors`: List monitored resource descriptors for GKE.
+- `list_recommendations`: List recommendations for GKE clusters.
+- `get_k8s_changelog`: Get Kubernetes changelog for upgrades.
+- `get_gke_release_notes`: Get GKE release notes.
+- `generate_manifest`: Generate a Kubernetes manifest using Vertex AI.
 
 ## MCP Commands
 
@@ -109,8 +116,29 @@ This configuration tells Gemini CLI how to reach the gke-mcp server running on y
 
 ## Skills
 
-Skills provide specialized capabilities and workflows to your AI agent, such as
-cost analysis, cluster lifecycle management, and security auditing.
+Skills provide specialized capabilities and workflows to your AI agent.
+
+### Available Skills
+
+- `custom-golden-image-discovery`: Discover golden base images for GKE custom nodes.
+- `gke-ai-troubleshooting-skill-creation-guide`: Guide for building high-quality GKE troubleshooting skills.
+- `gke-ai-troubleshooting-tpu-connection-failure-vbar-oom`: Diagnose and prevent TPU connection failures and OOMs.
+- `gke-app-onboarding`: Workflows for containerizing and deploying applications to GKE.
+- `gke-backup-dr`: Configure Backup for GKE and disaster recovery.
+- `gke-cluster-creator`: Create GKE clusters using predefined templates.
+- `gke-cluster-lifecycle`: Manage lifecycle and upgrades of GKE clusters.
+- `gke-compute-class-creator`: Create GKE ComputeClass resources.
+- `gke-cost-analysis`: Answer questions about GKE-related costs.
+- `gke-cost-optimization`: Optimize costs for GKE clusters.
+- `gke-inference-quickstart`: Deploy optimized AI/ML inference workloads on GKE.
+- `gke-multi-tenancy`: Implement multi-tenancy and governance in GKE.
+- `gke-networking-edge`: Configure edge networking, ingress, and security on GKE.
+- `gke-observability`: Set up and audit observability on GKE.
+- `gke-productionize`: Prepare applications and clusters for production.
+- `gke-reliability`: Ensure high availability and reliability of GKE workloads.
+- `gke-storage`: Manage storage in GKE clusters.
+- `gke-workload-scaling`: Scale GKE workloads using HPA and VPA.
+- `gke-workload-security`: Audit and harden the security of GKE workloads.
 
 ### Installing Skills
 
