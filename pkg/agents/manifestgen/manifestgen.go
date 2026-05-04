@@ -52,9 +52,9 @@ type Agent struct {
 
 // FetchProfilesArgs holds arguments for fetching GIQ profiles.
 type FetchProfilesArgs struct {
-	Model              string `json:"model,omitempty" jsonschema:"Optional. Filter profiles by model."`
-	ModelServer        string `json:"model_server,omitempty" jsonschema:"Optional. Filter profiles by model server."`
-	ModelServerVersion string `json:"model_server_version,omitempty" jsonschema:"Optional. Filter profiles by model server version."`
+	Model              string "json:\"model,omitempty\" jsonschema:\"Optional. Filter profiles by model name, e.g. 'gemini-2.5-pro'.\"" 
+	ModelServer        string "json:\"model_server,omitempty\" jsonschema:\"Optional. Filter profiles by model server, e.g. 'vllm'.\"" 
+	ModelServerVersion string "json:\"model_server_version,omitempty\" jsonschema:\"Optional. Filter profiles by model server version.\""
 }
 
 // NewAgent creates a new Agent attached to a specific text generator model.
