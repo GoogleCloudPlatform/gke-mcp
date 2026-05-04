@@ -29,7 +29,7 @@ jobs:
     permissions:
       contents: "read"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - name: "Run dev/ci/presubmits/docker-build.sh"
         run: |
           ./dev/ci/presubmits/docker-build.sh
@@ -40,8 +40,8 @@ jobs:
     permissions:
       contents: "read"
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
       - uses: ./.github/actions/build-ui
@@ -55,8 +55,8 @@ jobs:
     permissions:
       contents: "read"
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
       - uses: ./.github/actions/build-ui
@@ -70,8 +70,8 @@ jobs:
     permissions:
       contents: "read"
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
       - name: "Install UI dependencies"
@@ -87,8 +87,8 @@ jobs:
     permissions:
       contents: "read"
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
       - uses: ./.github/actions/build-ui
@@ -103,8 +103,8 @@ jobs:
       contents: "read"
       checks: "write" # For annotations on PRs
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
       - uses: ./.github/actions/build-ui
@@ -121,8 +121,8 @@ jobs:
     permissions:
       contents: "read"
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
       - uses: ./.github/actions/build-ui
@@ -136,13 +136,24 @@ jobs:
     permissions:
       contents: "read"
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
       - name: "Run dev/ci/presubmits/verify-gomod.sh"
         run: |
           ./dev/ci/presubmits/verify-gomod.sh
+
+  validate-skills:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: "read"
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Run dev/ci/presubmits/validate-skills.sh"
+        run: |
+          ./dev/ci/presubmits/validate-skills.sh
 
   super-linter:
     runs-on: ubuntu-latest
@@ -159,7 +170,7 @@ jobs:
       # to update commit status
       statuses: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           # super-linter needs the full git history to get the
           # list of files that changed across commits
