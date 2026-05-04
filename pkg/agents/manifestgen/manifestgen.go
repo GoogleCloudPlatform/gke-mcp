@@ -196,12 +196,20 @@ func (a *Agent) Run(ctx context.Context, prompt string, sessionID string) (strin
 
 // Install registers the tool with the MCP server.
 func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
-	// Create a new Gemini model backed by Vertex AI via ADK
-	llm, err := gemini.NewModel(ctx, defaultModel, &genai.ClientConfig{
+	// Create a new Gemini model backed by Vertex AI (or Google AI if project is missing) via ADK
+	genaiCfg := &genai.ClientConfig{
 		Project:  c.DefaultProjectID(),
-		Backend:  genai.BackendVertexAI,
 		Location: c.DefaultLocation(),
-	})
+		Backend:  genai.BackendVertexAI,
+		APIKey:   c.APIKey(),
+	}
+
+	// If project is missing but API key is present, switch to Gemini API backend
+	if genaiCfg.Project == "" && genaiCfg.APIKey != "" {
+		genaiCfg.Backend = genai.BackendGeminiAPI
+	}
+
+	llm, err := gemini.NewModel(ctx, defaultModel, genaiCfg)
 	if err != nil {
 		return fmt.Errorf("failed to create gemini model: %w", err)
 	}

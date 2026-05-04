@@ -18,7 +18,7 @@ import (
 	"context"
 	"embed"
 	"fmt"
-	"path/filepath"
+	"path"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -50,7 +50,7 @@ func installGetLogSchemas(s *mcp.Server) {
 func getLogSchema(_ context.Context, _ *mcp.CallToolRequest, req *GetLogSchemaRequest) (*mcp.CallToolResult, any, error) {
 	if supportedLogTypes[req.LogType] {
 		fileName := fmt.Sprintf("%s.md", req.LogType)
-		filePath := filepath.Join("schemas", fileName)
+		filePath := path.Join("schemas", fileName)
 		content, err := schemas.ReadFile(filePath)
 		if err != nil {
 			return nil, nil, fmt.Errorf("could not find schema for log_type %s: %w", req.LogType, err)

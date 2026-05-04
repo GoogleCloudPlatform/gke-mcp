@@ -29,6 +29,7 @@ type Config struct {
 	defaultLocation  string
 	agentProvider    string
 	agentModel       string
+	apiKey           string
 }
 
 // UserAgent returns the user agent string for outbound API calls.
@@ -56,6 +57,11 @@ func (c *Config) AgentModel() string {
 	return c.agentModel
 }
 
+// APIKey returns the configured API key for the LLM provider.
+func (c *Config) APIKey() string {
+	return c.apiKey
+}
+
 // New constructs a Config populated from gcloud and build version.
 func New(version string) *Config {
 	provider := os.Getenv("GKE_MCP_PROVIDER")
@@ -67,39 +73,75 @@ func New(version string) *Config {
 		model = "gemini-2.5-pro"
 	}
 
+	apiKey := os.Getenv("GOOGLE_API_KEY")
+	if apiKey == "" {
+		apiKey = os.Getenv("GEMINI_API_KEY")
+	}
+
 	return &Config{
 		userAgent:        "gke-mcp/" + version,
 		defaultProjectID: getDefaultProjectID(),
 		defaultLocation:  getDefaultLocation(),
 		agentProvider:    provider,
 		agentModel:       model,
+		apiKey:           apiKey,
 	}
 }
 
 func getDefaultProjectID() string {
+	if projectID := os.Getenv("GKE_MCP_PROJECT"); projectID != "" {
+		return projectID
+	}
+	if projectID := os.Getenv("GOOGLE_CLOUD_PROJECT"); projectID != "" {
+		return projectID
+	}
+	if projectID := os.Getenv("GCP_PROJECT"); projectID != "" {
+		return projectID
+	}
+
 	projectID, err := getGcloudConfig("core/project")
 	if err != nil {
-		log.Printf("Failed to get default project: %v", err)
+		log.Printf("Failed to get default project from gcloud: %v", err)
+		return ""
+	}
+	if projectID == "(unset)" {
 		return ""
 	}
 	return projectID
 }
 
 func getDefaultLocation() string {
+	if location := os.Getenv("GKE_MCP_LOCATION"); location != "" {
+		return location
+	}
+	if location := os.Getenv("GOOGLE_CLOUD_LOCATION"); location != "" {
+		return location
+	}
+	if location := os.Getenv("GCP_LOCATION"); location != "" {
+		return location
+	}
+
 	region, err := getGcloudConfig("compute/region")
-	if err == nil {
+	if err == nil && region != "(unset)" {
 		return region
 	}
 	zone, err := getGcloudConfig("compute/zone")
-	if err == nil {
+	if err == nil && zone != "(unset)" {
 		return zone
 	}
-	return ""
+	return "us-central1"
 }
 
 func getGcloudConfig(key string) (string, error) {
-	// #nosec G204
-	out, err := exec.Command("gcloud", "config", "get", key).Output()
+	// Use 'cmd /c gcloud' on Windows to ensure it finds gcloud.cmd or gcloud.ps1
+	var cmd *exec.Cmd
+	if os.Getenv("OS") == "Windows_NT" {
+		cmd = exec.Command("cmd", "/c", "gcloud", "config", "get", key)
+	} else {
+		cmd = exec.Command("gcloud", "config", "get", key)
+	}
+
+	out, err := cmd.Output()
 	if err != nil {
 		return "", err
 	}
