@@ -50,6 +50,13 @@ type Agent struct {
 	sessionService session.Service
 }
 
+// FetchProfilesArgs holds arguments for fetching GIQ profiles.
+type FetchProfilesArgs struct {
+	Model              string `json:"model,omitempty" jsonschema:"Optional. Filter profiles by model."`
+	ModelServer        string `json:"model_server,omitempty" jsonschema:"Optional. Filter profiles by model server."`
+	ModelServerVersion string `json:"model_server_version,omitempty" jsonschema:"Optional. Filter profiles by model server version."`
+}
+
 // NewAgent creates a new Agent attached to a specific text generator model.
 func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 	if llm == nil {
@@ -84,12 +91,25 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 		return nil, fmt.Errorf("failed to create giq fetch models tool: %w", err)
 	}
 
+	fetchProfilesTool, err := functiontool.New(
+		functiontool.Config{
+			Name:        "giq_fetch_profiles",
+			Description: "Fetch available performance profiles for models and servers in GKE Inference Quickstart (GIQ).",
+		},
+		func(ctx tool.Context, args FetchProfilesArgs) (string, error) {
+			return giq.FetchProfiles(ctx, args.Model, args.ModelServer, args.ModelServerVersion)
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create giq fetch profiles tool: %w", err)
+	}
+
 	adkAgent, err := llmagent.New(llmagent.Config{
 		Name:        "manifest_agent",
 		Description: "Agent specialized in generating and validating Kubernetes manifests.",
 		Model:       llm,
 		Instruction: instructionTemplate,
-		Tools:       []tool.Tool{giqTool, fetchModelsTool},
+		Tools:       []tool.Tool{giqTool, fetchModelsTool, fetchProfilesTool},
 		BeforeModelCallbacks: []llmagent.BeforeModelCallback{
 			func(ctx agent.CallbackContext, llmRequest *model.LLMRequest) (*model.LLMResponse, error) {
 				// Inject user content if Contents is empty to avoid content loss.
