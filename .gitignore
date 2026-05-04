@@ -1,12 +1,13 @@
 server
 gke-mcp
+gke-mcp.exe
+gke-mcp.exe~
 .gemini/
 # Added by goreleaser init:
-dist/
+/dist/
 gemini-extension.json.out
 vendor/
 release-notes-*.html
 
 # UI dependencies
 ui/node_modules/
-ui/dist/
