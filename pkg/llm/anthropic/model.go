@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package anthropic provides an ADK model adapter for Anthropic Claude models.
 package anthropic
 
 import (
@@ -25,27 +26,27 @@ import (
 	"google.golang.org/genai"
 )
 
-// AnthropicModel implements the model.LLM interface for Anthropic Claude models.
-type AnthropicModel struct {
+// Model implements the model.LLM interface for Anthropic Claude models.
+type Model struct {
 	client anthropic.Client
 	model  string
 }
 
-// NewModel creates a new AnthropicModel instance.
-func NewModel(apiKey string, modelName string) *AnthropicModel {
-	return &AnthropicModel{
+// NewModel creates a new Model instance.
+func NewModel(apiKey string, modelName string) *Model {
+	return &Model{
 		client: anthropic.NewClient(option.WithAPIKey(apiKey)),
 		model:  modelName,
 	}
 }
 
 // Name returns the name of the provider.
-func (m *AnthropicModel) Name() string {
+func (m *Model) Name() string {
 	return "anthropic"
 }
 
 // GenerateContent implements the model.LLM interface to generate content.
-func (m *AnthropicModel) GenerateContent(ctx context.Context, req *model.LLMRequest, stream bool) iter.Seq2[*model.LLMResponse, error] {
+func (m *Model) GenerateContent(ctx context.Context, req *model.LLMRequest, stream bool) iter.Seq2[*model.LLMResponse, error] {
 	return func(yield func(*model.LLMResponse, error) bool) {
 		// 1. Map System Instruction
 		var systemPrompt string
@@ -100,7 +101,6 @@ func (m *AnthropicModel) GenerateContent(ctx context.Context, req *model.LLMRequ
 
 		// 4. Call API
 		if stream {
-			// TODO: Implement streaming
 			yield(nil, fmt.Errorf("streaming not implemented yet for Anthropic adapter"))
 			return
 		}
@@ -133,4 +133,3 @@ func (m *AnthropicModel) GenerateContent(ctx context.Context, req *model.LLMRequ
 		yield(adkResp, nil)
 	}
 }
-

@@ -41,6 +41,7 @@ func TestNewClient_UnsupportedProvider(t *testing.T) {
 
 func TestNewClient_CaseInsensitiveProvider(t *testing.T) {
 	// Create dummy credentials file
+	// #nosec G101
 	dummyCreds := `{
 	  "type": "service_account",
 	  "project_id": "dummy-project",
@@ -53,12 +54,16 @@ func TestNewClient_CaseInsensitiveProvider(t *testing.T) {
 	  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
 	  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/dummy%40example.com"
 	}`
-	
+
 	tmpfile, err := os.CreateTemp("", "dummy-creds-*.json")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tmpfile.Name())
+	defer func() {
+		if err := os.Remove(tmpfile.Name()); err != nil {
+			t.Logf("Failed to remove temp file: %v", err)
+		}
+	}()
 
 	if _, err := tmpfile.Write([]byte(dummyCreds)); err != nil {
 		t.Fatal(err)

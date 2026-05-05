@@ -57,12 +57,14 @@ func TestGenerateContent_Success(t *testing.T) {
 
 		// Return mock response
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(mockResp)
+		if err := json.NewEncoder(w).Encode(mockResp); err != nil {
+			t.Errorf("Failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
 	// Create model with mock server
-	m := &AnthropicModel{
+	m := &Model{
 		client: anthropic.NewClient(
 			option.WithAPIKey("dummy"),
 			option.WithHTTPClient(server.Client()),
