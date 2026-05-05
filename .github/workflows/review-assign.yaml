@@ -16,7 +16,7 @@ jobs:
         id: assign
         with:
           assignees: ${{ github.actor }} # assign pull request author
-          reviewers: ${{ vars.REVIEWERS }} # if draft, assigned when draft is released
+          reviewers: bradhoekstra, jayantid, GinnyJI, dshnayder, stalhaali, toshiowang # if draft, assigned when draft is released
           max-num-of-reviewers: 1
           draft-keyword: wip
         env:
