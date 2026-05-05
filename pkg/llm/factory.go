@@ -55,3 +55,4 @@ func NewClient(ctx context.Context, cfg *config.Config) (model.LLM, error) {
 		return nil, fmt.Errorf("unsupported LLM provider: %s", cfg.AgentProvider())
 	}
 }
+
