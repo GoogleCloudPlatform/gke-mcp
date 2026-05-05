@@ -143,7 +143,7 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 		Description: "Agent specialized in generating and validating Kubernetes manifests.",
 		Model:       llm,
 		Instruction: instructionTemplate,
-		Tools:       []tool.Tool{generateManifestTool, fetchModelsTool, fetchModelServerVersionsTool, fetchProfilesTool, fetchModelServersTool},
+		Tools:       []tool.Tool{generateManifestTool, fetchModelsTool, fetchModelServersTool, fetchModelServerVersionsTool, fetchProfilesTool},
 		BeforeModelCallbacks: []llmagent.BeforeModelCallback{
 			func(ctx agent.CallbackContext, llmRequest *model.LLMRequest) (*model.LLMResponse, error) {
 				// Inject user content if Contents is empty to avoid content loss.
