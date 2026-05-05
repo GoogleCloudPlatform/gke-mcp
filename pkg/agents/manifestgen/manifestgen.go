@@ -79,7 +79,7 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create generate manifest tool: %w", err)
+		return nil, fmt.Errorf("failed to create giq generate manifest tool: %w", err)
 	}
 
 	fetchModelsTool, err := functiontool.New(
