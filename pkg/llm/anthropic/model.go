@@ -26,6 +26,8 @@ import (
 	"google.golang.org/genai"
 )
 
+const defaultMaxTokens = 1024
+
 // Model implements the model.LLM interface for Anthropic Claude models.
 type Model struct {
 	client anthropic.Client
@@ -93,7 +95,7 @@ func (m *Model) GenerateContent(ctx context.Context, req *model.LLMRequest, stre
 		// 3. Create request params
 		params := anthropic.MessageNewParams{
 			Model:     anthropic.Model(m.model),
-			MaxTokens: 1024, // Fallback default
+			MaxTokens: defaultMaxTokens,
 			Messages:  messages,
 		}
 		if systemPrompt != "" {
