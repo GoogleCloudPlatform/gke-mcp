@@ -33,12 +33,7 @@ func NewClient(ctx context.Context, cfg *config.Config) (model.LLM, error) {
 		return nil, fmt.Errorf("config parameter 'cfg' cannot be nil")
 	}
 
-	provider, err := parseProvider(cfg.AgentProvider())
-	if err != nil {
-		return nil, err
-	}
-
-	switch provider {
+	switch strings.ToLower(strings.TrimSpace(cfg.AgentProvider())) {
 	case "vertex-ai":
 		llm, err := gemini.NewModel(ctx, cfg.AgentModel(), &genai.ClientConfig{
 			Project:  cfg.DefaultProjectID(),
@@ -55,17 +50,5 @@ func NewClient(ctx context.Context, cfg *config.Config) (model.LLM, error) {
 
 	default:
 		return nil, fmt.Errorf("unsupported LLM provider: %s", cfg.AgentProvider())
-	}
-}
-
-func parseProvider(provider string) (string, error) {
-	p := strings.ToLower(strings.TrimSpace(provider))
-	switch p {
-	case "vertex-ai":
-		return "vertex-ai", nil
-	case "anthropic":
-		return "anthropic", nil
-	default:
-		return "", fmt.Errorf("unsupported LLM provider: %s", provider)
 	}
 }

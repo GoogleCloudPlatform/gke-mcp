@@ -16,6 +16,7 @@ package llm
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
@@ -38,13 +39,40 @@ func TestNewClient_UnsupportedProvider(t *testing.T) {
 	}
 }
 
-func TestParseProvider_CaseInsensitive(t *testing.T) {
-	provider, err := parseProvider("  VeRtEx-AI ")
+func TestNewClient_CaseInsensitiveProvider(t *testing.T) {
+	// Create dummy credentials file
+	dummyCreds := `{
+	  "type": "service_account",
+	  "project_id": "dummy-project",
+	  "private_key_id": "12345",
+	  "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+	  "client_email": "dummy@example.com",
+	  "client_id": "12345",
+	  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+	  "token_uri": "https://oauth2.googleapis.com/token",
+	  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+	  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/dummy%40example.com"
+	}`
+	
+	tmpfile, err := os.CreateTemp("", "dummy-creds-*.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+
+	if _, err := tmpfile.Write([]byte(dummyCreds)); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("GOOGLE_APPLICATION_CREDENTIALS", tmpfile.Name())
+
+	cfg := config.NewTestConfig("test-project", "us-central1", "VeRtEx-AI", "gemini-2.5-pro")
+	_, err = NewClient(context.Background(), cfg)
 
 	if err != nil {
-		t.Errorf("Expected no error for mixed-case vertex provider, got %v", err)
-	}
-	if provider != "vertex-ai" {
-		t.Errorf("Expected vertex-ai, got %s", provider)
+		t.Errorf("Expected no error for mixed-case vertex provider with dummy credentials, got %v", err)
 	}
 }
