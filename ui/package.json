@@ -23,12 +23,12 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.5.0",
+    "globals": "^17.6.0",
     "jiti": "^2.6.1",
     "prettier": "^3.8.3",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.59.1",
+    "typescript-eslint": "^8.59.2",
     "vite": "^8.0.10",
     "vite-plugin-singlefile": "^2.3.3",
     "vitest": "^4.1.5"
@@ -37,9 +37,9 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/material": "^9.0.0",
-    "@mui/x-charts": "^9.0.3",
+    "@mui/x-charts": "^9.0.4",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "zod": "^4.3.6"
+    "zod": "^4.4.3"
   }
 }

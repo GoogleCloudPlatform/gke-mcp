@@ -27,21 +27,21 @@ func (p *Project) ProjectIDPath() string {
 	return fmt.Sprintf("projects/%s", p.ProjectID)
 }
 
-// Location contains the project and GKE cluster location.
-type Location struct {
+// LocationRequired contains the project and GKE cluster location.
+type LocationRequired struct {
 	Project
-	Location string `json:"location" jsonschema:"Required. GKE cluster location."`
+	Location string `json:"location" jsonschema:"Required to be a valid GCP region or zone. MUST NOT be empty."`
 }
 
 // LocationPath returns the GKE location resource path.
-func (l *Location) LocationPath() string {
+func (l *LocationRequired) LocationPath() string {
 	return fmt.Sprintf("%s/locations/%s", l.ProjectIDPath(), l.Location)
 }
 
 // LocationOptional contains the project and an optional GKE cluster location.
 type LocationOptional struct {
 	Project
-	Location string `json:"location,omitempty" jsonschema:"Optional. GKE cluster location."`
+	Location string `json:"location,omitempty" jsonschema:"Optional. GCP region or zone."`
 }
 
 // LocationPath returns the GKE location resource path, using "-" for all locations if empty.
@@ -54,11 +54,22 @@ func (l *LocationOptional) LocationPath() string {
 
 // Cluster contains the location and GKE cluster name.
 type Cluster struct {
-	Location
+	LocationRequired
 	ClusterName string `json:"cluster_name" jsonschema:"Required. GKE cluster name."`
 }
 
 // ClusterPath returns the full GKE cluster resource path.
 func (c *Cluster) ClusterPath() string {
 	return fmt.Sprintf("%s/clusters/%s", c.LocationPath(), c.ClusterName)
+}
+
+// NodePool represents GKE node pool parameters.
+type NodePool struct {
+	Cluster
+	NodePoolName string `json:"node_pool_name" jsonschema:"Required. GKE node pool name."`
+}
+
+// NodePoolPath returns the full resource path for the node pool.
+func (n *NodePool) NodePoolPath() string {
+	return fmt.Sprintf("%s/nodePools/%s", n.ClusterPath(), n.NodePoolName)
 }

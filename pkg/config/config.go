@@ -83,6 +83,18 @@ func New(version string, enableDeleteTools bool) *Config {
 	}
 }
 
+// NewTestConfig constructs a mock configuration for testing purposes.
+func NewTestConfig(project, location, provider, model string) *Config {
+	return &Config{
+		userAgent:         "gke-mcp/test",
+		defaultProjectID:  project,
+		defaultLocation:   location,
+		agentProvider:     provider,
+		agentModel:        model,
+		enableDeleteTools: false,
+	}
+}
+
 func getDefaultProjectID() string {
 	projectID, err := getGcloudConfig("core/project")
 	if err != nil {

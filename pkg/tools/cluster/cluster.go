@@ -97,7 +97,7 @@ type getClustersArgs struct {
 }
 
 type createClustersArgs struct {
-	params.Location
+	params.LocationRequired
 	Cluster string `json:"cluster" jsonschema:"Required. A cluster resource represented as a string using JSON format."`
 }
 
@@ -215,7 +215,7 @@ func (h *handlers) getKubeconfig(ctx context.Context, _ *mcp.CallToolRequest, ar
 	}
 
 	// Standard naming convention for gcloud-generated kubeconfigs
-	newClusterName := fmt.Sprintf("gke_%s_%s_%s", args.ProjectID, args.Location.Location, args.ClusterName)
+	newClusterName := fmt.Sprintf("gke_%s_%s_%s", args.ProjectID, args.Location, args.ClusterName)
 
 	// Initialize a Kubeconfig object
 	pathOptions := clientcmd.NewDefaultPathOptions()
@@ -263,7 +263,7 @@ func (h *handlers) getKubeconfig(ctx context.Context, _ *mcp.CallToolRequest, ar
 
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
-			&mcp.TextContent{Text: fmt.Sprintf("Kubeconfig for cluster %s (Project: %s, Location: %s) successfully appended/updated in %s. Current context set to %s.", args.ClusterPath(), args.ProjectID, args.Location.Location, pathOptions.GlobalFile, newClusterName)},
+			&mcp.TextContent{Text: fmt.Sprintf("Kubeconfig for cluster %s (Project: %s, Location: %s) successfully appended/updated in %s. Current context set to %s.", args.ClusterPath(), args.ProjectID, args.Location, pathOptions.GlobalFile, newClusterName)},
 		},
 	}, nil, nil
 }

@@ -3,21 +3,21 @@ module github.com/GoogleCloudPlatform/gke-mcp
 go 1.26.2
 
 require (
-	cloud.google.com/go/container v1.49.0
-	cloud.google.com/go/gkerecommender v0.4.0
-	cloud.google.com/go/logging v1.16.0
-	cloud.google.com/go/monitoring v1.27.0
-	cloud.google.com/go/recommender v1.16.0
+	cloud.google.com/go/container v1.50.0
+	cloud.google.com/go/gkerecommender v0.5.0
+	cloud.google.com/go/logging v1.17.0
+	cloud.google.com/go/monitoring v1.28.0
+	cloud.google.com/go/recommender v1.17.0
 	github.com/PuerkitoBio/goquery v1.12.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/googleapis/gax-go/v2 v2.22.0
-	github.com/modelcontextprotocol/go-sdk v1.5.0
+	github.com/modelcontextprotocol/go-sdk v1.6.0
 	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.10.2
 	google.golang.org/adk v1.2.0
-	google.golang.org/api v0.276.0
-	google.golang.org/genai v1.54.0
+	google.golang.org/api v0.277.0
+	google.golang.org/genai v1.55.0
 	google.golang.org/genproto v0.0.0-20260414002931-afd174a4e478
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af
 	k8s.io/client-go v0.36.0
@@ -37,10 +37,10 @@ require (
 	github.com/fxamacker/cbor/v2 v2.9.1 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/google/jsonschema-go v0.4.2 // indirect
+	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/safehtml v0.1.0 // indirect
-	github.com/googleapis/enterprise-certificate-proxy v0.3.14 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.3.15 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -69,7 +69,7 @@ require (
 	golang.org/x/text v0.36.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260414002931-afd174a4e478 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260414002931-afd174a4e478 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260427160629-7cedc36a6bc4 // indirect
 	google.golang.org/grpc v1.80.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/apimachinery v0.36.0 // indirect

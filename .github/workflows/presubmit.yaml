@@ -44,7 +44,6 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: "go.mod"
-      - uses: ./.github/actions/build-ui
       - name: "Run dev/ci/presubmits/go-build.sh"
         run: |
           ./dev/ci/presubmits/go-build.sh
@@ -59,7 +58,6 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: "go.mod"
-      - uses: ./.github/actions/build-ui
       - name: "Run dev/ci/presubmits/go-test.sh"
         run: |
           ./dev/ci/presubmits/go-test.sh
@@ -91,7 +89,6 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: "go.mod"
-      - uses: ./.github/actions/build-ui
       - name: "Run dev/ci/presubmits/go-vet.sh"
         run: |
           ./dev/ci/presubmits/go-vet.sh
@@ -107,7 +104,6 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: "go.mod"
-      - uses: ./.github/actions/build-ui
       - name: "Install golangci-lint"
         run: |
           curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b $(go env GOPATH)/bin
@@ -125,7 +121,9 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: "go.mod"
-      - uses: ./.github/actions/build-ui
+      - name: "Install UI dependencies"
+        shell: bash
+        run: npm --prefix ui ci
       - name: "Run dev/ci/presubmits/verify-format.sh"
         run: |
           ./dev/ci/presubmits/verify-format.sh
@@ -143,6 +141,23 @@ jobs:
       - name: "Run dev/ci/presubmits/verify-gomod.sh"
         run: |
           ./dev/ci/presubmits/verify-gomod.sh
+
+  verify-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: "read"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: "Install UI dependencies"
+        shell: bash
+        run: npm --prefix ui ci
+      - name: "Verify UI"
+        run: |
+          ./dev/ci/presubmits/verify-ui.sh
 
   super-linter:
     runs-on: ubuntu-latest

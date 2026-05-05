@@ -24,13 +24,13 @@ import (
 	"strings"
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/llm"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/giq"
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"google.golang.org/adk/agent"
 	"google.golang.org/adk/agent/llmagent"
 	"google.golang.org/adk/model"
-	"google.golang.org/adk/model/gemini"
 	"google.golang.org/adk/runner"
 	"google.golang.org/adk/session"
 	"google.golang.org/adk/tool"
@@ -40,8 +40,6 @@ import (
 
 //go:embed instruction.md
 var instructionTemplate string
-
-const defaultModel = "gemini-2.5-pro"
 
 // Agent handles manifest generation via ADK.
 type Agent struct {
@@ -55,6 +53,11 @@ type FetchProfilesArgs struct {
 	Model              string "json:\"model,omitempty\" jsonschema:\"Optional. Filter profiles by model name, e.g. 'gemini-2.5-pro'.\""
 	ModelServer        string "json:\"model_server,omitempty\" jsonschema:\"Optional. Filter profiles by model server, e.g. 'vllm'.\""
 	ModelServerVersion string "json:\"model_server_version,omitempty\" jsonschema:\"Optional. Filter profiles by model server version.\""
+
+// FetchModelServerVersionsArgs holds arguments for fetching GIQ model server versions.
+type FetchModelServerVersionsArgs struct {
+	Model       string `json:"model" jsonschema:"The model for which to list model server versions. Required."`
+	ModelServer string `json:"model_server" jsonschema:"The model server for which to list versions. Required."`
 }
 
 // NewAgent creates a new Agent attached to a specific text generator model.
@@ -102,6 +105,18 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create giq fetch profiles tool: %w", err)
+    
+	fetchModelServerVersionsTool, err := functiontool.New(
+		functiontool.Config{
+			Name:        "giq_fetch_model_server_versions",
+			Description: "Fetch available versions for a given model and model server in GKE Inference Quickstart (GIQ).",
+		},
+		func(ctx tool.Context, args FetchModelServerVersionsArgs) (string, error) {
+			return giq.FetchModelServerVersions(ctx, args.Model, args.ModelServer)
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create giq fetch model server versions tool: %w", err)
 	}
 
 	adkAgent, err := llmagent.New(llmagent.Config{
@@ -109,7 +124,7 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 		Description: "Agent specialized in generating and validating Kubernetes manifests.",
 		Model:       llm,
 		Instruction: instructionTemplate,
-		Tools:       []tool.Tool{giqTool, fetchModelsTool, fetchProfilesTool},
+		Tools:       []tool.Tool{giqTool, fetchModelsTool, fetchModelServerVersionsTool, fetchProfilesTool},
 		BeforeModelCallbacks: []llmagent.BeforeModelCallback{
 			func(ctx agent.CallbackContext, llmRequest *model.LLMRequest) (*model.LLMResponse, error) {
 				// Inject user content if Contents is empty to avoid content loss.
@@ -216,17 +231,12 @@ func (a *Agent) Run(ctx context.Context, prompt string, sessionID string) (strin
 
 // Install registers the tool with the MCP server.
 func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
-	// Create a new Gemini model backed by Vertex AI via ADK
-	llm, err := gemini.NewModel(ctx, defaultModel, &genai.ClientConfig{
-		Project:  c.DefaultProjectID(),
-		Backend:  genai.BackendVertexAI,
-		Location: c.DefaultLocation(),
-	})
+	llmClient, err := llm.NewClient(ctx, c)
 	if err != nil {
-		return fmt.Errorf("failed to create gemini model: %w", err)
+		return fmt.Errorf("failed to create llm client: %w", err)
 	}
 
-	agent, err := NewAgent(llm, c)
+	agent, err := NewAgent(llmClient, c)
 	if err != nil {
 		return err
 	}
@@ -245,6 +255,9 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 		manifest, err := agent.Run(ctx, args.Prompt, sessID)
 		if err != nil {
 			return nil, nil, err
+		}
+		if os.Getenv("GKE_MCP_DEBUG") == "true" {
+			log.Printf("Model Used: %s", c.AgentModel())
 		}
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{
