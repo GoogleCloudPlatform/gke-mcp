@@ -46,6 +46,9 @@ func NewClient(ctx context.Context, cfg *config.Config) (model.LLM, error) {
 		return llm, nil
 
 	case "anthropic":
+		if cfg.AnthropicAPIKey() == "" {
+			return nil, fmt.Errorf("ANTHROPIC_API_KEY environment variable must be set when provider is 'anthropic'")
+		}
 		return anthropic.NewModel(cfg.AnthropicAPIKey(), cfg.AgentModel()), nil
 
 	default:

@@ -73,6 +73,10 @@ func (m *Model) GenerateContent(ctx context.Context, req *model.LLMRequest, stre
 
 			var blocks []anthropic.ContentBlockParamUnion
 			for _, part := range content.Parts {
+				if part.InlineData != nil || part.FileData != nil {
+					yield(nil, fmt.Errorf("unsupported part type: inline file data is not supported yet by the Anthropic adapter"))
+					return
+				}
 				if part.Text != "" {
 					blocks = append(blocks, anthropic.NewTextBlock(part.Text))
 				}
