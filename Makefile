@@ -23,7 +23,7 @@ build: build-ui ## Build the binary
 
 build-ui: ## Build the UI TypeScript code
 	@echo "Building UI..."
-	@npm --prefix $(UI_DIR) ci
+	@npm --prefix $(UI_DIR) install
 	@npm --prefix $(UI_DIR) run build
 	@echo "✓ UI built"
 

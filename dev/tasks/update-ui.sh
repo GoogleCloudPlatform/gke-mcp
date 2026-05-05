@@ -20,5 +20,5 @@ set -o pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "${REPO_ROOT}"
 
-npm --prefix ui ci
+npm --prefix ui install
 npm --prefix ui run build
