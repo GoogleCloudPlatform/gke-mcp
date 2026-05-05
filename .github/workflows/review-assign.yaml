@@ -4,14 +4,15 @@ on:
   pull_request:
     types: [opened, ready_for_review]
 
-permissions:
-  pull-requests: write
-  checks: write
-  contents: read
+permissions: read-all
 
 jobs:
   assign:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      checks: write
+      contents: read
     steps:
       - uses: hkusu/review-assign-action@v1
         id: assign
