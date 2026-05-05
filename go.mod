@@ -9,6 +9,7 @@ require (
 	cloud.google.com/go/monitoring v1.28.0
 	cloud.google.com/go/recommender v1.17.0
 	github.com/PuerkitoBio/goquery v1.12.0
+	github.com/anthropics/anthropic-sdk-go v1.39.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/googleapis/gax-go/v2 v2.22.0
@@ -31,7 +32,6 @@ require (
 	cloud.google.com/go/iam v1.9.0 // indirect
 	cloud.google.com/go/longrunning v0.11.0 // indirect
 	github.com/andybalholm/cascadia v1.3.3 // indirect
-	github.com/anthropics/anthropic-sdk-go v1.39.0 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
