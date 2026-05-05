@@ -7,6 +7,7 @@ import { getCssVar } from '@gke-mcp/ui/shared/utils/styles';
 import {
   type AppTimeSeries,
   type ChartDataPoint,
+  type ChartSeries,
   transformApiData,
   formatDate,
   appTimeSeriesSchema,
@@ -36,20 +37,20 @@ const queryTimeSeriesResponseSchema = z.object({
 
 function TimeSeriesChart({
   data,
-  seriesKeys,
+  series,
   xLegend,
   yLegend,
   loading,
 }: {
   data: ChartDataPoint[];
-  seriesKeys: string[];
+  series: ChartSeries[];
   xLegend: string;
   yLegend: string;
   loading: boolean;
 }) {
-  const series = seriesKeys.map((key) => ({
-    dataKey: key,
-    label: key,
+  const chartSeries = series.map(({ dataKey, label }) => ({
+    dataKey,
+    label,
     showMark: false,
   }));
 
@@ -83,7 +84,7 @@ function TimeSeriesChart({
           // },
         },
       ]}
-      series={series}
+      series={chartSeries}
       slotProps={{
         legend: {
           position: { vertical: 'bottom', horizontal: 'center' },
@@ -212,7 +213,7 @@ function App() {
           </Typography>
           <TimeSeriesChart
             data={transformedData.data}
-            seriesKeys={transformedData.seriesKeys}
+            series={transformedData.series}
             loading={loading}
             xLegend={xLegend}
             yLegend={yLegend}
