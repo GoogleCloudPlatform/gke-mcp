@@ -4,6 +4,10 @@ on:
   pull_request:
     types: [opened, ready_for_review, reopened]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   auto-request-review:
     name: Auto Request Review
@@ -13,4 +17,3 @@ jobs:
         uses: necojackarc/auto-request-review@v0.13.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-
