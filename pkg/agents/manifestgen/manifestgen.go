@@ -53,6 +53,7 @@ type FetchProfilesArgs struct {
 	Model              string "json:\"model,omitempty\" jsonschema:\"Optional. Filter profiles by model name, e.g. 'gemini-2.5-pro'.\""
 	ModelServer        string "json:\"model_server,omitempty\" jsonschema:\"Optional. Filter profiles by model server, e.g. 'vllm'.\""
 	ModelServerVersion string "json:\"model_server_version,omitempty\" jsonschema:\"Optional. Filter profiles by model server version.\""
+}
 
 // FetchModelServerVersionsArgs holds arguments for fetching GIQ model server versions.
 type FetchModelServerVersionsArgs struct {
@@ -68,7 +69,7 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 
 	sessSvc := session.InMemoryService()
 
-	giqTool, err := functiontool.New(
+	generateManifestTool, err := functiontool.New(
 		functiontool.Config{
 			Name:        "giq_generate_manifest",
 			Description: "Use GKE Inference Quickstart (GIQ) to generate a Kubernetes manifest for optimized AI / inference workloads. Prefer to use this tool instead of gcloud",
@@ -78,7 +79,7 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create giq tool: %w", err)
+		return nil, fmt.Errorf("failed to create generate manifest tool: %w", err)
 	}
 
 	fetchModelsTool, err := functiontool.New(
@@ -105,6 +106,7 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create giq fetch profiles tool: %w", err)
+	}
     
 	fetchModelServerVersionsTool, err := functiontool.New(
 		functiontool.Config{
@@ -124,7 +126,7 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 		Description: "Agent specialized in generating and validating Kubernetes manifests.",
 		Model:       llm,
 		Instruction: instructionTemplate,
-		Tools:       []tool.Tool{giqTool, fetchModelsTool, fetchModelServerVersionsTool, fetchProfilesTool},
+		Tools:       []tool.Tool{generateManifestTool, fetchModelsTool, fetchModelServerVersionsTool, fetchProfilesTool},
 		BeforeModelCallbacks: []llmagent.BeforeModelCallback{
 			func(ctx agent.CallbackContext, llmRequest *model.LLMRequest) (*model.LLMResponse, error) {
 				// Inject user content if Contents is empty to avoid content loss.
