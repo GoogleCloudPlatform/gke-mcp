@@ -107,7 +107,7 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create giq fetch profiles tool: %w", err)
 	}
-    
+
 	fetchModelServerVersionsTool, err := functiontool.New(
 		functiontool.Config{
 			Name:        "giq_fetch_model_server_versions",
