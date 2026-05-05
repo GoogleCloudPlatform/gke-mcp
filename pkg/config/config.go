@@ -77,7 +77,7 @@ func New(version string, enableDeleteTools bool) *Config {
 	model := os.Getenv("GKE_MCP_MODEL")
 	if model == "" {
 		if provider == "anthropic" {
-			model = "claude-3-7-sonnet-20250219"
+			model = "claude-opus-4-7"
 		} else {
 			model = "gemini-2.5-pro"
 		}
