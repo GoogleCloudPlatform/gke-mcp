@@ -30,6 +30,11 @@ export type ChartDataPoint = DatasetElementType<number | Date> & {
   [TIMESTAMP_KEY]: Date;
 };
 
+export type ChartSeries = {
+  dataKey: string;
+  label: string;
+};
+
 /**
  * Transforms backend API response format into a flattened, aggregated
  * data structure suitable for MUI Line Charts. All series data points are
@@ -41,34 +46,36 @@ export type ChartDataPoint = DatasetElementType<number | Date> & {
  */
 export function transformApiData(apiResponse: AppTimeSeries[], originalQuery: string) {
   if (!apiResponse || apiResponse.length === 0) {
-    return { data: [], seriesKeys: [] };
+    return { data: [], series: [] as ChartSeries[] };
   }
 
   const timeMap = new Map<number, Record<string, number>>();
-  const lineKeys = new Set<string>();
+  const series = apiResponse.map((timeSeries, index) => ({
+    dataKey: `series_${index}`,
+    label: timeSeries.label || originalQuery,
+  }));
 
-  apiResponse.forEach((series) => {
-    const seriesName = series.label || originalQuery;
+  apiResponse.forEach((timeSeries, index) => {
+    const dataKey = series[index].dataKey;
 
-    if (series.points && Array.isArray(series.points)) {
-      series.points.forEach((point) => {
+    if (timeSeries.points && Array.isArray(timeSeries.points)) {
+      timeSeries.points.forEach((point) => {
         const timestamp = new Date(point.timestamp).getTime();
 
         if (!timeMap.has(timestamp)) {
-          timeMap.set(timestamp, {});
+          timeMap.set(timestamp, Object.create(null) as Record<string, number>);
         }
 
-        lineKeys.add(seriesName);
-        timeMap.get(timestamp)![seriesName] = point.value;
+        timeMap.get(timestamp)![dataKey] = point.value;
       });
     }
   });
 
   const data: ChartDataPoint[] = Array.from(timeMap.entries())
     .sort(([timestampA], [timestampB]) => timestampA - timestampB)
-    .map(([timestamp, point]) => ({ ...point, [TIMESTAMP_KEY]: new Date(timestamp) }));
+    .map(([timestamp, point]) => Object.assign(Object.create(null), point, { [TIMESTAMP_KEY]: new Date(timestamp) }));
 
-  return { data, seriesKeys: Array.from(lineKeys) };
+  return { data, series };
 }
 
 /**

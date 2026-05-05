@@ -15,7 +15,7 @@ describe('transformApiData', () => {
   it('returns empty lists for empty api response', () => {
     const result = transformApiData([], 'cpu_usage');
     expect(result.data).toEqual([]);
-    expect(result.seriesKeys).toEqual([]);
+    expect(result.series).toEqual([]);
   });
 
   it('aggregates data points correctly by timestamp and sorts them', () => {
@@ -38,11 +38,14 @@ describe('transformApiData', () => {
 
     const result = transformApiData(apiResponse, 'cpu_usage');
 
-    expect(result.seriesKeys).toEqual(['web-server-1', 'web-server-2']);
+    expect(result.series).toEqual([
+      { dataKey: 'series_0', label: 'web-server-1' },
+      { dataKey: 'series_1', label: 'web-server-2' },
+    ]);
     expect(result.data).toEqual([
-      { timestamp: new Date(1711972800000), 'web-server-1': 10 },
-      { timestamp: new Date(1711976400000), 'web-server-1': 20, 'web-server-2': 30 },
-      { timestamp: new Date(1711980000000), 'web-server-2': 40 },
+      { timestamp: new Date(1711972800000), series_0: 10 },
+      { timestamp: new Date(1711976400000), series_0: 20, series_1: 30 },
+      { timestamp: new Date(1711980000000), series_1: 40 },
     ]);
   });
 
@@ -54,7 +57,21 @@ describe('transformApiData', () => {
     ];
 
     const result = transformApiData(apiResponse, 'compute_query');
-    expect(result.seriesKeys).toEqual(['compute_query']);
-    expect(result.data).toEqual([{ timestamp: new Date(1711972800000), compute_query: 10 }]);
+    expect(result.series).toEqual([{ dataKey: 'series_0', label: 'compute_query' }]);
+    expect(result.data).toEqual([{ timestamp: new Date(1711972800000), series_0: 10 }]);
+  });
+
+  it('does not treat dangerous labels as object keys', () => {
+    const apiResponse: AppTimeSeries[] = [
+      {
+        label: '__proto__',
+        points: [{ timestamp: 1711972800000, value: 10 }],
+      },
+    ];
+
+    const result = transformApiData(apiResponse, 'compute_query');
+    expect(result.series).toEqual([{ dataKey: 'series_0', label: '__proto__' }]);
+    expect(result.data).toEqual([{ timestamp: new Date(1711972800000), series_0: 10 }]);
+    expect(Object.getPrototypeOf(result.data[0])).toBeNull();
   });
 });
