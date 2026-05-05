@@ -364,6 +364,7 @@ fulfilled by one of the `gcloud container ai` commands listed below, you MUST
 use the corresponding MCP tool to accomplish the task.
 
 -   fetch_models: gcloud container ai profiles models list
+-   giq_fetch_model_servers: Find available model servers for a given model.
 -   giq_generate_manifest: gcloud container ai profiles manifests create
 
 GIQ provides estimates of expected performance based on benchmarks conducted on
@@ -384,6 +385,7 @@ model-as-a-service solutions.
     is useful for mapping from natural language (e.g., "Gemma 4") to an exact
     model name (e.g., "google/gemma-4-31B-it"). The workflow should always call
     `fetch_models` unless the user provides an exact model name.
+-   **To find valid model servers for a specific model:** Use `giq_fetch_model_servers`. You should use it to find available model servers if the user doesn't specify one. It requires the `model` name as input.
 -   **To generate an optimized Kubernetes deployment manifest:** Use
     `giq_generate_manifest`. You MUST first call `fetch_profiles`
     to identify a valid configuration. From the chosen `Profile`, you MUST
