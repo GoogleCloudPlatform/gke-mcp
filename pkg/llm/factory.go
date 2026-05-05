@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/llm/anthropic"
 	"google.golang.org/adk/model"
 	"google.golang.org/adk/model/gemini"
 	"google.golang.org/genai"
@@ -49,6 +50,9 @@ func NewClient(ctx context.Context, cfg *config.Config) (model.LLM, error) {
 		}
 		return llm, nil
 
+	case "anthropic":
+		return anthropic.NewModel(cfg.AnthropicAPIKey(), cfg.AgentModel()), nil
+
 	default:
 		return nil, fmt.Errorf("unsupported LLM provider: %s", cfg.AgentProvider())
 	}
@@ -59,6 +63,8 @@ func parseProvider(provider string) (string, error) {
 	switch p {
 	case "vertex-ai":
 		return "vertex-ai", nil
+	case "anthropic":
+		return "anthropic", nil
 	default:
 		return "", fmt.Errorf("unsupported LLM provider: %s", provider)
 	}
