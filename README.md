@@ -63,7 +63,7 @@ For detailed instructions on how to connect the GKE MCP Server to various AI cli
 - `list_recommendations`: List recommendations for GKE clusters.
 - `get_k8s_changelog`: Get Kubernetes changelog for upgrades.
 - `get_gke_release_notes`: Get GKE release notes.
-- `generate_manifest`: Generate a Kubernetes manifest using Vertex AI.
+- `generate_manifest`: Generate a Kubernetes manifest using Vertex AI (supports GKE Inference Quickstart for optimized AI workloads).
 
 ## MCP Prompts
 
@@ -178,6 +178,12 @@ To compile the binary and update the `gemini-cli` extension with your local chan
    ```
 
 1. Build the binary from the root of the project:
+
+   ```sh
+   make build
+   ```
+
+   Or, if you only want to build the Go binary without rebuilding the UI:
 
    ```sh
    go build -o gke-mcp .
