@@ -385,7 +385,7 @@ model-as-a-service solutions.
     is useful for mapping from natural language (e.g., "Gemma 4") to an exact
     model name (e.g., "google/gemma-4-31B-it"). The workflow should always call
     `fetch_models` unless the user provides an exact model name.
--   **To find valid versions for a specific model and model server:** Use `giq_fetch_model_server_versions`. You should use it if the user doesn't specify a version. It requires both `model` and `model_server` names as input.
+-   **To check available versions for a specific model and model server:** Use `giq_fetch_model_server_versions`. This tool requires both `model` and `model_server` names as input. It returns a list of supported versions. Use this tool to answer user questions about available versions or to validate a specific version request. Note that `giq_generate_manifest` does not accept a version parameter and will automatically use the recommended version for the selected model and server.
 -   **To generate an optimized Kubernetes deployment manifest:** Use
     `giq_generate_manifest`. You MUST first call `fetch_profiles`
     to identify a valid configuration. From the chosen `Profile`, you MUST
