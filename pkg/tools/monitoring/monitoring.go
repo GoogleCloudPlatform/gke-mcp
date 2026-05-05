@@ -52,6 +52,8 @@ func Install(_ context.Context, s *mcp.Server, c *config.Config) error {
 		},
 	}, h.listMRDescriptor)
 
+	installGetMetricSchemas(s)
+
 	return nil
 }
 
