@@ -44,7 +44,7 @@ For additional help, refer to the troubleshoot section: [gke-mcp: command not fo
 
 ### Add the MCP Server to your AI
 
-For detailed instructions on how to connect the GKE MCP Server to various AI clients, including cursor, Visual Studio Code, and claude desktop, please refer to our dedicated [installation guide](docs/installation_guide/).
+For detailed instructions on how to connect the GKE MCP Server to various AI clients, including Cursor, Visual Studio Code, Claude Desktop, and Claude Code, please refer to our dedicated [installation guide](docs/installation_guide/).
 
 ## MCP Tools
 
@@ -56,6 +56,11 @@ For detailed instructions on how to connect the GKE MCP Server to various AI cli
 - `update_cluster`: Update a GKE cluster.
 - `get_node_sos_report`: Generate and download an SOS report from a GKE node.
 - `delete_cluster`: Delete a GKE cluster (if enabled).
+- `list_node_pools`: List node pools in a GKE cluster.
+- `get_node_pool`: Get details for a GKE node pool.
+- `create_node_pool`: Create a new node pool in a GKE cluster.
+- `update_node_pool`: Update a GKE node pool.
+- `delete_node_pool`: Delete a GKE node pool (if enabled).
 - `gke_deploy`: Deploy a workload to a GKE cluster using a configuration file.
 - `query_logs`: Query Google Cloud Platform logs using Logging Query Language (LQL).
 - `get_log_schema`: Get the schema for a specific GKE log type.
@@ -84,21 +89,24 @@ In addition to the tools above, a lot of value is provided through the bundled c
 
 ## Supported MCP Transports
 
-By default, `gke-mcp` uses the [stdio]("https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#stdio") transport. Additionally, the [Streamable HTTP](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#streamable-http) transport is supported as well.
+By default, `gke-mcp` uses the [stdio](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#stdio) transport. Additionally, the [Streamable HTTP](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#streamable-http) transport is supported as well.
 
 You can set the transport mode using the following options:
 
 `--server-mode`: transport to use for the server: stdio (default) or http
 
-`--server-port`: server port to use when server-mode is http or sse; defaults to 8080
+`--server-host`: server host to use when server-mode is http; defaults to `127.0.0.1`
+
+`--server-port`: server port to use when server-mode is http; defaults to 8080
 
 ```sh
-gke-mcp --server-mode http --server-port 8080
+gke-mcp --server-mode http --server-host 127.0.0.1 --server-port 8080
 ```
 
 > [!WARNING]
-> When using the `Streamable HTTP` transport, the server listens on all network interfaces (e.g., `0.0.0.0`), which can expose it to any network your machine is connected to.
-> Please ensure you have a firewall ad/or other security measures in place to restrict access if the server is not intended to be public.
+> By default, the HTTP server binds to `127.0.0.1`, which limits access to the local machine.
+> If you explicitly set `--server-host 0.0.0.0` or another non-loopback address, the server may become reachable from other machines on your network.
+> Please ensure you have a firewall and/or other security measures in place if the server is not intended to be private.
 
 ### Connecting Gemini CLI to the HTTP Server
 
