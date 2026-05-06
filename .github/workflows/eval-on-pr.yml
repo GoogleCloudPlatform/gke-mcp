@@ -13,10 +13,7 @@ jobs:
   evaluate:
     runs-on: ubuntu-latest
     
-    # Add permissions required for Workload Identity Federation
-    permissions:
-      contents: 'read'
-      id-token: 'write'
+
 
     steps:
     - name: Checkout code
@@ -25,8 +22,7 @@ jobs:
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
       with:
-        workload_identity_provider: '${{ secrets.WIF_PROVIDER }}'
-        service_account: '${{ secrets.WIF_SERVICE_ACCOUNT }}'
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
     - name: Set up Go
       uses: actions/setup-go@v5
