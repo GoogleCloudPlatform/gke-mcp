@@ -406,4 +406,16 @@ model-as-a-service solutions.
         been tested and validated with this exact version (e.g. for Gemma 4
         model, the vLLM image should be vllm/vllm-openai:gemma4).
         
+## Developer Knowledge
+
+You can use the Developer Knowledge tools to access Google's developer knowledge base.
+
+-   **dk_get_documents**: Use this tool to fetch specific documents by their IDs. Use this if another tool or the user provides a document ID and you need the full content.
+-   **dk_answer_query**: Use this tool to ask a direct question to the knowledge base. This is the preferred tool for general knowledge queries.
+-   **dk_search_documents**: Use this tool to search for documents related to a query. Use this when you need to find relevant documents but don't have a specific question.
+
+When to use:
+-   To look up detailed configuration guidelines for complex setups.
+-   To verify if a specific pattern is supported or recommended.
+
 <!-- prettier-ignore-end -->
