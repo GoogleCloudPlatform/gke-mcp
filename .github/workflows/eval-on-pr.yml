@@ -5,59 +5,57 @@ env:
 
 on:
   pull_request_target:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - 'pkg/agents/**'
+      - "pkg/agents/**"
 
 jobs:
   evaluate:
     runs-on: ubuntu-latest
-    
-
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ github.event.pull_request.head.sha }}
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
-    - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v2
-      with:
-        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: "${{ secrets.GCP_SA_KEY }}"
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.22'
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.13'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
 
-    - name: Build UI
-      run: |
-        npm --prefix ui install
-        npm --prefix ui run build
+      - name: Build UI
+        run: |
+          npm --prefix ui install
+          npm --prefix ui run build
 
-    - name: Build Go Server
-      run: go build -o gke-mcp .
+      - name: Build Go Server
+        run: go build -o gke-mcp .
 
-    - name: Install Python Dependencies
-      run: |
-        python -m venv venv
-        ./venv/bin/pip install --index-url https://pypi.org/simple deepeval langchain-google-genai pytest pyyaml
+      - name: Install Python Dependencies
+        run: |
+          python -m venv venv
+          ./venv/bin/pip install --index-url https://pypi.org/simple deepeval langchain-google-genai pytest pyyaml
 
-    - name: Run Evaluation
-      env:
-        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      run: |
-        ./venv/bin/pytest pkg/agents/evals/test_compare_baseline.py
+      - name: Run Evaluation
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          ./venv/bin/pytest pkg/agents/evals/test_compare_baseline.py
 
-    - name: Add Job Summary
-      if: always()
-      run: |
-        if [ -f pkg/agents/evals/JOB_SUMMARY.md ]; then
-          cat pkg/agents/evals/JOB_SUMMARY.md >> $GITHUB_STEP_SUMMARY
-        fi
+      - name: Add Job Summary
+        if: always()
+        run: |
+          if [ -f pkg/agents/evals/JOB_SUMMARY.md ]; then
+            cat pkg/agents/evals/JOB_SUMMARY.md >> $GITHUB_STEP_SUMMARY
+          fi
