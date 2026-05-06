@@ -215,20 +215,23 @@ else
   echo "No agents to configure for semantic routing."
 fi
 
-# --- Phase 5: Execute Post-Install Scripts ---
-echo "--- Phase 5: Executing Post-Install Scripts ---"
-for AGENT_NAME in "${AGENTS[@]}"; do
-  POSTINSTALL_SCRIPT="$HOME/.openclaw/workspace/agents/$AGENT_NAME/postinstall.sh"
-  if [ -f "$POSTINSTALL_SCRIPT" ] && [ -x "$POSTINSTALL_SCRIPT" ]; then
-    echo "[gke-agent] Running postinstall script for $AGENT_NAME..."
-    "$POSTINSTALL_SCRIPT"
-  elif [ -f "$POSTINSTALL_SCRIPT" ]; then
-     echo "[gke-agent] Running postinstall script for $AGENT_NAME (via bash)..."
-     bash "$POSTINSTALL_SCRIPT"
-  else
-    echo "[gke-agent] No postinstall script found for $AGENT_NAME. Skipping."
-  fi
-done
+# --- Phase 5: Configure Heartbeat Cronjobs ---
+echo "--- Phase 5: Configuring Heartbeat Cronjobs ---"
+if [ ${#AGENTS[@]} -gt 0 ]; then
+  CURRENT_AGENTS_LIST=$(openclaw config get agents.list 2>/dev/null || echo "[]")
+  
+  # For each agent we just installed, update its heartbeat in the list
+  UPDATED_AGENTS_LIST="$CURRENT_AGENTS_LIST"
+  for AGENT_NAME in "${AGENTS[@]}"; do
+    UPDATED_AGENTS_LIST=$(echo "$UPDATED_AGENTS_LIST" | jq "map(if .id == \"$AGENT_NAME\" then .heartbeat = {\"every\": \"1m\", \"session\": \"agent:$AGENT_NAME:main\", \"target\": \"last\"} else . end)")
+  done
+
+  # Apply the updated agents list
+  echo "{\"agents\":{\"list\":$UPDATED_AGENTS_LIST}}" | openclaw config patch --stdin
+else
+  echo "No agents to configure for heartbeats."
+fi
+
 
 # Cleanup
 rm -rf "$TMP_DIR"
