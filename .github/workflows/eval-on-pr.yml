@@ -48,7 +48,7 @@ jobs:
       - name: Install Python Dependencies
         run: |
           python -m venv venv
-          ./venv/bin/pip install --index-url https://pypi.org/simple deepeval langchain-google-genai pytest pyyaml
+          ./venv/bin/pip install --index-url https://pypi.org/simple -r pkg/agents/evals/requirements.txt
 
       - name: Run Evaluation
         env:
