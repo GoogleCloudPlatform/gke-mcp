@@ -107,10 +107,20 @@ def mcp_call_tool(process, tool_name, arguments):
 def clean_yaml(output):
     """Cleans up markdown code blocks if present."""
     import re
-    # Extract content between triple-backtick fences (e.g., yaml ... )
-    pattern = r"\x60\x60\x60(?:yaml)?\s*(.*?)\s*\x60\x60\x60"
-    match = re.search(pattern, output, re.DOTALL)
-    return match.group(1).strip() if match else output.strip()
+    
+    # First try to find a block explicitly labeled as yaml
+    yaml_pattern = r"\x60\x60\x60yaml\s*(.*?)\s*\x60\x60\x60"
+    match = re.search(yaml_pattern, output, re.DOTALL | re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+        
+    # If not found, fall back to finding the first code block
+    any_pattern = r"\x60\x60\x60(?:[a-zA-Z]+)?\s*(.*?)\s*\x60\x60\x60"
+    match = re.search(any_pattern, output, re.DOTALL)
+    if match:
+        return match.group(1).strip()
+        
+    return output.strip()
 
 def generate_markdown_report(results, prompt, agent_output, baseline_output, agent_cleaned):
     """Generates a beautiful markdown report for GitHub Job Summary."""
