@@ -86,7 +86,23 @@ def mcp_call_tool(process, tool_name, arguments):
     }
     send_rpc_message(process, call_req)
     call_res_str = read_rpc_response(process)
-    return json.loads(call_res_str)
+    
+    if not call_res_str:
+        raise RuntimeError("MCP server terminated unexpectedly or closed stdout")
+        
+    try:
+        response = json.loads(call_res_str)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"Failed to parse JSON-RPC response: {e}. Raw response: {call_res_str!r}")
+        
+    if "error" in response:
+        error_data = response["error"]
+        code = error_data.get("code")
+        message = error_data.get("message")
+        data = error_data.get("data")
+        raise RuntimeError(f"MCP tool call failed with error code {code}: {message}. Data: {data}")
+        
+    return response
 
 def clean_yaml(output):
     """Cleans up markdown code blocks if present."""
