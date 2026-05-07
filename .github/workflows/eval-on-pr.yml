@@ -1,0 +1,62 @@
+name: GKE-MCP Baseline Evaluation
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'pkg/agents/**'
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    
+    # Add permissions required for Workload Identity Federation
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        workload_identity_provider: '${{ secrets.WIF_PROVIDER }}'
+        service_account: '${{ secrets.WIF_SERVICE_ACCOUNT }}'
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+
+    - name: Build UI
+      run: |
+        npm --prefix ui install
+        npm --prefix ui run build
+
+    - name: Build Go Server
+      run: go build -o gke-mcp .
+
+    - name: Install Python Dependencies
+      run: |
+        python -m venv venv
+        ./venv/bin/pip install --index-url https://pypi.org/simple deepeval langchain-google-genai pytest pyyaml
+
+    - name: Run Evaluation
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      run: |
+        ./venv/bin/pytest pkg/agents/evals/test_compare_baseline.py
+
+    - name: Add Job Summary
+      if: always()
+      run: |
+        if [ -f pkg/agents/evals/JOB_SUMMARY.md ]; then
+          cat pkg/agents/evals/JOB_SUMMARY.md >> $GITHUB_STEP_SUMMARY
+        fi
