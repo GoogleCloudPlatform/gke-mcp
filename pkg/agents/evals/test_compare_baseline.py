@@ -197,6 +197,9 @@ def test_compare_agent_vs_baseline():
   if not api_key:
     pytest.fail("GEMINI_API_KEY environment variable not set")
 
+  # Set GOOGLE_API_KEY for libraries that expect it
+  os.environ["GOOGLE_API_KEY"] = api_key
+
   # Unset all potential Google Cloud credentials environment variables to force use of API Key
   for var in ["GOOGLE_APPLICATION_CREDENTIALS", "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE", "GOOGLE_GHA_CREDS_PATH"]:
       if var in os.environ:
