@@ -193,19 +193,14 @@ def test_compare_agent_vs_baseline():
   agent_cleaned = clean_yaml(agent_output)
 
   # 2. Get Baseline Output
-  api_key = os.getenv("GEMINI_API_KEY")
-  if not api_key:
-    pytest.fail("GEMINI_API_KEY environment variable not set")
-
-  # Set GOOGLE_API_KEY for libraries that expect it
-  os.environ["GOOGLE_API_KEY"] = api_key
-
-  # Unset all potential Google Cloud credentials environment variables to force use of API Key
-  for var in ["GOOGLE_APPLICATION_CREDENTIALS", "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE", "GOOGLE_GHA_CREDS_PATH"]:
-      if var in os.environ:
-          del os.environ[var]
-
-  chat_model = ChatGoogleGenerativeAI(model="gemini-2.5-pro", google_api_key=api_key)
+  # Switch to Vertex AI using ADC set up by the workflow
+  project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "gke-mcp-ci-cd")
+  
+  chat_model = ChatGoogleGenerativeAI(
+      model="gemini-2.5-pro",
+      vertexai=True,
+      project=project_id
+  )
   baseline_output = chat_model.invoke(prompt).content
   baseline_cleaned = clean_yaml(baseline_output)
 
