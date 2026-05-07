@@ -17,8 +17,10 @@ package anthropic
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"iter"
+	"strings"
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/option"
@@ -75,12 +77,17 @@ func (m *Model) GenerateContent(ctx context.Context, req *model.LLMRequest, stre
 
 			var blocks []anthropic.ContentBlockParamUnion
 			for _, part := range content.Parts {
-				if part.InlineData != nil || part.FileData != nil {
-					yield(nil, fmt.Errorf("unsupported part type: inline file data is not supported yet by the Anthropic adapter"))
-					return
-				}
 				if part.Text != "" {
 					blocks = append(blocks, anthropic.NewTextBlock(part.Text))
+				} else if part.FunctionResponse != nil {
+					// Map ADK FunctionResponse to Anthropic tool_result block
+					contentStr := ""
+					if part.FunctionResponse.Response != nil {
+						b, _ := json.Marshal(part.FunctionResponse.Response)
+						contentStr = string(b)
+					}
+					// Using NewToolResultBlock from Anthropic SDK
+					blocks = append(blocks, anthropic.NewToolResultBlock(part.FunctionResponse.ID, contentStr, false))
 				}
 			}
 
@@ -105,7 +112,39 @@ func (m *Model) GenerateContent(ctx context.Context, req *model.LLMRequest, stre
 			params.MaxTokens = int64(req.Config.MaxOutputTokens)
 		}
 
-		// 4. Call API
+		// 4. Map Tools
+		if req.Config != nil && len(req.Config.Tools) > 0 {
+			var tools []anthropic.ToolUnionParam
+			for _, t := range req.Config.Tools {
+				if t == nil {
+					continue
+				}
+				for _, fd := range t.FunctionDeclarations {
+					if fd == nil {
+						continue
+					}
+					properties := map[string]any{}
+					var required []string
+					if fd.Parameters != nil {
+						properties = schemaPropertiesToMap(fd.Parameters.Properties)
+						required = fd.Parameters.Required
+					}
+					tools = append(tools, anthropic.ToolUnionParam{
+						OfTool: &anthropic.ToolParam{
+							Name:        fd.Name,
+							Description: anthropic.String(fd.Description),
+							InputSchema: anthropic.ToolInputSchemaParam{
+								Properties: properties,
+								Required:   required,
+							},
+						},
+					})
+				}
+			}
+			params.Tools = tools
+		}
+
+		// 5. Call API
 		if stream {
 			yield(nil, fmt.Errorf("streaming not implemented yet for Anthropic adapter"))
 			return
@@ -117,25 +156,78 @@ func (m *Model) GenerateContent(ctx context.Context, req *model.LLMRequest, stre
 			return
 		}
 
-		// 5. Map response back
-		var responseText string
+		// 6. Map response back
+		var parts []*genai.Part
 		for _, block := range resp.Content {
 			if block.Type == "text" {
-				responseText += block.Text
+				parts = append(parts, &genai.Part{Text: block.Text})
+			} else if block.Type == "tool_use" {
+				args := make(map[string]any)
+				if block.Input != nil {
+					if err := json.Unmarshal(block.Input, &args); err != nil {
+						yield(nil, fmt.Errorf("failed to unmarshal tool input: %w", err))
+						return
+					}
+				}
+				parts = append(parts, &genai.Part{
+					FunctionCall: &genai.FunctionCall{
+						ID:   block.ID,
+						Name: block.Name,
+						Args: args,
+					},
+				})
 			}
 		}
 
 		adkResp := &model.LLMResponse{
 			Content: &genai.Content{
-				Role: "model",
-				Parts: []*genai.Part{
-					{
-						Text: responseText,
-					},
-				},
+				Role:  "model",
+				Parts: parts,
 			},
 		}
 
 		yield(adkResp, nil)
 	}
+}
+
+// Helper function to convert schema properties
+func schemaPropertiesToMap(props map[string]*genai.Schema) map[string]any {
+	if props == nil {
+		return nil
+	}
+	result := make(map[string]any)
+	for name, schema := range props {
+		if schema == nil {
+			continue
+		}
+		result[name] = schemaToMap(schema)
+	}
+	return result
+}
+
+// Helper function to convert schema to map
+func schemaToMap(schema *genai.Schema) map[string]any {
+	if schema == nil {
+		return nil
+	}
+	result := make(map[string]any)
+	if schema.Type != "" {
+		result["type"] = strings.ToLower(string(schema.Type))
+	}
+	if schema.Description != "" {
+		result["description"] = schema.Description
+	}
+	if len(schema.Enum) > 0 {
+		result["enum"] = schema.Enum
+	}
+	if schema.Items != nil {
+		result["items"] = schemaToMap(schema.Items)
+	}
+	if len(schema.Properties) > 0 {
+		result["properties"] = schemaPropertiesToMap(schema.Properties)
+	}
+	if len(schema.Required) > 0 {
+		result["required"] = schema.Required
+	}
+	return result
 }
