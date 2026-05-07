@@ -197,6 +197,10 @@ def test_compare_agent_vs_baseline():
   if not api_key:
     pytest.fail("GEMINI_API_KEY environment variable not set")
 
+  # Unset GOOGLE_APPLICATION_CREDENTIALS to force use of API Key instead of ADC
+  if "GOOGLE_APPLICATION_CREDENTIALS" in os.environ:
+      del os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
+
   chat_model = ChatGoogleGenerativeAI(model="gemini-2.5-pro", google_api_key=api_key)
   baseline_output = chat_model.invoke(prompt).content
   baseline_cleaned = clean_yaml(baseline_output)
