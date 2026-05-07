@@ -23,7 +23,7 @@ require (
 	k8s.io/client-go v0.36.0
 )
 
-require github.com/google/uuid v1.6.0 // indirect
+require github.com/google/uuid v1.6.0
 
 require (
 	cloud.google.com/go v0.123.0 // indirect
