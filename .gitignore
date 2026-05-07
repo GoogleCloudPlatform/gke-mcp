@@ -15,3 +15,6 @@ ui/dist/
 __pycache__/
 .deepeval/
 *.pyc
+
+# Generated reports
+JOB_SUMMARY.md
