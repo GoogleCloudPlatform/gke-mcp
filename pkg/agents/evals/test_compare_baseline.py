@@ -275,13 +275,26 @@ def test_compare_agent_vs_baseline():
   generate_markdown_report(results, prompt, agent_output, baseline_output, agent_cleaned)
 
   # Check for failures on the Agent to provide pass/fail status
-  agent_res = results.test_results[0]
-  for metric in agent_res.metrics_data:
-    if not metric.success:
-      pytest.fail(
-          f"Agent Metric '{metric.name}' failed with score {metric.score:.2f}."
-          f" Reason: {metric.reason}"
-      )
+  agent_res = None
+  for res in results.test_results:
+      actual = getattr(res, 'actual_output', None)
+      if actual is None:
+           test_case = getattr(res, 'test_case', None)
+           if test_case:
+                actual = getattr(test_case, 'actual_output', None)
+      if actual == agent_cleaned:
+          agent_res = res
+          break
+
+  if agent_res:
+      for metric in agent_res.metrics_data:
+        if not metric.success:
+          pytest.fail(
+              f"Agent Metric '{metric.name}' failed with score {metric.score:.2f}."
+              f" Reason: {metric.reason}"
+          )
+  else:
+      pytest.fail("Could not find Agent result in evaluation results")
 
 if __name__ == '__main__':
     test_compare_agent_vs_baseline()
