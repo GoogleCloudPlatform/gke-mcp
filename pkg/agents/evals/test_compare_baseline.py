@@ -97,11 +97,24 @@ def clean_yaml(output):
         cleaned_output = cleaned_output[:-len("```")]
     return cleaned_output.strip()
 
-def generate_markdown_report(results, prompt, agent_output, baseline_output):
+def generate_markdown_report(results, prompt, agent_output, baseline_output, agent_cleaned):
     """Generates a beautiful markdown report for GitHub Job Summary."""
-    agent_res = results.test_results[0]
-    baseline_res = results.test_results[1]
     
+    agent_res = None
+    baseline_res = None
+    
+    for res in results.test_results:
+        actual = getattr(res, 'actual_output', None)
+        if actual is None:
+             test_case = getattr(res, 'test_case', None)
+             if test_case:
+                  actual = getattr(test_case, 'actual_output', None)
+                  
+        if actual == agent_cleaned:
+            agent_res = res
+        else:
+            baseline_res = res
+
     def get_metric(metrics_data, name):
         for m in metrics_data:
             if name in m.name:
@@ -259,7 +272,7 @@ def test_compare_agent_vs_baseline():
   print(f"Results: {results}")
 
   # Generate report
-  generate_markdown_report(results, prompt, agent_output, baseline_output)
+  generate_markdown_report(results, prompt, agent_output, baseline_output, agent_cleaned)
 
   # Check for failures on the Agent to provide pass/fail status
   agent_res = results.test_results[0]
