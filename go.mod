@@ -11,7 +11,6 @@ require (
 	github.com/PuerkitoBio/goquery v1.12.0
 	github.com/anthropics/anthropic-sdk-go v1.39.0
 	github.com/google/go-cmp v0.7.0
-	github.com/google/uuid v1.6.0
 	github.com/googleapis/gax-go/v2 v2.22.0
 	github.com/modelcontextprotocol/go-sdk v1.6.0
 	github.com/rs/cors v1.11.1
@@ -23,6 +22,8 @@ require (
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af
 	k8s.io/client-go v0.36.0
 )
+
+require github.com/google/uuid v1.6.0 // indirect
 
 require (
 	cloud.google.com/go v0.123.0 // indirect
