@@ -170,7 +170,13 @@ func NewAgent(llm model.LLM, cfg *config.Config, dkClient dk.DeveloperKnowledgeC
 		return nil, fmt.Errorf("failed to create dk tools: %w", err)
 	}
 
-	allTools := []tool.Tool{generateManifestTool, fetchModelsTool, fetchModelServersTool, fetchModelServerVersionsTool, fetchProfilesTool}
+	allTools := []tool.Tool{
+		generateManifestTool,
+		fetchModelsTool,
+		fetchModelServersTool,
+		fetchModelServerVersionsTool,
+		fetchProfilesTool,
+	}
 	allTools = append(allTools, dkTools...)
 
 	adkAgent, err := llmagent.New(llmagent.Config{
