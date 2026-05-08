@@ -76,7 +76,6 @@ type AnswerQueryArgs struct {
 type SearchDocumentsArgs struct {
 	Query string `json:"query" jsonschema:"The query to search for. Required."`
 }
-}
 
 // createDKTools creates the tools for the Developer Knowledge API.
 func createDKTools(client dk.DeveloperKnowledgeClient) ([]tool.Tool, error) {
@@ -184,16 +183,11 @@ func NewAgent(llm model.LLM, cfg *config.Config, dkClient dk.DeveloperKnowledgeC
 		return nil, fmt.Errorf("failed to create giq fetch model server versions tool: %w", err)
 	}
 
-<<<<<<< HEAD
-=======
-	dkClient := dk.NewRealDeveloperKnowledgeClient()
->>>>>>> 825aaac (feat: define and register dk_search_documents tool with nil check and DI)
 	dkTools, err := createDKTools(dkClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create dk tools: %w", err)
 	}
 
-<<<<<<< HEAD
 	allTools := []tool.Tool{
 		generateManifestTool,
 		fetchModelsTool,
@@ -201,9 +195,6 @@ func NewAgent(llm model.LLM, cfg *config.Config, dkClient dk.DeveloperKnowledgeC
 		fetchModelServerVersionsTool,
 		fetchProfilesTool,
 	}
-=======
-	allTools := []tool.Tool{generateManifestTool, fetchModelsTool, fetchModelServersTool, fetchModelServerVersionsTool, fetchProfilesTool}
->>>>>>> 825aaac (feat: define and register dk_search_documents tool with nil check and DI)
 	allTools = append(allTools, dkTools...)
 
 	adkAgent, err := llmagent.New(llmagent.Config{
