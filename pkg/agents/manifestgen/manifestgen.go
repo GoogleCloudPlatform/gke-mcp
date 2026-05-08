@@ -72,6 +72,12 @@ type AnswerQueryArgs struct {
 	Query string `json:"query" jsonschema:"The query to answer. Required."`
 }
 
+// SearchDocumentsArgs holds arguments for searching documents.
+type SearchDocumentsArgs struct {
+	Query string `json:"query" jsonschema:"The query to search for. Required."`
+}
+}
+
 // createDKTools creates the tools for the Developer Knowledge API.
 func createDKTools(client dk.DeveloperKnowledgeClient) ([]tool.Tool, error) {
 	if client == nil {
@@ -90,7 +96,20 @@ func createDKTools(client dk.DeveloperKnowledgeClient) ([]tool.Tool, error) {
 		return nil, fmt.Errorf("failed to create dk_answer_query tool: %w", err)
 	}
 
-	return []tool.Tool{answerQueryTool}, nil
+	searchDocsTool, err := functiontool.New(
+		functiontool.Config{
+			Name:        "dk_search_documents",
+			Description: "Search for documents in the Developer Knowledge base.",
+		},
+		func(ctx tool.Context, args SearchDocumentsArgs) (string, error) {
+			return client.SearchDocuments(ctx, args.Query)
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create dk_search_documents tool: %w", err)
+	}
+
+	return []tool.Tool{answerQueryTool, searchDocsTool}, nil
 }
 
 // NewAgent creates a new Agent attached to a specific text generator model.
@@ -165,11 +184,16 @@ func NewAgent(llm model.LLM, cfg *config.Config, dkClient dk.DeveloperKnowledgeC
 		return nil, fmt.Errorf("failed to create giq fetch model server versions tool: %w", err)
 	}
 
+<<<<<<< HEAD
+=======
+	dkClient := dk.NewRealDeveloperKnowledgeClient()
+>>>>>>> 825aaac (feat: define and register dk_search_documents tool with nil check and DI)
 	dkTools, err := createDKTools(dkClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create dk tools: %w", err)
 	}
 
+<<<<<<< HEAD
 	allTools := []tool.Tool{
 		generateManifestTool,
 		fetchModelsTool,
@@ -177,6 +201,9 @@ func NewAgent(llm model.LLM, cfg *config.Config, dkClient dk.DeveloperKnowledgeC
 		fetchModelServerVersionsTool,
 		fetchProfilesTool,
 	}
+=======
+	allTools := []tool.Tool{generateManifestTool, fetchModelsTool, fetchModelServersTool, fetchModelServerVersionsTool, fetchProfilesTool}
+>>>>>>> 825aaac (feat: define and register dk_search_documents tool with nil check and DI)
 	allTools = append(allTools, dkTools...)
 
 	adkAgent, err := llmagent.New(llmagent.Config{
