@@ -25,17 +25,17 @@ import (
 	"google.golang.org/genai"
 )
 
-type mockDKClientLocal struct{}
+type mockDKClient struct{}
 
-func (m *mockDKClientLocal) GetDocuments(_ context.Context, _ []string) (string, error) {
+func (m *mockDKClient) GetDocuments(_ context.Context, _ []string) (string, error) {
 	return "mock docs", nil
 }
 
-func (m *mockDKClientLocal) AnswerQuery(_ context.Context, _ string) (string, error) {
+func (m *mockDKClient) AnswerQuery(_ context.Context, _ string) (string, error) {
 	return "mock answer", nil
 }
 
-func (m *mockDKClientLocal) SearchDocuments(_ context.Context, _ string) (string, error) {
+func (m *mockDKClient) SearchDocuments(_ context.Context, _ string) (string, error) {
 	return "mock search", nil
 }
 
@@ -74,7 +74,7 @@ func TestNewAgent_NilModel(t *testing.T) {
 
 func TestGenerateManifest_Success(t *testing.T) {
 	mockModel := &mockGenerativeModel{res: "apiVersion: apps/v1\nkind: Deployment"}
-	agent, err := NewAgent(mockModel, &config.Config{}, &mockDKClientLocal{})
+	agent, err := NewAgent(mockModel, &config.Config{}, &mockDKClient{})
 	if err != nil {
 		t.Fatalf("Failed to create agent: %v", err)
 	}

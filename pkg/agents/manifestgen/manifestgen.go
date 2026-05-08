@@ -81,7 +81,6 @@ type SearchDocumentsArgs struct {
 type GetDocumentsArgs struct {
 	DocumentIDs []string `json:"document_ids" jsonschema:"The IDs of the documents to fetch. Required."`
 }
-}
 
 // createDKTools creates the tools for the Developer Knowledge API.
 func createDKTools(client dk.DeveloperKnowledgeClient) ([]tool.Tool, error) {
