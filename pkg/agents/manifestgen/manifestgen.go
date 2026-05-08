@@ -23,6 +23,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/clients/dk"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/llm"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/giq"
@@ -66,8 +67,34 @@ type FetchModelServersArgs struct {
 	Model string `json:"model" jsonschema:"The model for which to list model servers. Required."`
 }
 
+// AnswerQueryArgs holds arguments for answering a query.
+type AnswerQueryArgs struct {
+	Query string `json:"query" jsonschema:"The query to answer. Required."`
+}
+
+// createDKTools creates the tools for the Developer Knowledge API.
+func createDKTools(client dk.DeveloperKnowledgeClient) ([]tool.Tool, error) {
+	if client == nil {
+		return nil, fmt.Errorf("dk client cannot be nil")
+	}
+	answerQueryTool, err := functiontool.New(
+		functiontool.Config{
+			Name:        "dk_answer_query",
+			Description: "Answer a query based on the Developer Knowledge base.",
+		},
+		func(ctx tool.Context, args AnswerQueryArgs) (string, error) {
+			return client.AnswerQuery(ctx, args.Query)
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create dk_answer_query tool: %w", err)
+	}
+
+	return []tool.Tool{answerQueryTool}, nil
+}
+
 // NewAgent creates a new Agent attached to a specific text generator model.
-func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
+func NewAgent(llm model.LLM, cfg *config.Config, dkClient dk.DeveloperKnowledgeClient) (*Agent, error) {
 	if llm == nil {
 		return nil, fmt.Errorf("model cannot be nil")
 	}
@@ -138,12 +165,20 @@ func NewAgent(llm model.LLM, cfg *config.Config) (*Agent, error) {
 		return nil, fmt.Errorf("failed to create giq fetch model server versions tool: %w", err)
 	}
 
+	dkTools, err := createDKTools(dkClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create dk tools: %w", err)
+	}
+
+	allTools := []tool.Tool{generateManifestTool, fetchModelsTool, fetchModelServersTool, fetchModelServerVersionsTool, fetchProfilesTool}
+	allTools = append(allTools, dkTools...)
+
 	adkAgent, err := llmagent.New(llmagent.Config{
 		Name:        "manifest_agent",
 		Description: "Agent specialized in generating and validating Kubernetes manifests.",
 		Model:       llm,
 		Instruction: instructionTemplate,
-		Tools:       []tool.Tool{generateManifestTool, fetchModelsTool, fetchModelServersTool, fetchModelServerVersionsTool, fetchProfilesTool},
+		Tools:       allTools,
 		BeforeModelCallbacks: []llmagent.BeforeModelCallback{
 			func(ctx agent.CallbackContext, llmRequest *model.LLMRequest) (*model.LLMResponse, error) {
 				// Inject user content if Contents is empty to avoid content loss.
@@ -255,7 +290,8 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 		return fmt.Errorf("failed to create llm client: %w", err)
 	}
 
-	agent, err := NewAgent(llmClient, c)
+	dkClient := dk.NewRealDeveloperKnowledgeClient()
+	agent, err := NewAgent(llmClient, c, dkClient)
 	if err != nil {
 		return err
 	}
