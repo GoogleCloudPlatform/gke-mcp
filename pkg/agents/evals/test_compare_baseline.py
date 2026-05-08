@@ -2,6 +2,7 @@ import subprocess
 import json
 import time
 import os
+import re
 import pytest
 import yaml
 from deepeval import evaluate
@@ -106,7 +107,6 @@ def mcp_call_tool(process, tool_name, arguments):
 
 def clean_yaml(output):
     """Cleans up markdown code blocks if present."""
-    import re
     
     # First try to find a block explicitly labeled as yaml
     yaml_pattern = r"\x60\x60\x60yaml\s*(.*?)\s*\x60\x60\x60"
