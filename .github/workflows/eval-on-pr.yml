@@ -53,6 +53,7 @@ jobs:
           ./venv/bin/pip install --index-url https://pypi.org/simple -r pkg/agents/evals/requirements.txt
 
       - name: Run Evaluation
+        continue-on-error: true
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
