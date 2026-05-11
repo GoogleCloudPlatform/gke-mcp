@@ -93,6 +93,9 @@ func createDKTools(client dk.DeveloperKnowledgeClient) ([]tool.Tool, error) {
 			Description: "Fetch specific documents by their IDs from the Developer Knowledge base.",
 		},
 		func(ctx tool.Context, args GetDocumentsArgs) (string, error) {
+			if len(args.DocumentIDs) == 0 {
+				return "", fmt.Errorf("document_ids must not be empty")
+			}
 			return client.GetDocuments(ctx, args.DocumentIDs)
 		},
 	)
