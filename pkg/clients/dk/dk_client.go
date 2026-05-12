@@ -102,8 +102,10 @@ func (c *RealDeveloperKnowledgeClient) GetDocuments(_ context.Context, _ []strin
 }
 
 // AnswerQuery answers a query based on the knowledge base.
-func (c *RealDeveloperKnowledgeClient) AnswerQuery(_ context.Context, _ string) (string, error) {
-	return "", fmt.Errorf("AnswerQuery not implemented")
+func (c *RealDeveloperKnowledgeClient) AnswerQuery(ctx context.Context, query string) (string, error) {
+	return c.doPost(ctx, "/v1alpha/TopLevel:answerQuery", map[string]interface{}{
+		"query": query,
+	})
 }
 
 // SearchDocuments searches for documents related to a query.
