@@ -14,7 +14,6 @@ on:
 jobs:
   evaluate:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.full_name == github.repository
 
     permissions:
       contents: read
@@ -26,6 +25,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Authenticate to Google Cloud
+        if: github.event.pull_request.head.repo.full_name == github.repository
         uses: google-github-actions/auth@v3
         with:
           credentials_json: "${{ secrets.GCP_SA_KEY }}"
@@ -54,7 +54,7 @@ jobs:
           ./venv/bin/pip install --index-url https://pypi.org/simple -r pkg/agents/evals/requirements.txt
 
       - name: Run Evaluation
-        continue-on-error: true
+        if: github.event.pull_request.head.repo.full_name == github.repository
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |

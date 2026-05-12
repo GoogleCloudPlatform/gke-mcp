@@ -13,6 +13,7 @@
 // limitations under the License.
 
 // Package manifestgen provides an agent for generating Kubernetes manifests.
+// Dummy change to trigger baseline evaluation workflow test.
 package manifestgen
 
 import (
