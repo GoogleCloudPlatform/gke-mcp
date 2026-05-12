@@ -16,8 +16,12 @@
 package dk
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 )
 
 // DeveloperKnowledgeClient defines the interface for interacting with the Developer Knowledge API.
@@ -27,14 +31,23 @@ type DeveloperKnowledgeClient interface {
 	SearchDocuments(ctx context.Context, query string) (string, error)
 }
 
-// RealDeveloperKnowledgeClient is the actual implementation (stubbed for now).
+// RealDeveloperKnowledgeClient is the actual implementation.
 type RealDeveloperKnowledgeClient struct {
-	// Add configuration fields here (e.g., API key, base URL)
+	baseURL    string
+	httpClient *http.Client
+	apiKey     string
 }
 
 // NewRealDeveloperKnowledgeClient creates a new real client instance.
-func NewRealDeveloperKnowledgeClient() *RealDeveloperKnowledgeClient {
-	return &RealDeveloperKnowledgeClient{}
+func NewRealDeveloperKnowledgeClient(baseURL string, apiKey string) *RealDeveloperKnowledgeClient {
+	if baseURL == "" {
+		baseURL = "https://knowledge.googleapis.com"
+	}
+	return &RealDeveloperKnowledgeClient{
+		baseURL:    baseURL,
+		httpClient: &http.Client{},
+		apiKey:     apiKey,
+	}
 }
 
 // GetDocuments fetches specific documents by their IDs.
@@ -48,6 +61,40 @@ func (c *RealDeveloperKnowledgeClient) AnswerQuery(_ context.Context, _ string) 
 }
 
 // SearchDocuments searches for documents related to a query.
-func (c *RealDeveloperKnowledgeClient) SearchDocuments(_ context.Context, _ string) (string, error) {
-	return "", fmt.Errorf("SearchDocuments not implemented")
+func (c *RealDeveloperKnowledgeClient) SearchDocuments(ctx context.Context, query string) (string, error) {
+	url := fmt.Sprintf("%s/v1/documents:searchDocumentChunks", c.baseURL)
+
+	reqBody, err := json.Marshal(map[string]interface{}{
+		"query": query,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if c.apiKey != "" {
+		req.Header.Set("X-Goog-Api-Key", c.apiKey)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("API request failed with status %s: %s", resp.Status, string(body))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
 }
