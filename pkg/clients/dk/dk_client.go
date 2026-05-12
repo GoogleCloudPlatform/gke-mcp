@@ -97,8 +97,10 @@ func (c *RealDeveloperKnowledgeClient) doPost(ctx context.Context, path string, 
 }
 
 // GetDocuments fetches specific documents by their IDs.
-func (c *RealDeveloperKnowledgeClient) GetDocuments(_ context.Context, _ []string) (string, error) {
-	return "", fmt.Errorf("GetDocuments not implemented")
+func (c *RealDeveloperKnowledgeClient) GetDocuments(ctx context.Context, documentIDs []string) (string, error) {
+	return c.doPost(ctx, "/v1/documents:batchGet", map[string]interface{}{
+		"names": documentIDs,
+	})
 }
 
 // AnswerQuery answers a query based on the knowledge base.
