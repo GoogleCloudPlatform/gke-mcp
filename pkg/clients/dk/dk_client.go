@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 )
 
 // DeveloperKnowledgeClient defines the interface for interacting with the Developer Knowledge API.
@@ -40,38 +41,25 @@ type RealDeveloperKnowledgeClient struct {
 
 // NewRealDeveloperKnowledgeClient creates a new real client instance.
 func NewRealDeveloperKnowledgeClient(baseURL string, apiKey string) *RealDeveloperKnowledgeClient {
-	if baseURL == "" {
-		baseURL = "https://knowledge.googleapis.com"
-	}
 	return &RealDeveloperKnowledgeClient{
-		baseURL:    baseURL,
-		httpClient: &http.Client{},
-		apiKey:     apiKey,
+		baseURL: baseURL,
+		httpClient: &http.Client{
+			Timeout: 30 * time.Second,
+		},
+		apiKey: apiKey,
 	}
 }
 
-// GetDocuments fetches specific documents by their IDs.
-func (c *RealDeveloperKnowledgeClient) GetDocuments(_ context.Context, _ []string) (string, error) {
-	return "", fmt.Errorf("GetDocuments not implemented")
-}
+// doPost executes a POST request to the Developer Knowledge API.
+func (c *RealDeveloperKnowledgeClient) doPost(ctx context.Context, path string, reqBody interface{}) (string, error) {
+	url := fmt.Sprintf("%s%s", c.baseURL, path)
 
-// AnswerQuery answers a query based on the knowledge base.
-func (c *RealDeveloperKnowledgeClient) AnswerQuery(_ context.Context, _ string) (string, error) {
-	return "", fmt.Errorf("AnswerQuery not implemented")
-}
-
-// SearchDocuments searches for documents related to a query.
-func (c *RealDeveloperKnowledgeClient) SearchDocuments(ctx context.Context, query string) (string, error) {
-	url := fmt.Sprintf("%s/v1/documents:searchDocumentChunks", c.baseURL)
-
-	reqBody, err := json.Marshal(map[string]interface{}{
-		"query": query,
-	})
+	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
 		return "", err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(reqBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", err
 	}
@@ -97,4 +85,21 @@ func (c *RealDeveloperKnowledgeClient) SearchDocuments(ctx context.Context, quer
 	}
 
 	return string(body), nil
+}
+
+// GetDocuments fetches specific documents by their IDs.
+func (c *RealDeveloperKnowledgeClient) GetDocuments(_ context.Context, _ []string) (string, error) {
+	return "", fmt.Errorf("GetDocuments not implemented")
+}
+
+// AnswerQuery answers a query based on the knowledge base.
+func (c *RealDeveloperKnowledgeClient) AnswerQuery(_ context.Context, _ string) (string, error) {
+	return "", fmt.Errorf("AnswerQuery not implemented")
+}
+
+// SearchDocuments searches for documents related to a query.
+func (c *RealDeveloperKnowledgeClient) SearchDocuments(ctx context.Context, query string) (string, error) {
+	return c.doPost(ctx, "/v1/documents:searchDocumentChunks", map[string]interface{}{
+		"query": query,
+	})
 }

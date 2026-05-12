@@ -65,7 +65,7 @@ func TestRealDeveloperKnowledgeClient_SearchDocuments(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(mockResponse))
+		_, _ = w.Write([]byte(mockResponse))
 	}))
 	defer server.Close()
 

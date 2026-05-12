@@ -31,6 +31,8 @@ type Config struct {
 	agentModel        string
 	enableDeleteTools bool
 	anthropicAPIKey   string
+	dkBaseURL         string
+	dkAPIKey          string
 }
 
 // UserAgent returns the user agent string for outbound API calls.
@@ -68,6 +70,16 @@ func (c *Config) AnthropicAPIKey() string {
 	return c.anthropicAPIKey
 }
 
+// DKBaseURL returns the configured Developer Knowledge Base URL.
+func (c *Config) DKBaseURL() string {
+	return c.dkBaseURL
+}
+
+// DKAPIKey returns the configured Developer Knowledge API Key.
+func (c *Config) DKAPIKey() string {
+	return c.dkAPIKey
+}
+
 // New constructs a Config populated from gcloud and build version.
 func New(version string, enableDeleteTools bool) *Config {
 	provider := os.Getenv("GKE_MCP_PROVIDER")
@@ -85,6 +97,12 @@ func New(version string, enableDeleteTools bool) *Config {
 
 	anthropicKey := os.Getenv("ANTHROPIC_API_KEY")
 
+	dkBaseURL := os.Getenv("DK_BASE_URL")
+	if dkBaseURL == "" {
+		dkBaseURL = "https://knowledge.googleapis.com"
+	}
+	dkAPIKey := os.Getenv("DK_API_KEY")
+
 	return &Config{
 		userAgent:         "gke-mcp/" + version,
 		defaultProjectID:  getDefaultProjectID(),
@@ -93,6 +111,8 @@ func New(version string, enableDeleteTools bool) *Config {
 		agentModel:        model,
 		enableDeleteTools: enableDeleteTools,
 		anthropicAPIKey:   anthropicKey,
+		dkBaseURL:         dkBaseURL,
+		dkAPIKey:          dkAPIKey,
 	}
 }
 

@@ -314,7 +314,7 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 		return fmt.Errorf("failed to create llm client: %w", err)
 	}
 
-	dkClient := dk.NewRealDeveloperKnowledgeClient(os.Getenv("DK_BASE_URL"), os.Getenv("DK_API_KEY"))
+	dkClient := dk.NewRealDeveloperKnowledgeClient(c.DKBaseURL(), c.DKAPIKey())
 	agent, err := NewAgent(llmClient, c, dkClient)
 	if err != nil {
 		return err
