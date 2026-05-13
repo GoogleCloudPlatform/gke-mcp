@@ -38,22 +38,24 @@ type RealDeveloperKnowledgeClient struct {
 	baseURL    string
 	httpClient *http.Client
 	apiKey     string
+	userAgent  string
 }
 
 // NewRealDeveloperKnowledgeClient creates a new real client instance.
-func NewRealDeveloperKnowledgeClient(baseURL string, apiKey string) *RealDeveloperKnowledgeClient {
+func NewRealDeveloperKnowledgeClient(baseURL string, apiKey string, userAgent string) *RealDeveloperKnowledgeClient {
 	return &RealDeveloperKnowledgeClient{
 		baseURL: baseURL,
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
-		apiKey: apiKey,
+		apiKey:    apiKey,
+		userAgent: userAgent,
 	}
 }
 
 // doPost executes a POST request to the Developer Knowledge API.
 func (c *RealDeveloperKnowledgeClient) doPost(ctx context.Context, path string, reqBody interface{}) (string, error) {
-	url, err := url.JoinPath(c.baseURL, path)
+	reqURL, err := url.JoinPath(c.baseURL, path)
 	if err != nil {
 		return "", err
 	}
@@ -63,13 +65,16 @@ func (c *RealDeveloperKnowledgeClient) doPost(ctx context.Context, path string, 
 		return "", err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	if c.apiKey != "" {
 		req.Header.Set("X-Goog-Api-Key", c.apiKey)
+	}
+	if c.userAgent != "" {
+		req.Header.Set("User-Agent", c.userAgent)
 	}
 
 	resp, err := c.httpClient.Do(req)

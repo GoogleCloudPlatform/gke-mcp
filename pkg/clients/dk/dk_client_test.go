@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -55,6 +56,9 @@ func TestRealDeveloperKnowledgeClient_SearchDocuments(t *testing.T) {
 		if r.Header.Get("Content-Type") != "application/json" {
 			t.Errorf("Expected Content-Type application/json, got %s", r.Header.Get("Content-Type"))
 		}
+		if r.Header.Get("User-Agent") != "gke-mcp/test" {
+			t.Errorf("Expected User-Agent gke-mcp/test, got %s", r.Header.Get("User-Agent"))
+		}
 
 		var body map[string]interface{}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -69,12 +73,30 @@ func TestRealDeveloperKnowledgeClient_SearchDocuments(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewRealDeveloperKnowledgeClient(server.URL, "test-api-key")
+	client := NewRealDeveloperKnowledgeClient(server.URL, "test-api-key", "gke-mcp/test")
 	resp, err := client.SearchDocuments(context.Background(), expectedQuery)
 	if err != nil {
 		t.Fatalf("SearchDocuments failed: %v", err)
 	}
 	if resp != mockResponse {
 		t.Errorf("Expected response %s, got %s", mockResponse, resp)
+	}
+}
+
+func TestRealDeveloperKnowledgeClient_SearchDocuments_Error(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte("Internal Server Error"))
+	}))
+	defer server.Close()
+
+	client := NewRealDeveloperKnowledgeClient(server.URL, "test-api-key", "gke-mcp/test")
+	_, err := client.SearchDocuments(context.Background(), "gke network policy")
+	if err == nil {
+		t.Fatalf("Expected error for non-200 status code, got nil")
+	}
+	expectedErrSubstring := "API request failed with status 500 Internal Server Error: Internal Server Error"
+	if !strings.Contains(err.Error(), expectedErrSubstring) {
+		t.Errorf("Expected error containing %q, got %v", expectedErrSubstring, err)
 	}
 }
