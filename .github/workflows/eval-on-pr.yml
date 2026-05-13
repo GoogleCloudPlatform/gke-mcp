@@ -6,7 +6,7 @@ env:
 permissions: read-all
 
 on:
-  pull_request_target:
+  pull_request:
     branches: [main]
     paths:
       - "pkg/agents/**"
@@ -22,8 +22,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Authenticate to Google Cloud
         if: github.event.pull_request.head.repo.full_name == github.repository
