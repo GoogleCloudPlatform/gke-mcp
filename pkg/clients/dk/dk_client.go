@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -52,14 +53,17 @@ func NewRealDeveloperKnowledgeClient(baseURL string, apiKey string) *RealDevelop
 
 // doPost executes a POST request to the Developer Knowledge API.
 func (c *RealDeveloperKnowledgeClient) doPost(ctx context.Context, path string, reqBody interface{}) (string, error) {
-	url := fmt.Sprintf("%s%s", c.baseURL, path)
+	url, err := url.JoinPath(c.baseURL, path)
+	if err != nil {
+		return "", err
+	}
 
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
 		return "", err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", err
 	}
@@ -75,7 +79,7 @@ func (c *RealDeveloperKnowledgeClient) doPost(ctx context.Context, path string, 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1024*1024))
 		return "", fmt.Errorf("API request failed with status %s: %s", resp.Status, string(body))
 	}
 

@@ -43,7 +43,7 @@ func TestRealDeveloperKnowledgeClient_SearchDocuments(t *testing.T) {
 	mockResponse := `{"results": [{"chunk": "details"}]}`
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
+		if r.Method != http.MethodPost {
 			t.Errorf("Expected method POST, got %s", r.Method)
 		}
 		if r.URL.Path != "/v1/documents:searchDocumentChunks" {
