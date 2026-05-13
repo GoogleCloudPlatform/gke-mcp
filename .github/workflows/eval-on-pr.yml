@@ -7,7 +7,7 @@ permissions: read-all
 
 on:
   pull_request_target:
-    branches: [main]
+    branches: [main, "feature/**"]
     paths:
       - "pkg/agents/**"
       - ".github/workflows/eval-on-pr.yml"
