@@ -12,6 +12,7 @@ from deepeval.test_case import LLMTestCaseParams
 from deepeval.models.base_model import DeepEvalBaseLLM
 from langchain_google_genai import ChatGoogleGenerativeAI
 
+
 # Custom model implementation for Gemini in DeepEval using Google AI Studio API Key
 class GoogleGeminiAI(DeepEvalBaseLLM):
     def __init__(self, model):
