@@ -7,6 +7,7 @@ permissions: read-all
 
 on:
   pull_request_target:
+    types: [opened, synchronize, reopened, labeled]
     branches: [main, "feature/**"]
     paths:
       - "pkg/agents/**"
@@ -15,6 +16,7 @@ on:
 jobs:
   evaluate:
     runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'run-evals')
 
     permissions:
       contents: read
