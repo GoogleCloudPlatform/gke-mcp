@@ -28,15 +28,15 @@ import (
 type MockDeveloperKnowledgeClient struct{}
 
 func (m *MockDeveloperKnowledgeClient) GetDocuments(_ context.Context, documentIDs []string) (string, error) {
-	return fmt.Sprintf("Mock documents for IDs: %v", documentIDs), nil
+	return fmt.Sprintf(`{"documents": [{"id": "%v", "content": "Mock content"}]}`, documentIDs), nil
 }
 
 func (m *MockDeveloperKnowledgeClient) AnswerQuery(_ context.Context, query string) (string, error) {
-	return fmt.Sprintf("Mock answer for query: %s", query), nil
+	return fmt.Sprintf(`{"answer": "Mock answer for query: %s"}`, query), nil
 }
 
 func (m *MockDeveloperKnowledgeClient) SearchDocuments(_ context.Context, query string) (string, error) {
-	return fmt.Sprintf("Mock search results for query: %s", query), nil
+	return fmt.Sprintf(`{"results": [{"chunk": "Mock search results for query: %s"}]}`, query), nil
 }
 
 func TestRealDeveloperKnowledgeClient_SearchDocuments(t *testing.T) {
@@ -62,7 +62,9 @@ func TestRealDeveloperKnowledgeClient_SearchDocuments(t *testing.T) {
 
 		var body map[string]interface{}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			t.Fatalf("Failed to decode request body: %v", err)
+			t.Errorf("Failed to decode request body: %v", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 		if body["query"] != expectedQuery {
 			t.Errorf("Expected query %q, got %q", expectedQuery, body["query"])
@@ -124,7 +126,9 @@ func TestRealDeveloperKnowledgeClient_AnswerQuery(t *testing.T) {
 
 		var body map[string]interface{}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			t.Fatalf("Failed to decode request body: %v", err)
+			t.Errorf("Failed to decode request body: %v", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 		if body["query"] != expectedQuery {
 			t.Errorf("Expected query %q, got %q", expectedQuery, body["query"])
