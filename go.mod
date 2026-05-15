@@ -26,7 +26,10 @@ require (
 	sigs.k8s.io/yaml v1.6.0
 )
 
-require github.com/google/uuid v1.6.0
+require (
+	github.com/Alcova-AI/adk-anthropic-go v0.1.15
+	github.com/google/uuid v1.6.0
+)
 
 require (
 	cloud.google.com/go v0.123.0 // indirect

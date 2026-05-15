@@ -20,8 +20,9 @@ import (
 	"fmt"
 	"strings"
 
+	adkanthropic "github.com/Alcova-AI/adk-anthropic-go"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
-	"github.com/GoogleCloudPlatform/gke-mcp/pkg/llm/anthropic"
+	"github.com/anthropics/anthropic-sdk-go"
 	"google.golang.org/adk/model"
 	"google.golang.org/adk/model/gemini"
 	"google.golang.org/genai"
@@ -49,10 +50,15 @@ func NewClient(ctx context.Context, cfg *config.Config) (model.LLM, error) {
 		if cfg.AnthropicAPIKey() == "" {
 			return nil, fmt.Errorf("ANTHROPIC_API_KEY environment variable must be set when provider is 'anthropic'")
 		}
-		return anthropic.NewModel(cfg.AnthropicAPIKey(), cfg.AgentModel()), nil
+		m, err := adkanthropic.NewModel(ctx, anthropic.Model(cfg.AgentModel()), &adkanthropic.Config{
+			APIKey: cfg.AnthropicAPIKey(),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize Anthropic model: %w", err)
+		}
+		return m, nil
 
 	default:
 		return nil, fmt.Errorf("unsupported LLM provider: %s", cfg.AgentProvider())
 	}
 }
-
