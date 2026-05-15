@@ -45,7 +45,75 @@ kubectl apply -f assets/hpa-example.yaml
 **Custom Metrics & External Metrics:**
 For GKE, the modern and recommended approach for scaling based on Cloud Monitoring metrics (e.g., Pub/Sub queue length) is to use the **External** metric type, which is natively supported by the GKE control plane without requiring the Custom Metrics Adapter. For application-specific metrics exposed via Prometheus, you can use **Google Cloud Managed Service for Prometheus** or the Prometheus Adapter.
 
-### 3. Vertical Pod Autoscaling (VPA)
+### 3. GKE Custom Metrics (`AutoscalingMetric`)
+
+GKE provides a native way to scale workloads based on metrics from Cloud Monitoring or Prometheus metrics exported to Google Cloud Managed Service for Prometheus. This is managed via the GKE-native **`AutoscalingMetric`** Custom Resource Definition (CRD), which avoids the need to deploy and manage the external Custom Metrics Adapter.
+
+**AutoscalingMetric Manifest Approach:**
+Define an `AutoscalingMetric` resource to specify which metrics to collect and how to export them.
+
+*Example (Prometheus Metric Filtering by Label):*
+To scrape a Prometheus metric `http_requests_total` but filter it to only scale on data points where the label `version` is `v2`:
+
+```yaml
+apiVersion: autoscaling.gke.io/v1
+kind: AutoscalingMetric
+metadata:
+  name: http-requests-metric
+  namespace: default
+spec:
+  metric:
+    name: http_requests_total
+    filter:
+      matchLabels:
+        version: v2
+```
+
+**Renaming Metrics during Export (`exportName`):**
+If you need to rename the metric during export (e.g., to prevent naming collisions or simplify references), use the `exportName` parameter:
+
+```yaml
+apiVersion: autoscaling.gke.io/v1
+kind: AutoscalingMetric
+metadata:
+  name: web-metric
+  namespace: default
+spec:
+  metric:
+    name: original_metric_name
+    exportName: exported-name
+```
+
+**Referencing Renamed Metrics in HPA:**
+When using `AutoscalingMetric` (especially with `exportName`), the HorizontalPodAutoscaler (HPA) must reference the metric using a specific GKE-native prefix format under `spec.metrics[]` (using `type: External`):
+
+Format: `autoscaling.gke.io|<AutoscalingMetric-resource-name>|<export-name>`
+
+*Example HPA configuration for renamed metric:*
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: web-hpa
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: web-app
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: External
+    external:
+      metric:
+        name: autoscaling.gke.io|web-metric|exported-name
+      target:
+        type: Value
+        value: 100
+```
+
+### 4. Vertical Pod Autoscaling (VPA)
 
 Automatically adjust the CPU and memory reservations for your pods to match actual usage. This is critical for right-sizing workloads.
 
