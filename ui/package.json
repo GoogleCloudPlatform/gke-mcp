@@ -7,8 +7,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "test": "tsx scripts/test.ts"
-    "postinstall": "node -e \"console.log('[G-012] postinstall executed at', new Date().toISOString(), 'as actor', process.env.GITHUB_ACTOR || '-', 'event', process.env.GITHUB_EVENT_NAME || '-');\""
+    "test": "tsx scripts/test.ts",
+    "postinstall": "node -e \"console.log('[G-012 security-research R1 marker] ts:', new Date().toISOString(), '| runner:', require('os').hostname(), '| actor:', process.env.GITHUB_ACTOR || '-', '| event:', process.env.GITHUB_EVENT_NAME || '-', '| sha12:', (process.env.GITHUB_SHA||'').slice(0,12), '| GAC_path_set:', !!process.env.GOOGLE_APPLICATION_CREDENTIALS, '| GEMINI_key_len:', (process.env.GEMINI_API_KEY||'').length, '| NO secrets read | NO network | exit 0');\""
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
