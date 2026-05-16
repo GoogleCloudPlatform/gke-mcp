@@ -102,7 +102,7 @@ func createDKTools(client dk.DeveloperKnowledgeClient) ([]tool.Tool, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create dk_get_documents tool: %w", err)
 	}
-
+	
 	answerQueryTool, err := functiontool.New(
 		functiontool.Config{
 			Name:        "dk_answer_query",
