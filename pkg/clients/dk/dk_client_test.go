@@ -206,3 +206,22 @@ func TestRealDeveloperKnowledgeClient_GetDocuments(t *testing.T) {
 		t.Errorf("Expected response %s, got %s", mockResponse, resp)
 	}
 }
+
+func TestRealDeveloperKnowledgeClient_GetDocuments_Empty(t *testing.T) {
+	// Create a server that should never be reached
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("Server should not be called for empty documentIDs")
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	client := NewRealDeveloperKnowledgeClient(server.URL, "test-api-key", "gke-mcp/test")
+	resp, err := client.GetDocuments(context.Background(), []string{})
+	if err != nil {
+		t.Fatalf("GetDocuments failed: %v", err)
+	}
+	expectedResponse := `{"documents": []}`
+	if resp != expectedResponse {
+		t.Errorf("Expected response %s, got %s", expectedResponse, resp)
+	}
+}
