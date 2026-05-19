@@ -154,7 +154,7 @@ func TestRealDeveloperKnowledgeClient_GetDocuments(t *testing.T) {
 	mockResponse := `{"documents": [{"name": "doc-1"}, {"name": "doc-2"}]}`
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
+		if r.Method != http.MethodPost {
 			t.Errorf("Expected method POST, got %s", r.Method)
 		}
 		if r.URL.Path != "/v1/documents:batchGet" {
@@ -166,18 +166,27 @@ func TestRealDeveloperKnowledgeClient_GetDocuments(t *testing.T) {
 		if r.Header.Get("Content-Type") != "application/json" {
 			t.Errorf("Expected Content-Type application/json, got %s", r.Header.Get("Content-Type"))
 		}
+		if r.Header.Get("User-Agent") != "gke-mcp/test" {
+			t.Errorf("Expected User-Agent gke-mcp/test, got %s", r.Header.Get("User-Agent"))
+		}
 
 		var body map[string]interface{}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			t.Fatalf("Failed to decode request body: %v", err)
+			t.Errorf("Failed to decode request body: %v", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 		rawNames, ok := body["names"]
 		if !ok {
-			t.Fatalf("Expected key 'names' in request body")
+			t.Errorf("Expected key 'names' in request body")
+			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 		namesSlice, ok := rawNames.([]interface{})
 		if !ok {
-			t.Fatalf("Expected 'names' to be a slice")
+			t.Errorf("Expected 'names' to be a slice")
+			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 		if len(namesSlice) != 2 || namesSlice[0] != expectedIDs[0] || namesSlice[1] != expectedIDs[1] {
 			t.Errorf("Expected names %v, got %v", expectedIDs, namesSlice)
@@ -188,7 +197,7 @@ func TestRealDeveloperKnowledgeClient_GetDocuments(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewRealDeveloperKnowledgeClient(server.URL, "test-api-key")
+	client := NewRealDeveloperKnowledgeClient(server.URL, "test-api-key", "gke-mcp/test")
 	resp, err := client.GetDocuments(context.Background(), expectedIDs)
 	if err != nil {
 		t.Fatalf("GetDocuments failed: %v", err)
