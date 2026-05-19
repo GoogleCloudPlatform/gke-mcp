@@ -100,3 +100,80 @@ func TestRealDeveloperKnowledgeClient_SearchDocuments_Error(t *testing.T) {
 		t.Errorf("Expected error containing %q, got %v", expectedErrSubstring, err)
 	}
 }
+
+func TestRealDeveloperKnowledgeClient_GetDocuments(t *testing.T) {
+	expectedIDs := []string{"doc-1", "doc-2"}
+	mockResponse := `{"documents": [{"name": "doc-1"}, {"name": "doc-2"}]}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Errorf("Expected method POST, got %s", r.Method)
+		}
+		if r.URL.Path != "/v1/documents:batchGet" {
+			t.Errorf("Expected path /v1/documents:batchGet, got %s", r.URL.Path)
+		}
+		if r.Header.Get("X-Goog-Api-Key") != "test-api-key" {
+			t.Errorf("Expected API Key header, got %s", r.Header.Get("X-Goog-Api-Key"))
+		}
+		if r.Header.Get("Content-Type") != "application/json" {
+			t.Errorf("Expected Content-Type application/json, got %s", r.Header.Get("Content-Type"))
+		}
+		if r.Header.Get("User-Agent") != "gke-mcp/test" {
+			t.Errorf("Expected User-Agent gke-mcp/test, got %s", r.Header.Get("User-Agent"))
+		}
+
+		var body map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Errorf("Failed to decode request body: %v", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		rawNames, ok := body["names"]
+		if !ok {
+			t.Errorf("Expected key 'names' in request body")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		namesSlice, ok := rawNames.([]interface{})
+		if !ok {
+			t.Errorf("Expected 'names' to be a slice")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		if len(namesSlice) != 2 || namesSlice[0] != expectedIDs[0] || namesSlice[1] != expectedIDs[1] {
+			t.Errorf("Expected names %v, got %v", expectedIDs, namesSlice)
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(mockResponse))
+	}))
+	defer server.Close()
+
+	client := NewRealDeveloperKnowledgeClient(server.URL, "test-api-key", "gke-mcp/test")
+	resp, err := client.GetDocuments(context.Background(), expectedIDs)
+	if err != nil {
+		t.Fatalf("GetDocuments failed: %v", err)
+	}
+	if resp != mockResponse {
+		t.Errorf("Expected response %s, got %s", mockResponse, resp)
+	}
+}
+
+func TestRealDeveloperKnowledgeClient_GetDocuments_Empty(t *testing.T) {
+	// Create a server that should never be reached
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("Server should not be called for empty documentIDs")
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	client := NewRealDeveloperKnowledgeClient(server.URL, "test-api-key", "gke-mcp/test")
+	resp, err := client.GetDocuments(context.Background(), []string{})
+	if err != nil {
+		t.Fatalf("GetDocuments failed: %v", err)
+	}
+	expectedResponse := `{"documents": []}`
+	if resp != expectedResponse {
+		t.Errorf("Expected response %s, got %s", expectedResponse, resp)
+	}
+}
