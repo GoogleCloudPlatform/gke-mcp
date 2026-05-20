@@ -209,7 +209,7 @@ func TestRealDeveloperKnowledgeClient_GetDocuments(t *testing.T) {
 
 func TestRealDeveloperKnowledgeClient_GetDocuments_Empty(t *testing.T) {
 	// Create a server that should never be reached
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		t.Errorf("Server should not be called for empty documentIDs")
 		w.WriteHeader(http.StatusInternalServerError)
 	}))
