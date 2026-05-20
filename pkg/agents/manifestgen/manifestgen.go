@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package manifestgen provides an agent for generating Kubernetes manifests.
+// Package manifestgen provides an agent for generating Kubernetes manifests. Minor change for testing
 package manifestgen
 
 import (
