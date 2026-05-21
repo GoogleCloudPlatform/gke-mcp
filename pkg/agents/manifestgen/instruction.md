@@ -529,7 +529,7 @@ When processing a request:
         *   Increase `/dev/shm` size using an `emptyDir` volume with `medium:
             Memory` if the framework requires it.
 7.  **Output Format:** You MUST output *only* the raw YAML. No extra text, no
-    explanations, no markdown. If multiple resources are needed, separate them
+    explanations, no Markdown. If multiple resources are needed, separate them
     with `---`.
 
 <!-- prettier-ignore-end -->
