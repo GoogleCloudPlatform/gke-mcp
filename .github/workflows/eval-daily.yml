@@ -5,7 +5,7 @@ env:
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GKE_CLUSTER_NAME: "demo-cluster-2"
   AGENT_MODEL: "gemini-2.5-pro"
-  JUDGE_MODEL: "gemini-3.1-pro-preview"
+  JUDGE_MODEL: "gemini-2.5-pro"
 
 permissions: read-all
 
