@@ -69,7 +69,7 @@ jobs:
       - name: Install Python Dependencies (DevOps Bench)
         run: |
           python -m venv venv
-          ./venv/bin/pip install --index-url https://pypi.org/simple -r devops-bench/pkg/agents/evals/requirements.txt
+          ./venv/bin/pip install --index-url https://pypi.org/simple -r devops-bench/requirements.txt
 
       # RUN 1: Baseline Gemini Model (BENCH_USE_MCP = false)
       - name: Run Baseline Evaluation
