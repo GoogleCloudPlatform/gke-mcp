@@ -73,6 +73,7 @@ jobs:
 
       # RUN 1: Baseline Gemini Model (BENCH_USE_MCP = false)
       - name: Run Baseline Evaluation
+        working-directory: devops-bench
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           BENCH_AGENT_TYPE: "api"
@@ -86,13 +87,16 @@ jobs:
           CONFIDENT_API_KEY: ${{ secrets.CONFIDENT_API_KEY }}
           CONFIDENT_PROJECT_NAME: "GKE-MCP-Daily-Baseline"
         run: |
-          ./venv/bin/python3 devops-bench/pkg/evaluator/evaluate.py devops-bench/tasks
-          # Move results to base folder
-          mkdir -p devops-bench/results/base
-          mv $(find devops-bench/results/ -name "run_*" -type d | head -n 1)/results.json devops-bench/results/base/results.json
+          ../venv/bin/python3 pkg/evaluator/evaluate.py tasks
+          # Move results to base folder and clean up
+          RUN_DIR=$(find results/ -maxdepth 1 -name "run_*" -type d | head -n 1)
+          mkdir -p results/base
+          mv $RUN_DIR/results.json results/base/results.json
+          rm -rf $RUN_DIR
 
       # RUN 2: Enhanced GKE-MCP Agent (BENCH_USE_MCP = true)
       - name: Run GKE-MCP Enhanced Evaluation
+        working-directory: devops-bench
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           BENCH_AGENT_TYPE: "api"
@@ -106,11 +110,12 @@ jobs:
           CONFIDENT_API_KEY: ${{ secrets.CONFIDENT_API_KEY }}
           CONFIDENT_PROJECT_NAME: "GKE-MCP-Daily-Enhanced"
         run: |
-          ./venv/bin/python3 devops-bench/pkg/evaluator/evaluate.py devops-bench/tasks
-          # Move results to enhanced folder
-          mkdir -p devops-bench/results/enhanced
-          # Find the folder that isn't named "base"
-          mv $(find devops-bench/results/ -name "run_*" -type d | grep -v "base" | head -n 1)/results.json devops-bench/results/enhanced/results.json
+          ../venv/bin/python3 pkg/evaluator/evaluate.py tasks
+          # Move results to enhanced folder and clean up
+          RUN_DIR=$(find results/ -maxdepth 1 -name "run_*" -type d | head -n 1)
+          mkdir -p results/enhanced
+          mv $RUN_DIR/results.json results/enhanced/results.json
+          rm -rf $RUN_DIR
 
       # RUN 3: Generate Summary Markdown Report
       - name: Generate Dashboard Summary
