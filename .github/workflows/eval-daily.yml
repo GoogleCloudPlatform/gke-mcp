@@ -2,7 +2,7 @@ name: GKE-MCP Daily DevOps Bench Evaluation
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  GCP_PROJECT_ID: "jayantid-gke-dev"
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GKE_CLUSTER_NAME: "demo-cluster-2"
   AGENT_MODEL: "gemini-2.5-pro"
   JUDGE_MODEL: "gemini-3.1-pro-preview"
