@@ -111,7 +111,7 @@ func Test<HandlerMethodName>(t *testing.T) {
 ```
 
 ### 4. Register in Main Server
-Update [pkg/tools/tools.go](file:///usr/local/google/home/jayantid/gke-mcp/pkg/tools/tools.go) to register the new tool:
+Update [pkg/tools/tools.go](../../pkg/tools/tools.go) to register the new tool:
 1.  Add the import:
     ```go
     "github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/<package-name>"
