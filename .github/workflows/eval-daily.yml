@@ -32,8 +32,10 @@ jobs:
         with:
           repository: gke-labs/devops-bench
           path: devops-bench
-          # If it is a private repo, a PAT token might be needed, but since it is gke-labs/devops-bench it might be public or accessible. 
-          # Assuming standard Gactions can check out if user has repository tokens configured.
+      - name: Link GKE-MCP skills into DevOps Bench
+        run: |
+          mkdir -p devops-bench/third_party
+          ln -s ${{ github.workspace }}/gke-mcp devops-bench/third_party/gke-mcp
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
