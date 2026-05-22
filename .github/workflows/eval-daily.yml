@@ -44,6 +44,7 @@ jobs:
         run: |
           mkdir -p ~/.config/gcloud
           cp "${{ env.GOOGLE_APPLICATION_CREDENTIALS }}" ~/.config/gcloud/application_default_credentials.json
+          gcloud config set project ${{ env.GCP_PROJECT_ID }}
 
       - name: Set up Go
         uses: actions/setup-go@v6
