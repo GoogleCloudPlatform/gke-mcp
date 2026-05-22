@@ -34,6 +34,20 @@ def get_status_emoji(diff):
         return f"🔴 -{int(abs(diff) * 100)}%"
     return f"⚪ {int(diff * 100)}%"
 
+def get_score(scores, name):
+    if not isinstance(scores, dict):
+        return None
+    # Try exact match
+    if name in scores:
+        val = scores[name]
+        return val.get("score") if isinstance(val, dict) else val
+    # Try with GEval suffix
+    suffix_name = f"{name} [GEval]"
+    if suffix_name in scores:
+        val = scores[suffix_name]
+        return val.get("score") if isinstance(val, dict) else val
+    return None
+
 def main():
     base_path = "devops-bench/results/base/results.json"
     enhanced_path = "devops-bench/results/enhanced/results.json"
@@ -75,10 +89,10 @@ def main():
         b_scores = b_task.get("scores", {})
         e_scores = e_task.get("scores", {})
 
-        b_checklist = b_scores.get("ChecklistScore", {}).get("score")
-        e_checklist = e_scores.get("ChecklistScore", {}).get("score")
-        b_outcome = b_scores.get("OutcomeValidity", {}).get("score")
-        e_outcome = e_scores.get("OutcomeValidity", {}).get("score")
+        b_checklist = get_score(b_scores, "ChecklistScore")
+        e_checklist = get_score(e_scores, "ChecklistScore")
+        b_outcome = get_score(b_scores, "OutcomeValidity")
+        e_outcome = get_score(e_scores, "OutcomeValidity")
 
         b_lat = b_task.get("latency", 0.0)
         e_lat = e_task.get("latency", 0.0)
