@@ -76,6 +76,14 @@ jobs:
           python -m venv venv
           ./venv/bin/pip install --index-url https://pypi.org/simple -r devops-bench/requirements.txt
 
+      - name: Prepare Evaluation Tasks
+        working-directory: devops-bench
+        run: |
+          mkdir -p target_tasks
+          for task in create-deployment computeclass-spot-fallback computeclass-active-migration gateway-cloud-armor gateway-https-redirect hpa-metric-filtering hpa-renamed-metric; do
+            cp -r tasks/$task target_tasks/
+          done
+
       # RUN 1: Baseline Gemini Model (BENCH_USE_MCP = false)
       - name: Run Baseline Evaluation
         working-directory: devops-bench
@@ -92,7 +100,7 @@ jobs:
           CONFIDENT_API_KEY: ${{ secrets.CONFIDENT_API_KEY }}
           CONFIDENT_PROJECT_NAME: "GKE-MCP-Daily-Baseline"
         run: |
-          ../venv/bin/python3 pkg/evaluator/evaluate.py tasks
+          ../venv/bin/python3 pkg/evaluator/evaluate.py target_tasks
           # Move results to base folder and clean up
           RUN_DIR=$(find results/ -maxdepth 1 -name "run_*" -type d | head -n 1)
           mkdir -p results/base
@@ -115,7 +123,7 @@ jobs:
           CONFIDENT_API_KEY: ${{ secrets.CONFIDENT_API_KEY }}
           CONFIDENT_PROJECT_NAME: "GKE-MCP-Daily-Enhanced"
         run: |
-          ../venv/bin/python3 pkg/evaluator/evaluate.py tasks
+          ../venv/bin/python3 pkg/evaluator/evaluate.py target_tasks
           # Move results to enhanced folder and clean up
           RUN_DIR=$(find results/ -maxdepth 1 -name "run_*" -type d | head -n 1)
           mkdir -p results/enhanced
