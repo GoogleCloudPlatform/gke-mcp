@@ -27,7 +27,7 @@ require (
 )
 
 require (
-	github.com/Alcova-AI/adk-anthropic-go v0.1.15
+	github.com/Alcova-AI/adk-anthropic-go v0.1.16
 	github.com/google/uuid v1.6.0
 )
 
