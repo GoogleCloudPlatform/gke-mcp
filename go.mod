@@ -15,7 +15,7 @@ require (
 	github.com/modelcontextprotocol/go-sdk v1.6.1
 	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.10.2
-	google.golang.org/adk v1.2.0
+	google.golang.org/adk v1.3.0
 	google.golang.org/api v0.280.0
 	google.golang.org/genai v1.58.0
 	google.golang.org/genproto v0.0.0-20260414002931-afd174a4e478
@@ -93,7 +93,7 @@ require (
 	golang.org/x/term v0.43.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260414002931-afd174a4e478 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260427160629-7cedc36a6bc4 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260511170946-3700d4141b60 // indirect
 	google.golang.org/grpc v1.81.1 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
