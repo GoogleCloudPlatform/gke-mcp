@@ -6,12 +6,7 @@ env:
 permissions: read-all
 
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened]
-    branches: [main, "feature/**"]
-    paths:
-      - "pkg/agents/**"
-      - ".github/workflows/eval-on-pr.yml"
+  workflow_dispatch:
 
 jobs:
   evaluate:
@@ -23,8 +18,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
