@@ -19,7 +19,7 @@ This project is a comprehensive bundle including:
 
 ## Why this, over out-of-the-box AI?
 
-Standard AI agents can run terminal commands, capable of many straight forward user instructions. Meanwhile GKE MCP is the **Google-recommended way** to manage GKE, featuring:
+Standard AI agents can run terminal commands and are capable of handling many straightforward user instructions. Meanwhile, GKE MCP is the **Google-recommended way** to manage GKE, featuring:
 
 - **Expert Logic:** Built-in intelligence for GKE cost allocation and upgrade paths.
 - **Reliability:** Specialized Skills outperforming generic LLM reasoning.
