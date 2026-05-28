@@ -51,6 +51,14 @@ func Install(_ context.Context, s *mcp.Server, c *config.Config) error {
 	}, h.listK8SEvents)
 
 	mcp.AddTool(s, &mcp.Tool{
+		Name:        "list_k8s_api_resources",
+		Description: "Retrieves the available API groups and resources from a Kubernetes cluster. This is similar to running `kubectl api-resources`.",
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
+	}, h.listK8SAPIResources)
+
+	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_k8s_version",
 		Description: "Retrieves the Kubernetes server version for a given cluster. This is similar to running kubectl version.",
 		Annotations: &mcp.ToolAnnotations{
@@ -83,6 +91,35 @@ func Install(_ context.Context, s *mcp.Server, c *config.Config) error {
 		Name:        "delete_k8s_resource",
 		Description: "Deletes a Kubernetes resource from a cluster. This is similar to running `kubectl delete`.",
 	}, h.deleteK8SResource)
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "patch_k8s_resource",
+		Description: "Patches a Kubernetes resource. This is similar to running `kubectl patch`.",
+	}, h.patchK8SResource)
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_k8s_rollout_status",
+		Description: "Checks the current rollout status of a Kubernetes resource. This is similar to running `kubectl rollout status`.",
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
+	}, h.getK8SRolloutStatus)
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "check_k8s_auth",
+		Description: "Checks whether an action is allowed on a Kubernetes resource. This is similar to running `kubectl auth can-i`.",
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
+	}, h.checkK8SAuth)
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "describe_k8s_resource",
+		Description: "Shows the details of a specific Kubernetes resource. This is similar to running `kubectl describe`.",
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
+	}, h.describeK8SResource)
 
 	return nil
 }
