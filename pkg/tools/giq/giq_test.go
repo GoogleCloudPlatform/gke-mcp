@@ -302,15 +302,27 @@ func TestGenerateInferenceManifest_Mock_Success(t *testing.T) {
 }
 
 func TestGenerateInferenceManifest_Mock_InvalidNTPOT(t *testing.T) {
-	args := &GenerateInferenceManifestArgs{
-		Model:                   "test-model",
-		ModelServer:             "test-server",
-		Accelerator:             "nvidia-l4",
-		TargetNTPOTMilliseconds: "not-a-number",
+	tests := []struct {
+		name  string
+		ntpot string
+	}{
+		{"not a number", "not-a-number"},
+		{"zero", "0"},
+		{"negative", "-100"},
 	}
 
-	_, err := GenerateInferenceManifest(context.Background(), args)
-	if err == nil {
-		t.Error("Expected error for invalid target_ntpot_milliseconds, got nil")
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			args := &GenerateInferenceManifestArgs{
+				Model:                   "test-model",
+				ModelServer:             "test-server",
+				Accelerator:             "nvidia-l4",
+				TargetNTPOTMilliseconds: tc.ntpot,
+			}
+			_, err := GenerateInferenceManifest(context.Background(), args)
+			if err == nil {
+				t.Errorf("Expected error for target_ntpot_milliseconds=%q, got nil", tc.ntpot)
+			}
+		})
 	}
 }

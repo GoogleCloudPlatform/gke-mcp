@@ -73,6 +73,9 @@ func GenerateInferenceManifest(ctx context.Context, args *GenerateInferenceManif
 		if err != nil {
 			return "", fmt.Errorf("invalid target_ntpot_milliseconds: %w", err)
 		}
+		if ntpot <= 0 {
+			return "", fmt.Errorf("target_ntpot_milliseconds must be greater than zero, got %d", ntpot)
+		}
 		val := int32(ntpot)
 		req.PerformanceRequirements = &gkerecommenderpb.PerformanceRequirements{
 			TargetNtpotMilliseconds: &val,
