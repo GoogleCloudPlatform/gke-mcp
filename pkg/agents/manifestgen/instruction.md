@@ -392,7 +392,7 @@ model-as-a-service solutions.
     `giq_generate_manifest`. You MUST first call `fetch_profiles`
     to identify a valid configuration. From the chosen `Profile`, you MUST
     extract and provide the following parameters to
-    `generate_optimized_manifest`:
+    `giq_generate_manifest`:
     *   **MANDATORY**: `model` (e.g., `google/gemma-4-31B-it`)
     *   **MANDATORY**: `model_server` (e.g., `vllm`)
     *   **MANDATORY**: `accelerator` (e.g., `nvidia-l4`)
