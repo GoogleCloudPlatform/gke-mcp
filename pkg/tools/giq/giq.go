@@ -18,6 +18,7 @@ package giq
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	gkerecommender "cloud.google.com/go/gkerecommender/apiv1"
@@ -31,6 +32,17 @@ type GenerateInferenceManifestArgs struct {
 	ModelServer             string `json:"model_server" jsonschema:"The model server to use. Get the list of valid model servers from 'gcloud container ai profiles list --format='table(modelServerInfo.model,modelServerInfo.modelServer,modelServerInfo.modelServerVersion,acceleratorType)' if the user doesn't provide it. You can filter that gcloud command on '--model={model}' if the user provides the model."`
 	Accelerator             string `json:"accelerator" jsonschema:"The accelerator to use. Get the list of valid accelerators from 'gcloud container ai profiles list --format='table(modelServerInfo.model,modelServerInfo.modelServer,modelServerInfo.modelServerVersion,acceleratorType)' if the user doesn't provide it. You can filter that gcloud command on '--model={model}' and '--model-server={model-server}' if the user provides those values."`
 	TargetNTPOTMilliseconds string `json:"target_ntpot_milliseconds,omitempty" jsonschema:"The maximum normalized time per output token (NTPOT) in milliseconds.NTPOT is measured as the request_latency / output_tokens."`
+}
+
+var generateOptimizedManifestFunc = func(ctx context.Context, req *gkerecommenderpb.GenerateOptimizedManifestRequest) (*gkerecommenderpb.GenerateOptimizedManifestResponse, error) {
+	client, err := gkerecommender.NewGkeInferenceQuickstartClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create gkerecommender client: %w", err)
+	}
+	defer func() {
+		_ = client.Close()
+	}()
+	return client.GenerateOptimizedManifest(ctx, req)
 }
 
 // GenerateInferenceManifest core logic for GKE Inference Quickstart manifest generation.
@@ -48,14 +60,6 @@ func GenerateInferenceManifest(ctx context.Context, args *GenerateInferenceManif
 		return "", fmt.Errorf("accelerator argument cannot be empty")
 	}
 
-	client, err := gkerecommender.NewGkeInferenceQuickstartClient(ctx)
-	if err != nil {
-		return "", fmt.Errorf("failed to create gkerecommender client: %w", err)
-	}
-	defer func() {
-		_ = client.Close()
-	}()
-
 	req := &gkerecommenderpb.GenerateOptimizedManifestRequest{
 		ModelServerInfo: &gkerecommenderpb.ModelServerInfo{
 			Model:       args.Model,
@@ -64,9 +68,20 @@ func GenerateInferenceManifest(ctx context.Context, args *GenerateInferenceManif
 		AcceleratorType: args.Accelerator,
 	}
 
-	resp, err := client.GenerateOptimizedManifest(ctx, req)
+	if args.TargetNTPOTMilliseconds != "" {
+		ntpot, err := strconv.ParseInt(args.TargetNTPOTMilliseconds, 10, 32)
+		if err != nil {
+			return "", fmt.Errorf("invalid target_ntpot_milliseconds: %w", err)
+		}
+		val := int32(ntpot)
+		req.PerformanceRequirements = &gkerecommenderpb.PerformanceRequirements{
+			TargetNtpotMilliseconds: &val,
+		}
+	}
+
+	resp, err := generateOptimizedManifestFunc(ctx, req)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate optimized manifest via SDK: %w", err)
+		return "", fmt.Errorf("failed to generate optimized manifest: %w", err)
 	}
 
 	var manifests []string

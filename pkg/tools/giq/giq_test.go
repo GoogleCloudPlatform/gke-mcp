@@ -252,3 +252,65 @@ func TestFetchModelServerVersions_Validation(t *testing.T) {
 		t.Error("Expected error for empty modelServer, got nil")
 	}
 }
+
+func TestGenerateInferenceManifest_Mock_Success(t *testing.T) {
+	originalFunc := generateOptimizedManifestFunc
+	defer func() { generateOptimizedManifestFunc = originalFunc }()
+
+	generateOptimizedManifestFunc = func(_ context.Context, req *gkerecommenderpb.GenerateOptimizedManifestRequest) (*gkerecommenderpb.GenerateOptimizedManifestResponse, error) {
+		if req.ModelServerInfo.Model != "test-model" {
+			t.Errorf("Expected model 'test-model', got %q", req.ModelServerInfo.Model)
+		}
+		if req.ModelServerInfo.ModelServer != "test-server" {
+			t.Errorf("Expected modelServer 'test-server', got %q", req.ModelServerInfo.ModelServer)
+		}
+		if req.AcceleratorType != "nvidia-l4" {
+			t.Errorf("Expected acceleratorType 'nvidia-l4', got %q", req.AcceleratorType)
+		}
+		if req.PerformanceRequirements == nil {
+			t.Error("Expected PerformanceRequirements to be set, got nil")
+		} else if req.PerformanceRequirements.TargetNtpotMilliseconds == nil {
+			t.Error("Expected TargetNtpotMilliseconds to be set, got nil")
+		} else if *req.PerformanceRequirements.TargetNtpotMilliseconds != 500 {
+			t.Errorf("Expected TargetNtpotMilliseconds to be 500, got %d", *req.PerformanceRequirements.TargetNtpotMilliseconds)
+		}
+
+		return &gkerecommenderpb.GenerateOptimizedManifestResponse{
+			KubernetesManifests: []*gkerecommenderpb.KubernetesManifest{
+				{
+					Content: "manifest-content",
+				},
+			},
+		}, nil
+	}
+
+	args := &GenerateInferenceManifestArgs{
+		Model:                   "test-model",
+		ModelServer:             "test-server",
+		Accelerator:             "nvidia-l4",
+		TargetNTPOTMilliseconds: "500",
+	}
+
+	res, err := GenerateInferenceManifest(context.Background(), args)
+	if err != nil {
+		t.Fatalf("GenerateInferenceManifest returned error: %v", err)
+	}
+
+	if res != "manifest-content" {
+		t.Errorf("GenerateInferenceManifest = %q, want 'manifest-content'", res)
+	}
+}
+
+func TestGenerateInferenceManifest_Mock_InvalidNTPOT(t *testing.T) {
+	args := &GenerateInferenceManifestArgs{
+		Model:                   "test-model",
+		ModelServer:             "test-server",
+		Accelerator:             "nvidia-l4",
+		TargetNTPOTMilliseconds: "not-a-number",
+	}
+
+	_, err := GenerateInferenceManifest(context.Background(), args)
+	if err == nil {
+		t.Error("Expected error for invalid target_ntpot_milliseconds, got nil")
+	}
+}
