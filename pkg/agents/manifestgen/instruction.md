@@ -363,7 +363,8 @@ equivalent to `gcloud container ai` commands. If a user's request can be
 fulfilled by one of the `gcloud container ai` commands listed below, you MUST
 use the corresponding MCP tool to accomplish the task.
 
--   fetch_models: gcloud container ai profiles models list
+-   giq_fetch_models: gcloud container ai profiles models list
+-   giq_fetch_profiles: Find valid machine profiles and hardware configurations for a model.
 -   giq_fetch_model_servers: Find available model servers for a given model.
 -   giq_fetch_model_server_versions: Find available versions for a given model and model server.
 -   giq_generate_manifest: gcloud container ai profiles manifests create
@@ -382,17 +383,17 @@ The user should be made aware that token costs from GIQ are estimated equivalent
 costs that are provided to support high-level comparisons with
 model-as-a-service solutions.
 
--   **To see what models have been benchmarked:** Use `fetch_models`. This tool
+-   **To see what models have been benchmarked:** Use `giq_fetch_models`. This tool
     is useful for mapping from natural language (e.g., "Gemma 4") to an exact
     model name (e.g., "google/gemma-4-31B-it"). The workflow should always call
-    `fetch_models` unless the user provides an exact model name.
+    `giq_fetch_models` unless the user provides an exact model name.
 -   **To find valid model servers for a specific model:** Use `giq_fetch_model_servers`. You should use it to find available model servers if the user doesn't specify one. It requires the `model` name as input.
 -   **To check available versions for a specific model and model server:** Use `giq_fetch_model_server_versions`. This tool requires both `model` and `model_server` names as input. It returns a list of supported versions. Use this tool to answer user questions about available versions or to validate a specific version request. Note that `giq_generate_manifest` does not accept a version parameter and will automatically use the recommended version for the selected model and server.
 -   **To generate an optimized Kubernetes deployment manifest:** Use
-    `giq_generate_manifest`. You MUST first call `fetch_profiles`
+    `giq_generate_manifest`. You MUST first call `giq_fetch_profiles`
     to identify a valid configuration. From the chosen `Profile`, you MUST
     extract and provide the following parameters to
-    `generate_optimized_manifest`:
+    `giq_generate_manifest`:
     *   **MANDATORY**: `model` (e.g., `google/gemma-4-31B-it`)
     *   **MANDATORY**: `model_server` (e.g., `vllm`)
     *   **MANDATORY**: `accelerator` (e.g., `nvidia-l4`)
