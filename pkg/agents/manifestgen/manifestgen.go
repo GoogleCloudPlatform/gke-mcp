@@ -92,7 +92,7 @@ func createDKTools(client dk.DeveloperKnowledgeClient) ([]tool.Tool, error) {
 			Name:        "dk_get_documents",
 			Description: "Fetch specific documents by their IDs from the Developer Knowledge base.",
 		},
-		func(ctx tool.Context, args GetDocumentsArgs) (string, error) {
+		func(ctx agent.ToolContext, args GetDocumentsArgs) (string, error) {
 			if len(args.DocumentIDs) == 0 {
 				return "", fmt.Errorf("document_ids must not be empty")
 			}
@@ -108,7 +108,7 @@ func createDKTools(client dk.DeveloperKnowledgeClient) ([]tool.Tool, error) {
 			Name:        "dk_answer_query",
 			Description: "Answer a query based on the Developer Knowledge base.",
 		},
-		func(ctx tool.Context, args AnswerQueryArgs) (string, error) {
+		func(ctx agent.ToolContext, args AnswerQueryArgs) (string, error) {
 			return client.AnswerQuery(ctx, args.Query)
 		},
 	)
@@ -121,7 +121,7 @@ func createDKTools(client dk.DeveloperKnowledgeClient) ([]tool.Tool, error) {
 			Name:        "dk_search_documents",
 			Description: "Search for documents in the Developer Knowledge base.",
 		},
-		func(ctx tool.Context, args SearchDocumentsArgs) (string, error) {
+		func(ctx agent.ToolContext, args SearchDocumentsArgs) (string, error) {
 			return client.SearchDocuments(ctx, args.Query)
 		},
 	)
@@ -145,7 +145,7 @@ func NewAgent(llm model.LLM, cfg *config.Config, dkClient dk.DeveloperKnowledgeC
 			Name:        "giq_generate_manifest",
 			Description: "Use GKE Inference Quickstart (GIQ) to generate a Kubernetes manifest for optimized AI / inference workloads. Prefer to use this tool instead of gcloud",
 		},
-		func(ctx tool.Context, args giq.GenerateInferenceManifestArgs) (string, error) {
+		func(ctx agent.ToolContext, args giq.GenerateInferenceManifestArgs) (string, error) {
 			return giq.GenerateInferenceManifest(ctx, &args)
 		},
 	)
@@ -158,7 +158,7 @@ func NewAgent(llm model.LLM, cfg *config.Config, dkClient dk.DeveloperKnowledgeC
 			Name:        "giq_fetch_models",
 			Description: "List all AI models available for GKE via GKE Inference Quickstart (GIQ). Open-source models follow the Huggingface Hub `owner/model_name` format.",
 		},
-		func(ctx tool.Context, _ struct{}) (string, error) {
+		func(ctx agent.ToolContext, _ struct{}) (string, error) {
 			return giq.FetchModels(ctx)
 		},
 	)
@@ -171,7 +171,7 @@ func NewAgent(llm model.LLM, cfg *config.Config, dkClient dk.DeveloperKnowledgeC
 			Name:        "giq_fetch_profiles",
 			Description: "Fetch available performance profiles for models and servers in GKE Inference Quickstart (GIQ).",
 		},
-		func(ctx tool.Context, args FetchProfilesArgs) (string, error) {
+		func(ctx agent.ToolContext, args FetchProfilesArgs) (string, error) {
 			return giq.FetchProfiles(ctx, args.Model, args.ModelServer, args.ModelServerVersion)
 		},
 	)
@@ -184,7 +184,7 @@ func NewAgent(llm model.LLM, cfg *config.Config, dkClient dk.DeveloperKnowledgeC
 			Name:        "giq_fetch_model_servers",
 			Description: "Fetch available model servers for a given model in GKE Inference Quickstart (GIQ).",
 		},
-		func(ctx tool.Context, args FetchModelServersArgs) (string, error) {
+		func(ctx agent.ToolContext, args FetchModelServersArgs) (string, error) {
 			return giq.FetchModelServers(ctx, args.Model)
 		},
 	)
@@ -196,7 +196,7 @@ func NewAgent(llm model.LLM, cfg *config.Config, dkClient dk.DeveloperKnowledgeC
 			Name:        "giq_fetch_model_server_versions",
 			Description: "Fetch available versions for a given model and model server in GKE Inference Quickstart (GIQ).",
 		},
-		func(ctx tool.Context, args FetchModelServerVersionsArgs) (string, error) {
+		func(ctx agent.ToolContext, args FetchModelServerVersionsArgs) (string, error) {
 			return giq.FetchModelServerVersions(ctx, args.Model, args.ModelServer)
 		},
 	)
