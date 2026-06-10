@@ -68,7 +68,7 @@ its impact and a short rationale explaining why it is needed.*
 
 Mandatory commands to run to confirm the fix is effective.
 
-1.  Run `kubectl get [resource]` and verify [Expected State].
+1.  Run `kubectl get <resource>` and verify <Expected State>.
 2.  Run `kubectl describe` and confirm no further errors.
 
 ### Rollback / Cleanup
