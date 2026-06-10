@@ -59,19 +59,10 @@ Step-by-step raw `kubectl` or `gcloud` commands to perform the necessary
 actions. *Note: Every command block MUST be preceded by a brief description of
 its impact and a short rationale explaining why it is needed.*
 
-1.  **[Action Description]**:
+1.  **<Action Description>**:
 
    ```bash
-   kubectl [command]
-   ```
-
-2.  **[Destructive Action Description]**:
-   *CRITICAL: Ask the user for permission before executing the following
-    command.*
-
-   ```bash
-   kubectl delete [resource] [name]
-   ```
+   kubectl <command>
 
 ### Verification
 
