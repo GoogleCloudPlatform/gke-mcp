@@ -49,9 +49,9 @@ proceeding.
 Instructions for the agent to run specific read-only commands to verify the
 cluster is in the expected state.
 
-1.  Run `kubectl get pods -n [namespace]` to check status.
-2.  Run `kubectl describe [resource] [name]` to look for events.
-3.  Check logs using `kubectl logs [pod]`.
+1.  Run `kubectl get pods -n <namespace>` to check status.
+2.  Run `kubectl describe <resource> <name>` to look for events.
+3.  Check logs using `kubectl logs <pod>`.
 
 ### Fix (Remediation)
 
