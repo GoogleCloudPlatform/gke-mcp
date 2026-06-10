@@ -1,0 +1,11 @@
+suite_name: "gke_ai_troubleshooting_tpu_connection_failure_vbar_oom"
+timeout_seconds: 300
+cases:
+  - name: "diagnose_vbar_oom"
+    prompt: >
+      My GKE AI workload is failing to launch on TPU v6e nodes. I suspect a TPU connection failure or VBAR OOM. Can you help me diagnose it?
+    expectations: |
+      The agent must:
+      - Use the `gke-ai-troubleshooting-tpu-connection-failure-vbar-oom` skill
+      - Ask for context (Project ID, Cluster Name, Node Name, Issue Time, Workload Name, Workload Namespace)
+      - Suggest using `query_logs` with the appropriate filter for VBAR OOMs

@@ -1,0 +1,11 @@
+suite_name: "gke_ai_troubleshooting_jobset_interruption"
+timeout_seconds: 300
+cases:
+  - name: "diagnose_jobset_interruption"
+    prompt: >
+      My GKE training JobSet 'megatron-gpt3' keeps getting interrupted and restarting. Can you help me troubleshoot the root cause?
+    expectations: |
+      The agent must:
+      - Use the `gke-ai-troubleshooting-jobset-interruption` skill
+      - Request the required context (Project ID, Cluster Name, Workload Name, Namespace, Issue Time)
+      - Propose using `monitoring_time_series_chart` with MQL for metrics and `query_logs` with LQL for logs

@@ -22,7 +22,7 @@ or cgroup OOMs.
 - `references/failure_signatures.md`: Example failure logs for pattern matching calibration.
 - `scripts/validate_queries.sh`: Syntax validator for diagnostic queries.
 - `TEST.md`: Manual verification plan.
-- `EVAL.textproto`: Evaluation data for performance measurement.
+- `EVAL.yaml`: Evaluation data for performance measurement.
 
 ## Maintenance
 

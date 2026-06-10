@@ -25,7 +25,7 @@ In large slices, a single worker failing or a single physical host malfunctionin
 - `references/failure_signatures.md`: Example failure logs for pattern matching.
 - `scripts/validate_queries.sh`: Syntax validator for diagnostic queries.
 - `TEST.md`: Manual verification plan.
-- `EVAL.textproto`: Evaluation suite for testing agent compliance.
+- `EVAL.yaml`: Evaluation suite for testing agent compliance.
 - `BUILD`: Build definition for integration testing.
 
 ## Maintenance

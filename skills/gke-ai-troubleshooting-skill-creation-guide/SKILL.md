@@ -21,7 +21,7 @@ agents to diagnose complex failures in GKE workloads.
 4. **`scripts/validate_queries.sh`**: Automatic syntax validator for all
    queries.
 5. **`TEST.md`**: Manual verification plan for humans.
-6. **`EVAL.textproto`**: Evaluation suite for performance tracking.
+6. **`EVAL.yaml`**: Evaluation suite for performance tracking.
 
 ### Optional Components
 
