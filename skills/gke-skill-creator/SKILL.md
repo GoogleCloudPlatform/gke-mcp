@@ -34,11 +34,11 @@ GKE customers.
 -   Ask the user for specific GKE symptoms (e.g., Pods stuck in
     `CrashLoopBackOff`, Service 503 errors, Node pressure).
 -   Use **read-only** tools to pull live context:
-    -   `kubectl get [resource] -o yaml`
-    -   `kubectl describe [resource]`
-    -   `kubectl logs [pod] --tail=100`
+    -   `kubectl get <resource> -o yaml`
+    -   `kubectl describe <resource>`
+    -   `kubectl logs <pod> --tail=100`
     -   `kubectl get events --sort-by='.lastTimestamp'`
-    -   `gcloud container clusters describe [cluster]`
+    -   `gcloud container clusters describe <cluster>`
 
 ### 2. Perform Deep Research
 
