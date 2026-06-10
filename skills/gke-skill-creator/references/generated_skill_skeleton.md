@@ -15,13 +15,13 @@ All generated skills must strictly follow this structure.
 
 --------------------------------------------------------------------------------
 
-name: [issue-name-kebab-case] description: >-
+---
+name: <issue-name-kebab-case>
+description: >-
+  Expert diagnosis and remediation for <Issue Name>. Triggered by <Observable Symptom>.
+---
 
-## Expert diagnosis and remediation for [Issue Name].
-
-Triggered by [Observable Symptom].
-
-## [Issue Name] Expert
+# <Issue Name> Expert
 
 ### Symptoms
 
