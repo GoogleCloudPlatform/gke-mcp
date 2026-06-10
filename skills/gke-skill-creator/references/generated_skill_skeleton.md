@@ -75,7 +75,7 @@ Mandatory commands to run to confirm the fix is effective.
 
 Steps to undo the changes if the fix fails or causes issues.
 
-1.  **[Rollback Action]**: `kubectl [command to undo]`
+1.  **<Rollback Action>**: `kubectl <command to undo>`
 
 ### Technical Explanation
 
