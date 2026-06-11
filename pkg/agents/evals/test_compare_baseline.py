@@ -33,9 +33,11 @@ class GoogleGeminiAI(DeepEvalBaseLLM):
         return "Gemini AI Model"
 
 def start_mcp_server():
-    """Starts the Go MCP server in stdio mode."""
+    """Starts the MCP server in stdio mode."""
+    cmd_str = os.getenv("GKE_MCP_SERVER_CMD", "go run main.go")
+    cmd = cmd_str.split()
     return subprocess.Popen(
-        ["go", "run", "main.go"],
+        cmd,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
