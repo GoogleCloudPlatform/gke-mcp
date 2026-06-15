@@ -16,7 +16,7 @@ require (
 	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.10.2
 	google.golang.org/adk v1.4.0
-	google.golang.org/api v0.283.0
+	google.golang.org/api v0.284.0
 	google.golang.org/genai v1.60.0
 	google.golang.org/genproto v0.0.0-20260414002931-afd174a4e478
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af
@@ -89,7 +89,7 @@ require (
 	golang.org/x/crypto v0.51.0 // indirect
 	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
-	golang.org/x/sync v0.20.0 // indirect
+	golang.org/x/sync v0.21.0 // indirect
 	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/term v0.43.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
