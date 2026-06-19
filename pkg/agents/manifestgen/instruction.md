@@ -365,7 +365,7 @@ use the corresponding MCP tool to accomplish the task.
 
 -   giq_fetch_models: gcloud container ai profiles models list
 -   giq_fetch_profiles: gcloud container ai profiles list
--   giq_fetch_model_servers: Find available model servers for a given model.
+-   giq_fetch_model_servers: gcloud container ai profiles model-servers list --model=MODEL
 -   giq_fetch_model_server_versions: Find available versions for a given model and model server.
 -   giq_generate_manifest: gcloud container ai profiles manifests create
 
