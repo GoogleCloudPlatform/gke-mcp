@@ -29,7 +29,7 @@ jobs:
     permissions:
       contents: "read"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: "Run dev/ci/presubmits/docker-build.sh"
         run: |
           ./dev/ci/presubmits/docker-build.sh
@@ -40,7 +40,7 @@ jobs:
     permissions:
       contents: "read"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v6
         with:
           go-version-file: "go.mod"
@@ -54,7 +54,7 @@ jobs:
     permissions:
       contents: "read"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v6
         with:
           go-version-file: "go.mod"
@@ -68,7 +68,7 @@ jobs:
     permissions:
       contents: "read"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -85,7 +85,7 @@ jobs:
     permissions:
       contents: "read"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v6
         with:
           go-version-file: "go.mod"
@@ -100,7 +100,7 @@ jobs:
       contents: "read"
       checks: "write" # For annotations on PRs
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v6
         with:
           go-version-file: "go.mod"
@@ -117,7 +117,7 @@ jobs:
     permissions:
       contents: "read"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v6
         with:
           go-version-file: "go.mod"
@@ -134,7 +134,7 @@ jobs:
     permissions:
       contents: "read"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v6
         with:
           go-version-file: "go.mod"
@@ -148,7 +148,7 @@ jobs:
     permissions:
       contents: "read"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -165,7 +165,7 @@ jobs:
     permissions:
       contents: "read"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: "Run dev/ci/presubmits/verify-workflows.py"
         run: |
           ./dev/ci/presubmits/verify-workflows.py
@@ -185,7 +185,7 @@ jobs:
       # to update commit status
       statuses: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           # super-linter needs the full git history to get the
           # list of files that changed across commits
