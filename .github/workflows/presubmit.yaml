@@ -192,7 +192,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: "Super-linter"
-        uses: super-linter/super-linter/slim@v8.6.0
+        uses: super-linter/super-linter/slim@v8.7.0
         env:
           # To report GitHub Actions status checks
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
