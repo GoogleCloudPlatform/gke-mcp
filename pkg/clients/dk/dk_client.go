@@ -98,14 +98,11 @@ func (c *RealDeveloperKnowledgeClient) doPost(ctx context.Context, path string, 
 
 // doGet executes a GET request to the Developer Knowledge API.
 func (c *RealDeveloperKnowledgeClient) doGet(ctx context.Context, path string, queryParams map[string]string) (string, error) {
-	reqURL, err := url.JoinPath(c.baseURL, path)
+	parsedURL, err := url.Parse(c.baseURL)
 	if err != nil {
 		return "", err
 	}
-	parsedURL, err := url.Parse(reqURL)
-	if err != nil {
-		return "", err
-	}
+	parsedURL = parsedURL.JoinPath(path)
 	q := parsedURL.Query()
 	for k, v := range queryParams {
 		q.Set(k, v)
