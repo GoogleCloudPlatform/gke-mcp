@@ -52,7 +52,7 @@ The manifest generation agent (`generate_manifest` tool) can retrieve official G
 
 To enable this capability:
 
-1. **Enable the API:** Enable the **Developer Knowledge API** in your Google Cloud Project (refer to the [Developer Knowledge API documentation](https://developers.google.com/knowledge/api#enable_the_api) for details on how to enable the API).
+1. **Enable the API:** Enable the **Developer Knowledge API** in your Google Cloud Project (refer to the [Developer Knowledge API documentation](https://developers.google.com/knowledge/api#enable_the_api) for details).
 2. **Generate an API Key:** Create an API key with permissions to call the Developer Knowledge API.
 3. **Configure the Environment Variable:** Set the `DK_API_KEY` environment variable when starting the MCP server:
    - **Gemini CLI / Terminal:**
