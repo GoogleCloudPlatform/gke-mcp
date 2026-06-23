@@ -46,6 +46,37 @@ For additional help, refer to the troubleshoot section: [gke-mcp: command not fo
 
 For detailed instructions on how to connect the GKE MCP Server to various AI clients, including Cursor, Visual Studio Code, Claude Desktop, and Claude Code, please refer to our dedicated [installation guide](docs/installation_guide/).
 
+### Configuring the Developer Knowledge API
+
+The manifest generation agent (`generate_manifest` tool) can retrieve official GKE documentation, required annotations, and best practices using the Developer Knowledge API.
+
+To enable this capability:
+
+1. **Enable the API:** Enable the **Developer Knowledge API** in your Google Cloud Project (refer to the [Developer Knowledge API documentation](https://developers.google.com/knowledge/api#enable_the_api) for details on how to enable the API).
+2. **Generate an API Key:** Create an API key with permissions to call the Developer Knowledge API.
+3. **Configure the Environment Variable:** Set the `DK_API_KEY` environment variable when starting the MCP server:
+   - **Gemini CLI / Terminal:**
+     ```sh
+     export DK_API_KEY="your-api-key-here"
+     ```
+   - **Cursor / Claude Desktop / Visual Studio Code:** Add the environment variable to your client's MCP configuration. For example, in `claude_desktop_config.json`:
+     ```json
+     {
+       "mcpServers": {
+         "gke-mcp": {
+           "command": "gke-mcp",
+           "env": {
+             "DK_API_KEY": "your-api-key-here"
+           }
+         }
+       }
+     }
+     ```
+
+Optional configuration:
+
+- `DK_BASE_URL`: The base URL of the Developer Knowledge API (defaults to `https://knowledge.googleapis.com`).
+
 ## MCP Tools
 
 - `cluster_toolkit_download`: Download the Cluster Toolkit Git repository.
