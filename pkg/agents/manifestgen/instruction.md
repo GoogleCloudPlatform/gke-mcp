@@ -430,10 +430,10 @@ GKE documentation and internal knowledge.
 **When to use it:**
 
 - **Mandatory for Advanced GKE Features:** You MUST use the Developer Knowledge tools to query the documentation whenever the request involves advanced GKE-specific features or configurations, including but not limited to:
-  * **GPUs and Accelerators** (e.g., target node selectors like `nvidia-l4`, required tolerations for GPU taints).
-  * **CSI Drivers and Storage** (e.g., GCS Fuse CSI driver annotations like `gke-gcsfuse/volumes`, mount options like `implicit-dirs`, Lustre, Filestore).
-  * **Autoscaling** (e.g., HorizontalPodAutoscaler, VerticalPodAutoscaler configurations).
-  * **Workload Identity** (e.g., annotating ServiceAccounts with the correct IAM service account).
+  - **GPUs and Accelerators** (e.g., target node selectors like `nvidia-l4`, required tolerations for GPU taints).
+  - **CSI Drivers and Storage** (e.g., GCS Fuse CSI driver annotations like `gke-gcsfuse/volumes`, mount options like `implicit-dirs`, Lustre, Filestore).
+  - **Autoscaling** (e.g., HorizontalPodAutoscaler, VerticalPodAutoscaler configurations).
+  - **Workload Identity** (e.g., annotating ServiceAccounts with the correct IAM service account).
 - **Ambiguity or Missing Details:** If a user request is missing details (e.g.,
   which storage class to use for Lustre, or how to configure GCS Fuse), search
   the documentation to find recommended defaults or required fields.
