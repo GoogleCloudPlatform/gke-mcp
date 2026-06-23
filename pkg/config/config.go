@@ -99,9 +99,12 @@ func New(version string, enableDeleteTools bool) *Config {
 
 	dkBaseURL := os.Getenv("DK_BASE_URL")
 	if dkBaseURL == "" {
-		dkBaseURL = "https://knowledge.googleapis.com"
+		dkBaseURL = "https://developerknowledge.googleapis.com"
 	}
 	dkAPIKey := os.Getenv("DK_API_KEY")
+	if dkAPIKey == "" {
+		dkAPIKey = os.Getenv("GEMINI_API_KEY")
+	}
 
 	return &Config{
 		userAgent:         "gke-mcp/" + version,

@@ -96,6 +96,52 @@ func (c *RealDeveloperKnowledgeClient) doPost(ctx context.Context, path string, 
 	return string(body), nil
 }
 
+// doGet executes a GET request to the Developer Knowledge API.
+func (c *RealDeveloperKnowledgeClient) doGet(ctx context.Context, path string, queryParams map[string]string) (string, error) {
+	reqURL, err := url.JoinPath(c.baseURL, path)
+	if err != nil {
+		return "", err
+	}
+	parsedURL, err := url.Parse(reqURL)
+	if err != nil {
+		return "", err
+	}
+	q := parsedURL.Query()
+	for k, v := range queryParams {
+		q.Set(k, v)
+	}
+	parsedURL.RawQuery = q.Encode()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, parsedURL.String(), nil)
+	if err != nil {
+		return "", err
+	}
+	if c.apiKey != "" {
+		req.Header.Set("X-Goog-Api-Key", c.apiKey)
+	}
+	if c.userAgent != "" {
+		req.Header.Set("User-Agent", c.userAgent)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1024*1024))
+		return "", fmt.Errorf("API request failed with status %s: %s", resp.Status, string(body))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
+}
+
 // GetDocuments fetches specific documents by their IDs.
 func (c *RealDeveloperKnowledgeClient) GetDocuments(ctx context.Context, documentIDs []string) (string, error) {
 	if len(documentIDs) == 0 {
@@ -108,14 +154,14 @@ func (c *RealDeveloperKnowledgeClient) GetDocuments(ctx context.Context, documen
 
 // AnswerQuery answers a query based on the knowledge base.
 func (c *RealDeveloperKnowledgeClient) AnswerQuery(ctx context.Context, query string) (string, error) {
-	return c.doPost(ctx, "/v1alpha/TopLevel:answerQuery", map[string]interface{}{
+	return c.doPost(ctx, "/v1/TopLevel:answerQuery", map[string]interface{}{
 		"query": query,
 	})
 }
 
 // SearchDocuments searches for documents related to a query.
 func (c *RealDeveloperKnowledgeClient) SearchDocuments(ctx context.Context, query string) (string, error) {
-	return c.doPost(ctx, "/v1/documents:searchDocumentChunks", map[string]interface{}{
+	return c.doGet(ctx, "/v1/documents:searchDocumentChunks", map[string]string{
 		"query": query,
 	})
 }

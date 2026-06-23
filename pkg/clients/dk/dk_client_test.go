@@ -44,8 +44,8 @@ func TestRealDeveloperKnowledgeClient_SearchDocuments(t *testing.T) {
 	mockResponse := `{"results": [{"chunk": "details"}]}`
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			t.Errorf("Expected method POST, got %s", r.Method)
+		if r.Method != http.MethodGet {
+			t.Errorf("Expected method GET, got %s", r.Method)
 		}
 		if r.URL.Path != "/v1/documents:searchDocumentChunks" {
 			t.Errorf("Expected path /v1/documents:searchDocumentChunks, got %s", r.URL.Path)
@@ -53,21 +53,13 @@ func TestRealDeveloperKnowledgeClient_SearchDocuments(t *testing.T) {
 		if r.Header.Get("X-Goog-Api-Key") != "test-api-key" {
 			t.Errorf("Expected API Key header, got %s", r.Header.Get("X-Goog-Api-Key"))
 		}
-		if r.Header.Get("Content-Type") != "application/json" {
-			t.Errorf("Expected Content-Type application/json, got %s", r.Header.Get("Content-Type"))
-		}
 		if r.Header.Get("User-Agent") != "gke-mcp/test" {
 			t.Errorf("Expected User-Agent gke-mcp/test, got %s", r.Header.Get("User-Agent"))
 		}
 
-		var body map[string]interface{}
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			t.Errorf("Failed to decode request body: %v", err)
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		if body["query"] != expectedQuery {
-			t.Errorf("Expected query %q, got %q", expectedQuery, body["query"])
+		query := r.URL.Query().Get("query")
+		if query != expectedQuery {
+			t.Errorf("Expected query %q, got %q", expectedQuery, query)
 		}
 
 		w.WriteHeader(http.StatusOK)
@@ -111,8 +103,8 @@ func TestRealDeveloperKnowledgeClient_AnswerQuery(t *testing.T) {
 		if r.Method != http.MethodPost {
 			t.Errorf("Expected method POST, got %s", r.Method)
 		}
-		if r.URL.Path != "/v1alpha/TopLevel:answerQuery" {
-			t.Errorf("Expected path /v1alpha/TopLevel:answerQuery, got %s", r.URL.Path)
+		if r.URL.Path != "/v1/TopLevel:answerQuery" {
+			t.Errorf("Expected path /v1/TopLevel:answerQuery, got %s", r.URL.Path)
 		}
 		if r.Header.Get("X-Goog-Api-Key") != "test-api-key" {
 			t.Errorf("Expected API Key header, got %s", r.Header.Get("X-Goog-Api-Key"))
