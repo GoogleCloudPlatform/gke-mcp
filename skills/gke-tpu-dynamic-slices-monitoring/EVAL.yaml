@@ -1,0 +1,28 @@
+---
+suite_name: "gke_tpu_dynamic_slices_monitoring"
+timeout_seconds: 300
+cases:
+  - name: "diagnose_failed_slice_creation_no_context"
+    prompt: >
+      I tried to create a dynamic TPU slice, but it is not working. The slice
+      name is 'test-slice'. Can you help me check its status and troubleshoot
+      why it failed?
+    expectations: |
+      The agent must:
+      - Use the `gke-tpu-dynamic-slices-monitoring` skill
+      - Ask for the missing context (Project ID, Cluster Name, Region/Zone)
+      - Indicate that it will check the slice status once the context is provided.
+
+  - name: "diagnose_failed_slice_creation_with_status"
+    prompt: >
+      I tried to create a dynamic TPU slice 'test-slice' in project 'my-tpu-proj',
+      cluster 'tpu-cluster-1', zone 'us-central1-a'. The slice status is
+      showing as `SliceCreationFailed`. Can you help me troubleshoot what this
+      means and what to check next?
+    expectations: |
+      The agent must:
+      - Use the `gke-tpu-dynamic-slices-monitoring` skill
+      - Explain what `SliceCreationFailed` means (prerequisites validation failed).
+      - Suggest the potential causes: selected nodes don't exist, nodes are
+        already used by another slice, or the topology doesn't match the
+        number of partitions.
