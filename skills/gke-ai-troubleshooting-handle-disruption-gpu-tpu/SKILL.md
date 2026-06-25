@@ -19,7 +19,7 @@ description: Diagnose and predict node disruption during Compute Engine host mai
   ```bash
   kubectl get nodes -l cloud.google.com/scheduled-maintenance-time -L cloud.google.com/scheduled-maintenance-time
   ```
-- **Interpretation**: The `SCHEDULED-MAINTENANCE-TIME` column shows the UNIX epoch time when the VM is scheduled for maintenance. If this label exists, a disruption is guaranteed to occur.
+- **Interpretation**: The `SCHEDULED-MAINTENANCE-TIME` column shows the Unix epoch time when the VM is scheduled for maintenance. If this label exists, a disruption is guaranteed to occur.
 
 ### Step 2: [Low Risk] Investigation via Cloud Monitoring (PromQL)
 

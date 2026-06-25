@@ -12,4 +12,4 @@
 
 ## Kubectl Label Signatures
 
-- `cloud.google.com/scheduled-maintenance-time` (Node label containing the UNIX epoch timestamp of upcoming scheduled maintenance).
+- `cloud.google.com/scheduled-maintenance-time` (Node label containing the Unix epoch timestamp of upcoming scheduled maintenance).
