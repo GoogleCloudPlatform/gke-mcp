@@ -1,14 +1,24 @@
+---
 suite_name: "gke_ai_troubleshooting_handle_disruption_gpu_tpu"
 timeout_seconds: 300
 cases:
   - name: "diagnose_gpu_tpu_disruption"
     prompt: >
-      My GPU or TPU workloads on GKE are getting terminated unexpectedly. I noticed some nodes shutting down. Can you help me investigate if this is due to host maintenance?
+      My GPU or TPU workloads on GKE are getting terminated unexpectedly.
+      I noticed some nodes shutting down.
+      Can you help me investigate if this is due to host maintenance?
     expectations: |
       The agent must:
       - Use the `gke-ai-troubleshooting-handle-disruption-gpu-tpu` skill.
-      - Request the mandatory context: Project ID, Location, Cluster Name, and Timestamp.
-      - Propose using `kubectl` to check for the `cloud.google.com/scheduled-maintenance-time` label on nodes.
-      - Propose using Cloud Monitoring to check the `kubernetes_io:node_interruption_count` metric with `interruption_reason="HW/SW Maintenance"`.
-      - Propose querying Cloud Logging for GKE logs showing `cloud.google.com/active-node-maintenance` and the `cloud.google.com/impending-node-termination:NoSchedule` taint.
-      - Suggest configuring graceful termination and opportunistic maintenance as resolutions.
+      - Request the mandatory context: Project ID, Location, Cluster Name,
+        and Timestamp.
+      - Propose using `kubectl` to check for the
+        `cloud.google.com/scheduled-maintenance-time` label on nodes.
+      - Propose using Cloud Monitoring to check the
+        `kubernetes_io:node_interruption_count` metric with
+        `interruption_reason="HW/SW Maintenance"`.
+      - Propose querying Cloud Logging for GKE logs showing
+        `cloud.google.com/active-node-maintenance` and the
+        `cloud.google.com/impending-node-termination:NoSchedule` taint.
+      - Suggest configuring graceful termination and opportunistic
+        maintenance as resolutions.
