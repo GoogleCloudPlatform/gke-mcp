@@ -1,0 +1,26 @@
+---
+suite_name: "gke_tpu_metrics_monitoring"
+timeout_seconds: 300
+cases:
+  - name: "tpu_metrics_no_context"
+    prompt: >
+      My TPU workload is running slow. How can I check if the TPUs are being
+      fully utilized?
+    expectations: |
+      The agent must:
+      - Ask for the missing context (Project ID, Cluster Name, Region/Zone)
+      - Identify that TPU duty cycle or TensorCore utilization are the key metrics to check.
+      - Indicate that it needs the context to help the user query or analyze these metrics for their specific cluster.
+
+  - name: "tpu_metrics_with_context"
+    prompt: >
+      My TPU workload is running slow in project 'my-project',
+      cluster 'my-cluster', zone 'us-central1-a'. I want to check the TPU
+      duty cycle and memory. What metrics should I look at and what do they
+      mean?
+    expectations: |
+      The agent must:
+      - Use the `gke-tpu-metrics-monitoring` skill
+      - List the runtime metrics: `kubernetes.io/container/accelerator/duty_cycle`, `kubernetes.io/container/accelerator/memory_used`, and `kubernetes.io/container/accelerator/memory_total`.
+      - Explain that `duty_cycle` is the percentage of time TensorCores were actively processing, and `memory_used`/`memory_total` are for memory allocation.
+      - Mention the requirement of `containerPort: 8431` in the pod spec.
