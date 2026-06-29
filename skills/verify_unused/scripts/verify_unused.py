@@ -60,7 +60,7 @@ def run_kubectl(args, timeout_sec=5.0):
     ):
       return None
     raise RuntimeError(
-        f"Kubectl query failed (exit code {e.returncode}): {e.stderr.strip()}"
+        f"Kubectl query failed (exit code {e.returncode}): {(e.stderr or '').strip()}"
     ) from e
 
 
