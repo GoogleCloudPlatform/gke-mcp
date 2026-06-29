@@ -149,23 +149,24 @@ def verify_unused(kubeconfig=None, context=None, timeout_sec=5.0):
             break
 
   except Exception as e:
-    print("=" * 70)
-    print("\033[91m[FAIL-CLOSE] Cluster safety check failed due to query error or timeout!\033[0m")
-    print(f"Error details: {e}")
-    print("To prevent accidental cluster deletion during control-plane outages or network latency, deletion is BLOCKED.")
-    print("=" * 70)
+    print("=" * 70, file=sys.stderr)
+    print("\033[91m[FAIL-CLOSE] Cluster safety check failed due to query error or timeout!\033[0m", file=sys.stderr)
+    print(f"Error details: {e}", file=sys.stderr)
+    print("To prevent accidental cluster deletion during control-plane outages or network latency, deletion is BLOCKED.", file=sys.stderr)
+    print("=" * 70, file=sys.stderr)
     return 2
 
   # Final Verdict
-  print("=" * 70)
   if active_reasons:
-    print("\033[91m[ACTIVE] Cluster is currently in use! Deletion blocked.\033[0m")
-    print("Active workloads/resources detected:")
+    print("=" * 70, file=sys.stderr)
+    print("\033[91m[ACTIVE] Cluster is currently in use! Deletion blocked.\033[0m", file=sys.stderr)
+    print("Active workloads/resources detected:", file=sys.stderr)
     for reason in active_reasons:
-      print(f"  - {reason}")
-    print("=" * 70)
+      print(f"  - {reason}", file=sys.stderr)
+    print("=" * 70, file=sys.stderr)
     return 1
   else:
+    print("=" * 70)
     print("\033[92m[UNUSED] Cluster is verified unused (no active compute, exposure, or persistent data).\033[0m")
     print("It is safe to proceed with cluster deletion.")
     print("=" * 70)
