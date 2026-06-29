@@ -154,7 +154,7 @@ def verify_unused(kubeconfig=None, context=None, timeout_sec=5.0):
     print(f"Error details: {e}")
     print("To prevent accidental cluster deletion during control-plane outages or network latency, deletion is BLOCKED.")
     print("=" * 70)
-    sys.exit(2)
+    return 2
 
   # Final Verdict
   print("=" * 70)
@@ -164,12 +164,12 @@ def verify_unused(kubeconfig=None, context=None, timeout_sec=5.0):
     for reason in active_reasons:
       print(f"  - {reason}")
     print("=" * 70)
-    sys.exit(1)
+    return 1
   else:
     print("\033[92m[UNUSED] Cluster is verified unused (no active compute, exposure, or persistent data).\033[0m")
     print("It is safe to proceed with cluster deletion.")
     print("=" * 70)
-    sys.exit(0)
+    return 0
 
 
 def main():
@@ -191,11 +191,12 @@ def main():
       help="Timeout in seconds for synchronous API queries (defaults to 5.0s).",
   )
   args = parser.parse_args()
-  verify_unused(
+  exit_code = verify_unused(
       kubeconfig=args.kubeconfig,
       context=args.context,
       timeout_sec=args.timeout,
   )
+  sys.exit(exit_code)
 
 
 if __name__ == "__main__":
