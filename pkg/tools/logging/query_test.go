@@ -23,6 +23,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	ltype "google.golang.org/genproto/googleapis/logging/type"
 	"google.golang.org/protobuf/testing/protocmp"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -180,6 +181,17 @@ func TestFormatter(t *testing.T) {
 		Timestamp: timestamppb.New(time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)),
 	}
 
+	protoEntry := &loggingpb.LogEntry{
+		Payload: &loggingpb.LogEntry_ProtoPayload{
+			ProtoPayload: &anypb.Any{
+				TypeUrl: "type.googleapis.com/unknown.MessageType",
+				Value:   []byte("raw_bytes_123"),
+			},
+		},
+		Severity:  ltype.LogSeverity_ERROR,
+		Timestamp: timestamppb.New(time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)),
+	}
+
 	tests := []struct {
 		name    string
 		req     LogQueryRequest
@@ -207,6 +219,21 @@ func TestFormatter(t *testing.T) {
 			want: `{
   "message": {
     "key": "value"
+  },
+  "severity": "ERROR",
+  "timestamp": "2023-01-01T00:00:00Z"
+}`,
+			wantErr: false,
+			isJSON:  true,
+		},
+		{
+			name:  "compact formatter unregistered proto payload fallback",
+			req:   LogQueryRequest{},
+			entry: protoEntry,
+			want: `{
+  "message": {
+    "@type": "type.googleapis.com/unknown.MessageType",
+    "value": "cmF3X2J5dGVzXzEyMw=="
   },
   "severity": "ERROR",
   "timestamp": "2023-01-01T00:00:00Z"

@@ -16,6 +16,7 @@ package logging
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -329,6 +330,10 @@ func extractMessage(entry *loggingpb.LogEntry) any {
 			if err := json.Unmarshal(b, &m); err == nil {
 				return m
 			}
+		}
+		return map[string]any{
+			"@type": pp.GetTypeUrl(),
+			"value": base64.StdEncoding.EncodeToString(pp.GetValue()),
 		}
 	}
 	return nil
