@@ -320,13 +320,7 @@ func extractMessage(entry *loggingpb.LogEntry) any {
 				}
 			}
 		}
-		b, err := protojson.Marshal(jp)
-		if err == nil {
-			var m map[string]any
-			if err := json.Unmarshal(b, &m); err == nil {
-				return m
-			}
-		}
+		return jp.AsMap()
 	}
 	if pp := entry.GetProtoPayload(); pp != nil {
 		b, err := protojson.Marshal(pp)
