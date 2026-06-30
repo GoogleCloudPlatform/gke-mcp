@@ -81,6 +81,22 @@ func TestLogQueryRequest_Validate(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "invalid view parameter",
+			req: LogQueryRequest{
+				ProjectID: "test-project",
+				View:      "INVALID",
+			},
+			wantErr: true,
+		},
+		{
+			name: "valid view parameter",
+			req: LogQueryRequest{
+				ProjectID: "test-project",
+				View:      "FULL",
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -173,8 +189,34 @@ func TestFormatter(t *testing.T) {
 		isJSON  bool
 	}{
 		{
-			name:  "json formatter text payload",
+			name:  "compact formatter text payload default",
 			req:   LogQueryRequest{},
+			entry: entry,
+			want: `{
+  "severity": "ERROR",
+  "message": "test log",
+  "timestamp": "2023-01-01T00:00:00Z"
+}`,
+			wantErr: false,
+			isJSON:  true,
+		},
+		{
+			name:  "compact formatter json payload default",
+			req:   LogQueryRequest{},
+			entry: jsonEntry,
+			want: `{
+  "message": {
+    "key": "value"
+  },
+  "severity": "ERROR",
+  "timestamp": "2023-01-01T00:00:00Z"
+}`,
+			wantErr: false,
+			isJSON:  true,
+		},
+		{
+			name:  "json formatter text payload full view",
+			req:   LogQueryRequest{View: "FULL"},
 			entry: entry,
 			want: `{
   "severity": "ERROR",
@@ -185,8 +227,8 @@ func TestFormatter(t *testing.T) {
 			isJSON:  true,
 		},
 		{
-			name:  "json formatter json payload",
-			req:   LogQueryRequest{},
+			name:  "json formatter json payload full view",
+			req:   LogQueryRequest{View: "FULL"},
 			entry: jsonEntry,
 			want: `{
   "jsonPayload": {

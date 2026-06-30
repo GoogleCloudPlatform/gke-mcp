@@ -40,7 +40,8 @@ type LogQueryRequest struct {
 	TimeRange TimeRange `json:"time_range,omitempty" jsonschema:"Time range for log query. If empty, no restrictions are applied."`
 	Since     string    `json:"since,omitempty" jsonschema:"Only return logs newer than a relative duration like 5s, 2m, or 3h. The only supported units are seconds ('s'), minutes ('m'), and hours ('h')."`
 	Limit     int       `json:"limit,omitempty" jsonschema:"Maximum number of log entries to return. Cannot be greater than 100. Consider multiple calls if needed. Defaults to 10."`
-	Format    string    `json:"format,omitempty" jsonschema:"Go template string to format each log entry. If empty, the full JSON representation is returned. Note that empty fields are not included in the response. Example: '{{.timestamp}} [{{.severity}}] {{.textPayload}}'. It's strongly recommended to use a template to minimize the size of the response and only include the fields you need. Use the get_schema tool before this tool to get information about supported log types and their schemas."`
+	View      string    `json:"view,omitempty" jsonschema:"View mode for log entries: 'BASIC' (default) or 'FULL'. In BASIC view, only timestamp, severity, logName, and message are returned. In FULL view, the full JSON representation is returned."`
+	Format    string    `json:"format,omitempty" jsonschema:"Go template string to format each log entry. If empty, formatting depends on the view parameter. Example: '{{.timestamp}} [{{.severity}}] {{.textPayload}}'. It's strongly recommended to use a template or BASIC view to minimize the size of the response."`
 }
 
 // TimeRange captures an optional start/end window for log queries.
@@ -97,6 +98,11 @@ func (r *LogQueryRequest) setDefaults() {
 	if r.Limit == 0 {
 		r.Limit = defaultLimit
 	}
+	if r.View == "" {
+		r.View = "BASIC"
+	} else {
+		r.View = strings.ToUpper(r.View)
+	}
 }
 
 func (r *LogQueryRequest) validate() error {
@@ -113,6 +119,9 @@ func (r *LogQueryRequest) validate() error {
 	}
 	if (r.TimeRange != TimeRange{}) && r.Since != "" {
 		return fmt.Errorf("since parameter cannot be used with time_range")
+	}
+	if r.View != "" && r.View != "BASIC" && r.View != "FULL" {
+		return fmt.Errorf("invalid view parameter: %s (must be BASIC or FULL)", r.View)
 	}
 	if r.Format != "" {
 		var err error
@@ -229,15 +238,18 @@ func buildListLogEntriesRequest(req *LogQueryRequest) *loggingpb.ListLogEntriesR
 }
 
 func formatterForRequest(req *LogQueryRequest) (formatter, error) {
-	if req.Format == "" {
-		return &jsonFormatter{}, nil
+	if req.Format != "" {
+		tmpl, err := template.New("log").Parse(req.Format)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse format template: %w", err)
+		}
+		return &goTemplateFormatter{tmpl: tmpl}, nil
 	}
 
-	tmpl, err := template.New("log").Parse(req.Format)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse format template: %w", err)
+	if strings.ToUpper(req.View) == "FULL" {
+		return &jsonFormatter{}, nil
 	}
-	return &goTemplateFormatter{tmpl: tmpl}, nil
+	return &compactFormatter{}, nil
 }
 
 type formatter interface {
@@ -257,6 +269,75 @@ func (f *jsonFormatter) format(entry *loggingpb.LogEntry) (string, error) {
 		return "", fmt.Errorf("could not marshal log entry to JSON: %w", err)
 	}
 	return string(logLine), nil
+}
+
+type compactLogEntry struct {
+	Timestamp string `json:"timestamp,omitempty"`
+	Severity  string `json:"severity,omitempty"`
+	LogName   string `json:"logName,omitempty"`
+	Message   any    `json:"message,omitempty"`
+}
+
+type compactFormatter struct{}
+
+func (f *compactFormatter) format(entry *loggingpb.LogEntry) (string, error) {
+	var ts string
+	if t := entry.GetTimestamp(); t != nil && t.IsValid() {
+		ts = t.AsTime().Format(time.RFC3339)
+	}
+	var sev string
+	if entry.GetSeverity() != 0 {
+		sev = entry.GetSeverity().String()
+	}
+	compact := compactLogEntry{
+		Timestamp: ts,
+		Severity:  sev,
+		LogName:   entry.GetLogName(),
+		Message:   extractMessage(entry),
+	}
+	b, err := json.MarshalIndent(compact, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("could not marshal compact log entry to JSON: %w", err)
+	}
+	return string(b), nil
+}
+
+func extractMessage(entry *loggingpb.LogEntry) any {
+	if tp := entry.GetTextPayload(); tp != "" {
+		return tp
+	}
+	if jp := entry.GetJsonPayload(); jp != nil {
+		fields := jp.GetFields()
+		if fields != nil {
+			if msg, ok := fields["message"]; ok && msg != nil {
+				if s := msg.GetStringValue(); s != "" {
+					return s
+				}
+			}
+			if msg, ok := fields["msg"]; ok && msg != nil {
+				if s := msg.GetStringValue(); s != "" {
+					return s
+				}
+			}
+		}
+		b, err := protojson.Marshal(jp)
+		if err == nil {
+			var m map[string]any
+			if err := json.Unmarshal(b, &m); err == nil {
+				return m
+			}
+		}
+	}
+	if pp := entry.GetProtoPayload(); pp != nil {
+		b, err := protojson.Marshal(pp)
+		if err == nil {
+			var m map[string]any
+			if err := json.Unmarshal(b, &m); err == nil {
+				return m
+			}
+		}
+	}
+	return nil
 }
 
 type goTemplateFormatter struct {
