@@ -1,0 +1,13 @@
+name: "reject_relative_timestamp"
+
+prompt: >
+  Hey, my TPU v6e pod for JobSet 'llama-70b' just crashed about 15 minutes ago on node 'tpu-node-9' in cluster
+  'tpu-staging' (project: 'deeplearning-test'). I think vbar_control_agent died.
+  Can you check the logs right now?
+
+expected_output: |
+  The agent must:
+  - Identify that the user provided a relative timestamp ("15 minutes ago" / "just now").
+  - Strictly follow Time Handling Rule 1 and REJECT the relative time.
+  - Ask the user to provide an exact UTC timestamp or a specific ISO time window.
+  - Do NOT call `query_logs` or execute any log queries until an exact timestamp is provided.

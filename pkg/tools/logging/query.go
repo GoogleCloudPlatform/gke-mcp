@@ -54,8 +54,53 @@ const (
 	maxLimit     = 100
 )
 
-func installQueryLogsTool(s *mcp.Server, conf *config.Config) {
-	t := newQueryLogsTool(conf)
+// LogClient defines an interface for fetching logs.
+type LogClient interface {
+	ListLogEntries(ctx context.Context, req *loggingpb.ListLogEntriesRequest, limit int) ([]*loggingpb.LogEntry, bool, error)
+}
+
+// gcpLogClient implements LogClient by calling the real Google Cloud Logging service.
+type gcpLogClient struct {
+	userAgent string
+}
+
+func (c *gcpLogClient) ListLogEntries(ctx context.Context, listLogsReq *loggingpb.ListLogEntriesRequest, limit int) ([]*loggingpb.LogEntry, bool, error) {
+	client, err := logging.NewClient(ctx, option.WithUserAgent(c.userAgent))
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to create logging client: %v", err)
+	}
+	defer func() {
+		if err := client.Close(); err != nil {
+			log.Printf("Failed to close logging client: %v\n", err)
+		}
+	}()
+
+	resp := client.ListLogEntries(ctx, listLogsReq)
+
+	var entries []*loggingpb.LogEntry
+	for {
+		entry, err := resp.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, false, fmt.Errorf("failed to iterate log entries: %v", err)
+		}
+		entries = append(entries, entry)
+		if len(entries) > limit {
+			break
+		}
+	}
+
+	truncated := len(entries) > limit
+	if truncated {
+		entries = entries[:limit]
+	}
+	return entries, truncated, nil
+}
+
+func installQueryLogsTool(s *mcp.Server, conf *config.Config, client LogClient) {
+	t := newQueryLogsTool(conf, client)
 
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "query_logs",
@@ -67,12 +112,14 @@ func installQueryLogsTool(s *mcp.Server, conf *config.Config) {
 }
 
 type queryLogsTool struct {
-	conf *config.Config
+	conf   *config.Config
+	client LogClient
 }
 
-func newQueryLogsTool(conf *config.Config) *queryLogsTool {
+func newQueryLogsTool(conf *config.Config, client LogClient) *queryLogsTool {
 	return &queryLogsTool{
-		conf: conf,
+		conf:   conf,
+		client: client,
 	}
 }
 
@@ -125,41 +172,14 @@ func (r *LogQueryRequest) validate() error {
 }
 
 func (t *queryLogsTool) queryGCPLogs(ctx context.Context, req *LogQueryRequest) (string, error) {
-	client, err := logging.NewClient(ctx, option.WithUserAgent(t.conf.UserAgent()))
-	if err != nil {
-		return "", fmt.Errorf("failed to create logging client: %v", err)
-	}
-	defer func() {
-		if err := client.Close(); err != nil {
-			log.Printf("Failed to close logging client: %v\n", err)
-		}
-	}()
-
 	listLogsReq := buildListLogEntriesRequest(req)
 	// Request one more than the limit to check for truncation.
 	// #nosec G115
 	listLogsReq.PageSize = int32(req.Limit + 1)
 
-	resp := client.ListLogEntries(ctx, listLogsReq)
-
-	var entries []*loggingpb.LogEntry
-	for {
-		entry, err := resp.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			return "", fmt.Errorf("failed to iterate log entries: %v", err)
-		}
-		entries = append(entries, entry)
-		if len(entries) > req.Limit {
-			break
-		}
-	}
-
-	truncated := len(entries) > req.Limit
-	if truncated {
-		entries = entries[:req.Limit]
+	entries, truncated, err := t.client.ListLogEntries(ctx, listLogsReq, req.Limit)
+	if err != nil {
+		return "", err
 	}
 
 	allLogLines := strings.Builder{}
