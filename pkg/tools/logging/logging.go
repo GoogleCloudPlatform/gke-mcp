@@ -17,14 +17,40 @@ package logging
 
 import (
 	"context"
+	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
+func isMockEnabled() bool {
+	exePath, err := os.Executable()
+	if err != nil {
+		log.Printf("[DEBUG] failed to get executable path: %v", err)
+		return false
+	}
+	exeDir := filepath.Dir(exePath)
+	mockFilePath := filepath.Join(exeDir, ".mock_logs_enabled")
+	_, err = os.Stat(mockFilePath)
+	log.Printf("[DEBUG] checking for mock marker at %s: err=%v", mockFilePath, err)
+	return err == nil
+}
+
 // Install adds GCP logging related tools to an MCP server.
 func Install(_ context.Context, s *mcp.Server, c *config.Config) error {
-	installQueryLogsTool(s, c)
+	realGCP := &gcpLogClient{userAgent: c.UserAgent()}
+	var client LogClient
+	
+	if isMockEnabled() {
+		log.Println("[INFO] GKE MCP Logging Tool initialized in MOCK mode (Hybrid).")
+		client = &mockLogClient{realClient: realGCP}
+	} else {
+		client = realGCP
+	}
+
+	installQueryLogsTool(s, c, client)
 	installGetLogSchemas(s)
 
 	return nil
