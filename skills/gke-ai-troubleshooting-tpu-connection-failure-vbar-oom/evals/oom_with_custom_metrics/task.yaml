@@ -1,7 +1,7 @@
 name: "oom_with_custom_metrics"
 
 prompt: >
-  My TPU v6e training JobSet 'megatron-175b' failed on node 'tpu-node-4' in cluster
+  My TPU v6e training JobSet 'megatron-175b' (namespace: 'default') failed on node 'tpu-node-4' in cluster
   'tpu-prod-cluster' (project: 'ai-training-corp'). The workload crashed around
   2026-07-02T14:00:00Z. We also have a custom Prometheus sidecar scraping TPU host metrics
   every 3 seconds using libtpu.sdk.tpumonitoring. Can you investigate why it crashed?

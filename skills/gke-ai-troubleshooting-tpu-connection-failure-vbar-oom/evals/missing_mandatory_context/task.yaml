@@ -5,6 +5,6 @@ prompt: >
 
 expected_output: |
   The agent must:
-  - Identify that mandatory diagnostic context is missing (specifically Project ID, Node Name/Instance ID, Workload Name, and Issue Time).
+  - Identify that mandatory diagnostic context is missing (specifically Project ID, Node Name/Instance ID, Workload Name, Workload Namespace, and Issue Time).
   - Ask the user to provide the missing required parameters.
   - Do NOT execute `query_logs` without Project ID and exact Issue Time.

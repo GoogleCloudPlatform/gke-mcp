@@ -1,7 +1,7 @@
 name: "no_vbar_error_found"
 
 prompt: >
-  Please check if there were any vbar_control_agent OOM issues for JobSet 'gpt-pretrain' on node 'tpu-node-healthy-1'
+  Please check if there were any vbar_control_agent OOM issues for JobSet 'gpt-pretrain' (namespace: 'default') on node 'tpu-node-healthy-1'
   in cluster 'tpu-prod' (project: 'ai-training-corp') at timestamp 2026-07-02T08:00:00Z.
 
 expected_output: |
