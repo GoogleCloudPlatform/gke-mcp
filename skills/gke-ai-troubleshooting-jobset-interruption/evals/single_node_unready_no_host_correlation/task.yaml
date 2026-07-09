@@ -1,0 +1,14 @@
+name: "single_node_unready_no_host_correlation"
+
+prompt: >
+  Please investigate training-job (namespace: 'default') in project 'my-project', cluster 'my-cluster', location 'us-central1-a'
+  at timestamp 2026-05-20T08:15:00Z. Notice one node recently went down.
+
+expected_output: |
+  The agent must:
+  - Calculate the query window [2026-05-20T07:45:00Z] to [2026-05-20T08:45:00Z].
+  - Query JobSet restarts (find restarts) and check nodepool interruptions (find normal).
+  - Use 'monitoring_time_series_chart' or 'query_logs' to identify that an active node went unready.
+  - Query node-to-host topology mapping and confirm that node failures do not correlate to the same physical host ID (no multiple nodes failing on same physical host).
+  - Do NOT recommend quarantining physical host VMs.
+  - Continue to check pod/container status or unschedulable pod count.

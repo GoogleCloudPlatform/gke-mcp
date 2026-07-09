@@ -1,0 +1,13 @@
+name: "no_jobset_restarts_detected"
+
+prompt: >
+  Please check if there are any interruption issues with our GKE JobSet workload 'training-job' (namespace: 'default')
+  in project 'my-project', cluster 'my-cluster', location 'us-central1-a' at timestamp 2026-05-20T08:15:00Z.
+
+expected_output: |
+  The agent must:
+  - Calculate the query window as [2026-05-20T07:45:00Z] to [2026-05-20T08:45:00Z].
+  - Use the 'monitoring_time_series_chart' tool to check JobSet restarts via the metric 'prometheus.googleapis.com/kube_jobset_restarts/gauge' (or equivalent PromQL).
+  - Report that no restart attempts or count increases were detected.
+  - Conclude that the workload is stable and immediately terminate the investigation.
+  - Do NOT call other node-level or pod-level diagnostic tools.

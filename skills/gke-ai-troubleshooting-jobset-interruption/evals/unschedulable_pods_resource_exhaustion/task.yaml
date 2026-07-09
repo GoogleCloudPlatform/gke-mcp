@@ -1,0 +1,12 @@
+name: "unschedulable_pods_resource_exhaustion"
+
+prompt: >
+  Our JobSet workload 'training-job' (namespace: 'default') restarted and is now stuck failing to run
+  in project 'my-project', cluster 'my-cluster', location 'us-central1-a' at timestamp 2026-05-20T08:15:00Z.
+
+expected_output: |
+  The agent must:
+  - Calculate the query window [2026-05-20T07:45:00Z] to [2026-05-20T08:45:00Z].
+  - Check JobSet restarts (find restarts), nodepool interruptions (find normal), and node health (find all healthy).
+  - Use 'monitoring_time_series_chart' to query pod status (MQL: 'kubernetes.io/pod/status/unschedulable') and find unschedulable pod count > 0.
+  - Diagnose that the workload is blocked by cluster resource exhaustion or GKE scheduling capacity limits.

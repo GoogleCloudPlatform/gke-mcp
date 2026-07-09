@@ -1,0 +1,13 @@
+name: "no_active_nodes_fallback_or_clean_telemetry"
+
+prompt: >
+  Please check infrastructure metrics for 'training-job' (namespace: 'default') historical failures
+  in project 'my-project', cluster 'my-cluster', location 'us-central1-a' at timestamp 2026-05-20T08:15:00Z.
+
+expected_output: |
+  The agent must:
+  - Calculate the query window [2026-05-20T07:45:00Z] to [2026-05-20T08:45:00Z].
+  - Use 'monitoring_time_series_chart' to query JobSet restarts and confirm restarts occurred.
+  - Query assigned nodes/nodepools and find none (no active nodes/nodepools discovered).
+  - Query unschedulable pod count and confirm pending pods count is 0.
+  - Suggest inspecting application container logs or tracebacks as a fallback since no infrastructure-level node failures or resource exhaustion were found.

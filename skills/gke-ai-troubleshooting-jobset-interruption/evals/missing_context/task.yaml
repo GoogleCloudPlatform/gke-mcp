@@ -1,0 +1,10 @@
+name: "missing_context"
+
+prompt: >
+  Please troubleshoot why our GKE JobSet workload 'training-job' keeps restarting in our cluster.
+
+expected_output: |
+  The agent must:
+  - Identify that required mandatory context (Project ID, GKE Cluster Name, or Location/Region) is missing.
+  - Ask the user to provide the missing required parameters.
+  - Do NOT call any diagnostic tools (like 'monitoring_time_series_chart' or 'query_logs') with empty, guessed, or placeholder parameters.

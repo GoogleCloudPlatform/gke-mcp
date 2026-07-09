@@ -1,0 +1,15 @@
+name: "spot_preemption_detected"
+
+prompt: >
+  Please troubleshoot why our GKE JobSet workload 'training-job' (namespace: 'default') keeps restarting
+  in project 'my-project', cluster 'my-cluster', location 'us-central1-a' at timestamp 2026-05-20T08:15:00Z.
+  Note: This cluster runs on Spot VM node pools.
+
+expected_output: |
+  The agent must:
+  - Calculate the query window [2026-05-20T07:45:00Z] to [2026-05-20T08:45:00Z].
+  - Use 'monitoring_time_series_chart' to query JobSet restarts and confirm restarts occurred.
+  - Use 'monitoring_time_series_chart' to query nodepool interruptions (using 'kubernetes.io/node_pool/interruption_count') and identify preemption/maintenance events.
+  - Attribute the root cause to Spot VM preemption.
+  - Recommend migrating the critical workload to GKE Reserved/On-Demand VM nodepools or using Compact Placement Policies.
+  - Do NOT recommend cordoning/draining nodes or quarantining physical hosts in this scenario.

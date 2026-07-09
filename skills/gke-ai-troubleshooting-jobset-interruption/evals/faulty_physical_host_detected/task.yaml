@@ -1,0 +1,15 @@
+name: "faulty_physical_host_detected"
+
+prompt: >
+  Please triage why 'training-job' (namespace: 'default') is crashing and experiencing downtime
+  in project 'my-project', cluster 'my-cluster', location 'us-central1-a' at timestamp 2026-05-20T08:15:00Z.
+
+expected_output: |
+  The agent must:
+  - Calculate the query window [2026-05-20T07:45:00Z] to [2026-05-20T08:45:00Z].
+  - Query JobSet restarts (find restarts) and check nodepool interruptions (find normal).
+  - Use 'monitoring_time_series_chart' or 'query_logs' to identify node unreadiness (Ready=False) on active nodes.
+  - Use 'monitoring_time_series_chart' to query 'kubernetes.io/node/cpu/total_cores' grouped by 'metadata.user.gce_topology_host' to correlate nodes to GCE physical host IDs.
+  - Conclude that multiple node failures correlate to the same GCE physical host ID (faulty host).
+  - Recommend cordoning/draining the affected nodes, deleting GCE VM instances to trigger recreation on healthy hardware.
+  - Explicitly state that it requires user confirmation before taking any action to cordon/drain nodes or delete instances.
