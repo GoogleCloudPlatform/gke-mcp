@@ -9,8 +9,8 @@ description: Diagnose and predict node disruption during Compute Engine host mai
 
 ### Step 0: Context Acquisition
 
-- **Mandatory**: <project_id>, <location>, <cluster_name>, <timestamp>.
-- **Optional**: <node_name>, <workload_name>, <workload_namespace>, <nodepool_name>.
+- **Mandatory**: `project_id`, `location`, `cluster_name`, `timestamp`.
+- **Optional**: `node_name`, `workload_name`, `workload_namespace`, `nodepool_name`.
 
 ### Step 1: [Low Risk] Check for Upcoming Scheduled Maintenance
 
