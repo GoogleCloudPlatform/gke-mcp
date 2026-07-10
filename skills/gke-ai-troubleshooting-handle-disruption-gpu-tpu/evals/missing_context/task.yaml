@@ -1,0 +1,10 @@
+name: "missing_context"
+
+prompt: >
+  Why did my GPU node 'gpu-node-1' restart unexpectedly in GKE project 'my-project-123'?
+
+expected_output: |
+  The agent must:
+  - Identify that required mandatory context (specifically location, cluster_name, and timestamp) is missing.
+  - Ask the user to provide the missing required parameters.
+  - Do not make tool calls with empty or placeholder parameters.

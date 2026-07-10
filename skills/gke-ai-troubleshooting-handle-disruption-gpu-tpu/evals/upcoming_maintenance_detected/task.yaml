@@ -1,0 +1,15 @@
+name: "upcoming_maintenance_detected"
+
+prompt: >
+  Can you check if there is any host maintenance scheduled for node 'gpu-node-3' in GKE cluster 'ml-training-cluster'
+  (project: 'ai-training-prod', location: 'us-central1-a') around timestamp 2026-06-15T12:00:00Z?
+
+expected_output: |
+  The agent must:
+  - Propose or run 'kubectl get nodes' checking for the 'cloud.google.com/scheduled-maintenance-time' label on the GKE node.
+  - Identify that there is an upcoming maintenance event scheduled at the timestamp indicated by the label.
+  - Use Cloud Monitoring (PromQL) to query the 'kubernetes_io:node_interruption_count' metric for node maintenance interruptions.
+  - Query GKE node logs via 'query_logs' or check node status/taints to check for active ongoing maintenance.
+  - Recommend configuring graceful termination (setting 'terminationGracePeriodSeconds' up to 60 minutes) to save checkpoints before the node terminates.
+  - Recommend configuring Opportunistic Maintenance to trigger host updates when the GPU/TPU nodes are idle.
+  - Recommend configuring a PodDisruptionBudget (PDB) to maintain minAvailable replicas during disruptions.

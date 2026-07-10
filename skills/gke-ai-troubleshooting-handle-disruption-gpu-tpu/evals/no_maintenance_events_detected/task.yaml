@@ -1,0 +1,14 @@
+name: "no_maintenance_events_detected"
+
+prompt: >
+  Our GKE cluster 'ml-training-cluster' (project: 'ai-training-prod', location: 'us-central1-a') experienced
+  workload disruptions at timestamp 2026-06-15T12:00:00Z. Can you check what happened and tell me the reason?
+
+expected_output: |
+  The agent must:
+  - Propose or run 'kubectl get nodes' checking for the 'cloud.google.com/scheduled-maintenance-time' label on the GKE nodes.
+  - Use Cloud Monitoring (PromQL) to query the 'kubernetes_io:node_interruption_count' metric for node maintenance interruptions.
+  - Query Cloud Logging to check for active ongoing node maintenance logs, or check node status/taints.
+  - Find no evidence of scheduled or past host maintenance.
+  - Conclude that the disruption was NOT caused by Compute Engine host maintenance and report the negative finding.
+  - Do NOT recommend configuring GKE graceful termination or opportunistic maintenance.

@@ -1,0 +1,16 @@
+name: "active_maintenance_confirmed_by_logs"
+
+prompt: >
+  Why is my GKE GPU node 'gpu-node-7' shutting down right now in cluster 'ml-training-cluster'
+  (project: 'ai-training-prod', location: 'us-central1-a')? The issue started at timestamp 2026-06-15T12:00:00Z.
+
+expected_output: |
+  The agent must:
+  - Propose or run 'kubectl get nodes' checking for the 'cloud.google.com/scheduled-maintenance-time' label on the GKE nodes.
+  - Use Cloud Monitoring (PromQL) to query the 'kubernetes_io:node_interruption_count' metric for node maintenance interruptions.
+  - Query GKE node logs via 'query_logs' or check node status/taints.
+  - Identify that 'cloud.google.com/active-node-maintenance' is set to 'ONGOING' or the node has the 'cloud.google.com/impending-node-termination:NoSchedule' taint.
+  - Inform the user that GKE is actively stopping workloads due to ongoing host maintenance.
+  - Advise the user NOT to tolerate the 'impending-node-termination:NoSchedule' taint.
+  - Recommend enabling graceful termination and opportunistic maintenance to mitigate future disruptions.
+  - Recommend configuring a PodDisruptionBudget (PDB) to maintain minAvailable replicas during disruptions.

@@ -1,0 +1,16 @@
+name: "past_interruption_confirmed_by_metrics"
+
+prompt: >
+  Our GPU training workload crashed in GKE cluster 'ml-cluster' (project: 'ai-training-prod', location: 'us-central1-a')
+  at timestamp 2026-06-15T12:00:00Z. Can you check what happened and tell me the reason?
+
+expected_output: |
+  The agent must:
+  - Query node maintenance schedules via kubectl (find none).
+  - Use Cloud Monitoring (PromQL) to query the 'kubernetes_io:node_interruption_count' metric (or node pool interruption count) for cluster 'ml-cluster'.
+  - Detect that host maintenance events ('HW/SW Maintenance') occurred at or near the given timestamp.
+  - Query GKE node logs via 'query_logs' or check node status/taints to check for active ongoing maintenance (find none or check status).
+  - Conclude that the disruption was caused by Compute Engine host maintenance.
+  - Recommend enabling disruption handling with graceful termination (setting 'terminationGracePeriodSeconds' up to 60 minutes) to save checkpoints.
+  - Recommend configuring Opportunistic Maintenance to trigger host updates when the GPU/TPU nodes are idle.
+  - Recommend configuring a PodDisruptionBudget (PDB) to maintain minAvailable replicas during disruptions.
