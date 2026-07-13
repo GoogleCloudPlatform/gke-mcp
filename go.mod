@@ -9,7 +9,7 @@ require (
 	cloud.google.com/go/monitoring v1.29.0
 	cloud.google.com/go/recommender v1.19.0
 	github.com/PuerkitoBio/goquery v1.12.0
-	github.com/anthropics/anthropic-sdk-go v1.56.0
+	github.com/anthropics/anthropic-sdk-go v1.57.0
 	github.com/google/go-cmp v0.7.0
 	github.com/googleapis/gax-go/v2 v2.22.0
 	github.com/modelcontextprotocol/go-sdk v1.6.1
