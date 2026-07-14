@@ -1,7 +1,7 @@
 name: "oom_without_custom_metrics"
 
 prompt: >
-  Our GKE TPU v6e node 'tpu-node-2' in cluster 'ai-cluster-us' (project: 'ml-infra-prod')
+  Our GKE TPU v6e node 'tpu-node-2' in cluster 'cluster-gke-ai-troubleshooting-tpu-connection-failure-vbar-oom--oom-without-custom-metrics' (project: 'ml-infra-prod')
   experienced initialization failures for JobSet 'resnet-training' (namespace: 'default') at exact timestamp 2026-07-02T10:00:00Z.
   Note: We do NOT run any custom scripts, Prometheus scrapers, or third-party monitoring agents;
   we only use standard GKE default telemetry. What is causing the crash?
@@ -10,7 +10,7 @@ expected_output: |
   The agent must:
   - Calculate the exact query window from start time 2026-07-02T09:30:00Z to end time 2026-07-02T10:30:00Z.
   - Use the 'query_logs' tool to search serial console logs of node 'tpu-node-2' in project 'ml-infra-prod' for `vbar_control_agent` OOM signatures.
-  - Use the 'query_logs' tool to search `tpu-device-plugin` container logs in cluster 'ai-cluster-us' for checksum mismatch signatures.
+  - Use the 'query_logs' tool to search `tpu-device-plugin` container logs in cluster 'cluster-gke-ai-troubleshooting-tpu-connection-failure-vbar-oom--oom-without-custom-metrics' for checksum mismatch signatures.
   - Note that since NO custom metrics collection is used, the custom monitoring mitigation workflow in this skill is NOT applicable.
   - Do NOT recommend disabling custom metrics collection.
   - Do NOT provide any upgrade or mitigation recommendations from this skill, as this skill is not suitable for resolving crashes without custom monitoring.

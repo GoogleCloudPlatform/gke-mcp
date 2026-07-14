@@ -2,7 +2,7 @@ name: "reject_relative_timestamp"
 
 prompt: >
   Hey, my TPU v6e pod for JobSet 'llama-70b' (namespace: 'default') just crashed about 15 minutes ago on node 'tpu-node-9' in cluster
-  'tpu-staging' (project: 'deeplearning-test'). I think vbar_control_agent died.
+  'cluster-gke-ai-troubleshooting-tpu-connection-failure-vbar-oom--reject-relative-timestamp' (project: 'deeplearning-test'). I think vbar_control_agent died.
   Can you check the logs right now?
 
 expected_output: |
