@@ -201,3 +201,54 @@ func TestNewConfigDifferentVersions(t *testing.T) {
 		})
 	}
 }
+
+func TestMockMode(t *testing.T) {
+	origBuildMockMode := BuildMockMode
+	defer func() { BuildMockMode = origBuildMockMode }()
+
+	cfg := &Config{}
+
+	BuildMockMode = "false"
+	if cfg.MockMode() {
+		t.Error("Expected MockMode to be false by default")
+	}
+
+	t.Setenv("GKE_MCP_MOCK", "true")
+	if !cfg.MockMode() {
+		t.Error("Expected MockMode to be true when GKE_MCP_MOCK=true")
+	}
+
+	t.Setenv("GKE_MCP_MOCK", "false")
+	BuildMockMode = "true"
+	if !cfg.MockMode() {
+		t.Error("Expected MockMode to be true when BuildMockMode=true")
+	}
+}
+
+func TestMockDataDir(t *testing.T) {
+	origBuildMockMode := BuildMockMode
+	origBuildMockDataDir := BuildMockDataDir
+	defer func() {
+		BuildMockMode = origBuildMockMode
+		BuildMockDataDir = origBuildMockDataDir
+	}()
+
+	cfg := &Config{}
+
+	BuildMockMode = "false"
+	if got := cfg.MockDataDir(); got != "mock_data" {
+		t.Errorf("MockDataDir() = %s, want mock_data", got)
+	}
+
+	t.Setenv("GKE_MCP_MOCK_DATA_DIR", "custom_dir")
+	if got := cfg.MockDataDir(); got != "custom_dir" {
+		t.Errorf("MockDataDir() = %s, want custom_dir", got)
+	}
+
+	BuildMockMode = "true"
+	BuildMockDataDir = "build_dir"
+	if got := cfg.MockDataDir(); got != "build_dir" {
+		t.Errorf("MockDataDir() = %s, want build_dir", got)
+	}
+}
+

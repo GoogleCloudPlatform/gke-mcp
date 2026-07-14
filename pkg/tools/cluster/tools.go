@@ -21,6 +21,7 @@ import (
 
 	container "cloud.google.com/go/container/apiv1"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/registry"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"google.golang.org/api/option"
 )
@@ -38,7 +39,7 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 		cmClient: cmClient,
 	}
 
-	mcp.AddTool(s, &mcp.Tool{
+	registry.RegisterTool(s, c, &mcp.Tool{
 		Name:        "list_clusters",
 		Description: "List GKE clusters. Prefer to use this tool instead of gcloud.",
 		Annotations: &mcp.ToolAnnotations{

@@ -80,6 +80,30 @@ func (c *Config) DKAPIKey() string {
 	return c.dkAPIKey
 }
 
+var (
+	// BuildMockMode can be set to "true" at compilation time using -ldflags to activate mock mode.
+	BuildMockMode = "false"
+	// BuildMockDataDir can be set at compilation time to specify the default mock data folder.
+	BuildMockDataDir = "mock_data"
+)
+
+// MockMode returns true if mock mode is activated.
+func (c *Config) MockMode() bool {
+	return BuildMockMode == "true" || os.Getenv("GKE_MCP_MOCK") == "true"
+}
+
+// MockDataDir returns the path to the mock data directory.
+func (c *Config) MockDataDir() string {
+	if BuildMockMode == "true" {
+		return BuildMockDataDir
+	}
+	if val := os.Getenv("GKE_MCP_MOCK_DATA_DIR"); val != "" {
+		return val
+	}
+	return "mock_data"
+}
+
+
 // New constructs a Config populated from gcloud and build version.
 func New(version string, enableDeleteTools bool) *Config {
 	provider := os.Getenv("GKE_MCP_PROVIDER")
