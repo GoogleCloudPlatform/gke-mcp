@@ -29,6 +29,7 @@ import (
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/logging"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/monitoring"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/recommendation"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/trace"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -47,6 +48,7 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 		k8schangelog.Install,
 		gkereleasenotes.Install,
 		manifestgen.Install,
+		trace.Install,
 	}
 
 	for _, installer := range installers {
