@@ -1,0 +1,12 @@
+{
+  "query_logs": [
+    {
+      "query_contains": "serial_port_1_output",
+      "response": "No out of memory messages or cgroup kills found in serial console logs for node."
+    },
+    {
+      "query_contains": "tpu-device-plugin",
+      "response": "I0702 08:00:00.000000       1 main.go:50] Device plugin started successfully, metrics fetched successfully."
+    }
+  ]
+}

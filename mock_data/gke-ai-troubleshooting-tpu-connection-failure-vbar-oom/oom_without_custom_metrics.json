@@ -1,0 +1,12 @@
+{
+  "query_logs": [
+    {
+      "query_contains": "serial_port_1_output",
+      "response": "[ 1234.567890] Memory cgroup out of memory: Killed process 5678 (vbar_control_ag) total-vm:4194304kB, anon-rss:2097152kB, file-rss:0kB, shmem-rss:0kB, UID:0 pgtables:8192kB oom_score_adj:0"
+    },
+    {
+      "query_contains": "tpu-device-plugin",
+      "response": "E0702 10:00:05.123456       1 device.go:120] metrics fetch failed for 3 deviceID and /sys/bus/pci/devices/0000:00:08.0 device path with error: checksum didn't match with the metrics data. Corrupt data found"
+    }
+  ]
+}
