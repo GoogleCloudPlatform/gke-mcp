@@ -252,3 +252,33 @@ func TestMockDataDir(t *testing.T) {
 	}
 }
 
+func TestMockSkillAndCase(t *testing.T) {
+	origSkill := BuildMockSkill
+	origCase := BuildMockCase
+	defer func() {
+		BuildMockSkill = origSkill
+		BuildMockCase = origCase
+	}()
+
+	cfg := &Config{}
+
+	BuildMockSkill = "test-skill"
+	BuildMockCase = "test_case"
+
+	if got := cfg.MockSkill(); got != "test-skill" {
+		t.Errorf("MockSkill() = %s, want test-skill", got)
+	}
+	if got := cfg.MockCase(); got != "test_case" {
+		t.Errorf("MockCase() = %s, want test_case", got)
+	}
+
+	t.Setenv("GKE_MCP_MOCK_SKILL", "env-skill")
+	t.Setenv("GKE_MCP_MOCK_CASE", "env_case")
+
+	if got := cfg.MockSkill(); got != "env-skill" {
+		t.Errorf("MockSkill() = %s, want env-skill", got)
+	}
+	if got := cfg.MockCase(); got != "env_case" {
+		t.Errorf("MockCase() = %s, want env_case", got)
+	}
+}

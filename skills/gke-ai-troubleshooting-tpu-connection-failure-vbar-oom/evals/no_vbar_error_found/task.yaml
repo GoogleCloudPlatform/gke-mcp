@@ -2,13 +2,13 @@ name: "no_vbar_error_found"
 
 prompt: >
   Please check if there were any vbar_control_agent OOM issues for JobSet 'gpt-pretrain' (namespace: 'default') on node 'tpu-node-healthy-1'
-  in cluster 'cluster-gke-ai-troubleshooting-tpu-connection-failure-vbar-oom--no-vbar-error-found' (project: 'ai-training-corp') at timestamp 2026-07-02T08:00:00Z.
+  in cluster 'tpu-prod' (project: 'ai-training-corp') at timestamp 2026-07-02T08:00:00Z.
 
 expected_output: |
   The agent must:
   - Calculate the exact query window from start time 2026-07-02T07:30:00Z to end time 2026-07-02T08:30:00Z.
   - Use the 'query_logs' tool to search serial console logs of node 'tpu-node-healthy-1' in project 'ai-training-corp' for `vbar_control_agent` OOM signatures.
-  - Use the 'query_logs' tool to search `tpu-device-plugin` container logs in cluster 'cluster-gke-ai-troubleshooting-tpu-connection-failure-vbar-oom--no-vbar-error-found' for checksum mismatch signatures.
+  - Use the 'query_logs' tool to search `tpu-device-plugin` container logs in cluster 'tpu-prod' for checksum mismatch signatures.
   - Correctly state that NO `vbar_control_agent` OOM messages or checksum mismatch errors were found in the logs during this window.
   - Conclude that the TPU connection failure on this node is NOT caused by the vBAR OOM race condition.
   - Do NOT recommend disabling custom metrics or claiming vBAR OOM as the root cause.

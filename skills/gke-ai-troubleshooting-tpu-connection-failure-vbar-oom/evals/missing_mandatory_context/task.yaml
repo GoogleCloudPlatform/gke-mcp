@@ -1,7 +1,7 @@
 name: "missing_mandatory_context"
 
 prompt: >
-  Why does `vbar_control_agent` keep crashing with OOM error in our GKE cluster 'cluster-gke-ai-troubleshooting-tpu-connection-failure-vbar-oom--missing-mandatory-context'?
+  Why does `vbar_control_agent` keep crashing with OOM error in our GKE cluster 'tpu-cluster-dev'?
 
 expected_output: |
   The agent must:

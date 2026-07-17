@@ -24,13 +24,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 )
 
 var (
-	// Extracts cluster_name="..." / cluster_name='...' or cluster "..." / cluster '...' from LQL query
-	clusterInQueryRegex = regexp.MustCompile(`(?:cluster_name\s*=\s*|cluster\s+)["']([^"']+)["']`)
 	// Restricts skill and case names to safe alphanumeric characters, hyphens, and underscores to prevent path traversal
 	safeNameRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 )
@@ -58,7 +56,7 @@ func RegisterTool[In, Out any](
 ) {
 	mcp.AddTool(s, tool, func(ctx context.Context, req *mcp.CallToolRequest, args In) (*mcp.CallToolResult, Out, error) {
 		if c != nil && c.MockMode() {
-			res, _, err := handleClusterEncodedMock(ctx, tool.Name, args, c)
+			res, _, err := handleMockToolCall(ctx, tool.Name, args, c)
 			if err != nil {
 				var zero Out
 				return nil, zero, err
@@ -70,47 +68,47 @@ func RegisterTool[In, Out any](
 	})
 }
 
-// handleClusterEncodedMock dispatches mock tool calls to their respective mock resolvers.
+// handleMockToolCall routes mock tool execution to the appropriate mock data handler.
 //
-// It dynamically extracts the scenario identifier (skill name and case name)
-// from the cluster name passed in parameters or LQL log queries, reads the corresponding
-// case JSON mock data, and executes the tool's simulated handler.
+// It resolves the mock scenario identifier (skill name and case name) from the
+// configuration (loaded via build-time linker flags or runtime environment variables),
+// reads the corresponding case-wide JSON mock data file, and dispatches the call.
 //
-// If the scenario cannot be resolved or the mock file is missing, it returns
-// "no mock data available for this tool under this test case".
-func handleClusterEncodedMock(ctx context.Context, toolName string, args any, c *config.Config) (*mcp.CallToolResult, any, error) {
-	argsMap, err := extractArgsMap(args)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to parse arguments: %w", err)
-	}
+// If the scenario coordinates cannot be resolved or the mock data file is missing,
+// it returns a structured failure indicating missing mock details.
+func handleMockToolCall(ctx context.Context, toolName string, args any, c *config.Config) (*mcp.CallToolResult, any, error) {
+	var envSkill, envCaseName, mockDir string
 
-	var clusterName string
-	if val, ok := argsMap["cluster_name"].(string); ok && val != "" {
-		clusterName = val
-	} else if query, ok := argsMap["query"].(string); ok && query != "" {
-		clusterName = extractClusterNameFromQuery(query)
+	if c != nil {
+		envSkill = c.MockSkill()
+		envCaseName = c.MockCase()
+		mockDir = c.MockDataDir()
+	} else {
+		envSkill = os.Getenv("GKE_MCP_MOCK_SKILL")
+		envCaseName = os.Getenv("GKE_MCP_MOCK_CASE")
+		if val := os.Getenv("GKE_MCP_MOCK_DATA_DIR"); val != "" {
+			mockDir = val
+		} else {
+			// "mock_data" is the default directory to read from if no override is provided
+			mockDir = "mock_data"
+		}
 	}
 
 	var skill, caseName string
 	resolved := false
 
-	if clusterName != "" {
-		var ok bool
-		skill, caseName, ok = resolveScenarioFromCluster(clusterName)
-		if ok {
+	if envSkill != "" && envCaseName != "" {
+		if safeNameRegex.MatchString(envSkill) && safeNameRegex.MatchString(envCaseName) {
+			skill = envSkill
+			caseName = envCaseName
 			resolved = true
 		}
 	}
 
 	if !resolved {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{&mcp.TextContent{Text: fmt.Sprintf("could not resolve cluster name from arguments for tool %s", toolName)}},
+			Content: []mcp.Content{&mcp.TextContent{Text: fmt.Sprintf("could not resolve mock scenario (skill/case) from environment or tool arguments for tool %s", toolName)}},
 		}, nil, nil
-	}
-
-	var mockDir string
-	if c != nil {
-		mockDir = c.MockDataDir()
 	}
 
 	// Load mock_data/<skill>/<caseName>.json
@@ -123,6 +121,10 @@ func handleClusterEncodedMock(ctx context.Context, toolName string, args any, c 
 	}
 
 	if toolName == "query_logs" {
+		argsMap, err := extractArgsMap(args)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to parse arguments: %w", err)
+		}
 		query, _ := argsMap["query"].(string)
 		res, err := resolveQueryLogsMock(mockBytes, query)
 		return res, nil, err
@@ -142,37 +144,6 @@ func extractArgsMap(args any) (map[string]any, error) {
 	var res map[string]any
 	err = json.Unmarshal(bytes, &res)
 	return res, err
-}
-
-// extractClusterNameFromQuery extracts the cluster_name filter value from an LQL string.
-func extractClusterNameFromQuery(query string) string {
-	matches := clusterInQueryRegex.FindStringSubmatch(query)
-	if len(matches) > 1 {
-		return matches[1]
-	}
-	return ""
-}
-
-// resolveScenarioFromCluster parses the skill and case name from an encoded cluster name.
-//
-// The GKE cluster name must conform to the convention: "cluster-<skill>--<case_name>",
-// where underscores in the case name are normalized to hyphens.
-func resolveScenarioFromCluster(clusterName string) (string, string, bool) {
-	if !strings.HasPrefix(clusterName, "cluster-") {
-		return "", "", false
-	}
-	name := strings.TrimPrefix(clusterName, "cluster-")
-	skill, caseRaw, found := strings.Cut(name, "--")
-	if !found || skill == "" || caseRaw == "" {
-		return "", "", false
-	}
-	caseName := strings.ReplaceAll(caseRaw, "-", "_")
-
-	if !safeNameRegex.MatchString(skill) || !safeNameRegex.MatchString(caseName) {
-		return "", "", false
-	}
-
-	return skill, caseName, true
 }
 
 // resolveQueryLogsMock handles simulated output for the query_logs tool.
@@ -200,5 +171,3 @@ func resolveQueryLogsMock(mockDataBytes []byte, query string) (*mcp.CallToolResu
 		},
 	}, nil
 }
-
-

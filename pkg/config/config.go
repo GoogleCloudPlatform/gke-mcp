@@ -85,6 +85,10 @@ var (
 	BuildMockMode = "false"
 	// BuildMockDataDir can be set at compilation time to specify the default mock data folder.
 	BuildMockDataDir = "mock_data"
+	// BuildMockSkill can be set at compilation time to specify the default mock skill name.
+	BuildMockSkill = ""
+	// BuildMockCase can be set at compilation time to specify the default mock case name.
+	BuildMockCase = ""
 )
 
 // MockMode returns true if mock mode is activated.
@@ -101,6 +105,22 @@ func (c *Config) MockDataDir() string {
 		return val
 	}
 	return "mock_data"
+}
+
+// MockSkill returns the mock skill name from env or build-time ldflags.
+func (c *Config) MockSkill() string {
+	if val := os.Getenv("GKE_MCP_MOCK_SKILL"); val != "" {
+		return val
+	}
+	return BuildMockSkill
+}
+
+// MockCase returns the mock case name from env or build-time ldflags.
+func (c *Config) MockCase() string {
+	if val := os.Getenv("GKE_MCP_MOCK_CASE"); val != "" {
+		return val
+	}
+	return BuildMockCase
 }
 
 

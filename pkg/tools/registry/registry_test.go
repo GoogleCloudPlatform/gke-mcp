@@ -21,132 +21,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 )
-
-func TestExtractClusterNameFromQuery(t *testing.T) {
-	tests := []struct {
-		name     string
-		query    string
-		expected string
-	}{
-		{
-			name:     "double quotes cluster_name",
-			query:    `resource.type="k8s_cluster" AND resource.labels.cluster_name="cluster-my-skill--case-one"`,
-			expected: "cluster-my-skill--case-one",
-		},
-		{
-			name:     "single quotes cluster_name",
-			query:    `resource.type='k8s_cluster' AND resource.labels.cluster_name='cluster-my-skill--case-one'`,
-			expected: "cluster-my-skill--case-one",
-		},
-		{
-			name:     "single quotes cluster",
-			query:    `resource.type='k8s_cluster' AND cluster 'cluster-my-skill--case-two'`,
-			expected: "cluster-my-skill--case-two",
-		},
-		{
-			name:     "double quotes cluster",
-			query:    `resource.type="k8s_cluster" AND cluster "cluster-my-skill--case-two"`,
-			expected: "cluster-my-skill--case-two",
-		},
-		{
-			name:     "query without cluster name",
-			query:    `resource.type="k8s_container" AND textPayload:"error"`,
-			expected: "",
-		},
-		{
-			name:     "empty query",
-			query:    "",
-			expected: "",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := extractClusterNameFromQuery(tt.query)
-			if got != tt.expected {
-				t.Errorf("extractClusterNameFromQuery() = %q, want %q", got, tt.expected)
-			}
-		})
-	}
-}
-
-func TestResolveScenarioFromCluster(t *testing.T) {
-	tests := []struct {
-		name         string
-		clusterName  string
-		wantSkill    string
-		wantCaseName string
-		wantOk       bool
-	}{
-		{
-			name:         "valid encoded cluster name",
-			clusterName:  "cluster-gke-ai-troubleshooting-tpu-connection-failure-vbar-oom--no-vbar-error-found",
-			wantSkill:    "gke-ai-troubleshooting-tpu-connection-failure-vbar-oom",
-			wantCaseName: "no_vbar_error_found",
-			wantOk:       true,
-		},
-		{
-			name:         "case name with multiple hyphens",
-			clusterName:  "cluster-my-skill--oom-without-custom-metrics",
-			wantSkill:    "my-skill",
-			wantCaseName: "oom_without_custom_metrics",
-			wantOk:       true,
-		},
-		{
-			name:         "missing cluster prefix",
-			clusterName:  "my-skill--case-name",
-			wantSkill:    "",
-			wantCaseName: "",
-			wantOk:       false,
-		},
-		{
-			name:         "missing double hyphen separator",
-			clusterName:  "cluster-my-skill-case-name",
-			wantSkill:    "",
-			wantCaseName: "",
-			wantOk:       false,
-		},
-		{
-			name:         "path traversal rejection",
-			clusterName:  "cluster-../../etc/passwd--case-name",
-			wantSkill:    "",
-			wantCaseName: "",
-			wantOk:       false,
-		},
-		{
-			name:         "invalid characters rejection",
-			clusterName:  "cluster-skill$name--case*name",
-			wantSkill:    "",
-			wantCaseName: "",
-			wantOk:       false,
-		},
-		{
-			name:         "empty cluster name",
-			clusterName:  "",
-			wantSkill:    "",
-			wantCaseName: "",
-			wantOk:       false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotSkill, gotCase, ok := resolveScenarioFromCluster(tt.clusterName)
-			if ok != tt.wantOk {
-				t.Fatalf("resolveScenarioFromCluster() ok = %v, want %v", ok, tt.wantOk)
-			}
-			if gotSkill != tt.wantSkill {
-				t.Errorf("resolveScenarioFromCluster() skill = %q, want %q", gotSkill, tt.wantSkill)
-			}
-			if gotCase != tt.wantCaseName {
-				t.Errorf("resolveScenarioFromCluster() case = %q, want %q", gotCase, tt.wantCaseName)
-			}
-		})
-	}
-}
 
 func TestExtractArgsMap(t *testing.T) {
 	type dummyArgs struct {
@@ -230,7 +108,7 @@ func TestResolveQueryLogsMock(t *testing.T) {
 	})
 }
 
-func TestHandleClusterEncodedMock_EndToEnd(t *testing.T) {
+func TestHandleMockToolCall_EndToEnd(t *testing.T) {
 	// Set up temporary mock_data directory structure
 	tempDir := t.TempDir()
 	skillDir := filepath.Join(tempDir, "my-skill")
@@ -257,14 +135,15 @@ func TestHandleClusterEncodedMock_EndToEnd(t *testing.T) {
 
 	ctx := context.Background()
 
-	t.Run("resolve from cluster_name argument parameter", func(t *testing.T) {
+	t.Run("resolve from env variables GKE_MCP_MOCK_SKILL and GKE_MCP_MOCK_CASE", func(t *testing.T) {
+		t.Setenv("GKE_MCP_MOCK_SKILL", "my-skill")
+		t.Setenv("GKE_MCP_MOCK_CASE", "my_test_case")
 		args := map[string]any{
-			"cluster_name": "cluster-my-skill--my-test-case",
-			"query":        "error_log",
+			"query": "error_log",
 		}
-		res, _, err := handleClusterEncodedMock(ctx, "query_logs", args, cfg)
+		res, _, err := handleMockToolCall(ctx, "query_logs", args, cfg)
 		if err != nil {
-			t.Fatalf("handleClusterEncodedMock failed: %v", err)
+			t.Fatalf("handleMockToolCall failed: %v", err)
 		}
 
 		textContent := res.Content[0].(*mcp.TextContent)
@@ -273,13 +152,24 @@ func TestHandleClusterEncodedMock_EndToEnd(t *testing.T) {
 		}
 	})
 
-	t.Run("resolve from query filter", func(t *testing.T) {
+	t.Run("resolve from build-time ldflags (config.BuildMockSkill and config.BuildMockCase)", func(t *testing.T) {
+		t.Setenv("GKE_MCP_MOCK_SKILL", "")
+		t.Setenv("GKE_MCP_MOCK_CASE", "")
+		origSkill := config.BuildMockSkill
+		origCase := config.BuildMockCase
+		config.BuildMockSkill = "my-skill"
+		config.BuildMockCase = "my_test_case"
+		defer func() {
+			config.BuildMockSkill = origSkill
+			config.BuildMockCase = origCase
+		}()
+
 		args := map[string]any{
-			"query": `resource.labels.cluster_name="cluster-my-skill--my-test-case" AND "error_log"`,
+			"query": "error_log",
 		}
-		res, _, err := handleClusterEncodedMock(ctx, "query_logs", args, cfg)
+		res, _, err := handleMockToolCall(ctx, "query_logs", args, cfg)
 		if err != nil {
-			t.Fatalf("handleClusterEncodedMock failed: %v", err)
+			t.Fatalf("handleMockToolCall failed: %v", err)
 		}
 
 		textContent := res.Content[0].(*mcp.TextContent)
@@ -288,48 +178,54 @@ func TestHandleClusterEncodedMock_EndToEnd(t *testing.T) {
 		}
 	})
 
-	t.Run("unresolvable cluster name", func(t *testing.T) {
+	t.Run("unresolvable mock scenario (both env and args missing)", func(t *testing.T) {
+		t.Setenv("GKE_MCP_MOCK_SKILL", "")
+		t.Setenv("GKE_MCP_MOCK_CASE", "")
 		args := map[string]any{
 			"query": `resource.type="k8s_cluster"`,
 		}
-		res, _, err := handleClusterEncodedMock(ctx, "query_logs", args, cfg)
+		res, _, err := handleMockToolCall(ctx, "query_logs", args, cfg)
 		if err != nil {
-			t.Fatalf("handleClusterEncodedMock failed: %v", err)
+			t.Fatalf("handleMockToolCall failed: %v", err)
 		}
 
 		textContent := res.Content[0].(*mcp.TextContent)
-		if !strings.Contains(textContent.Text, "could not resolve cluster name") {
-			t.Errorf("Text = %q, want unresolvable cluster error message", textContent.Text)
-		}
-	})
-
-	t.Run("resolvable cluster but missing mock file", func(t *testing.T) {
-		args := map[string]any{
-			"cluster_name": "cluster-my-skill--non-existent-case",
-		}
-		res, _, err := handleClusterEncodedMock(ctx, "query_logs", args, cfg)
-		if err != nil {
-			t.Fatalf("handleClusterEncodedMock failed: %v", err)
-		}
-
-		textContent := res.Content[0].(*mcp.TextContent)
-		if !strings.Contains(textContent.Text, "no mock data file found") {
-			t.Errorf("Text = %q, want missing mock file error message", textContent.Text)
+		if !strings.Contains(textContent.Text, "could not resolve mock scenario") {
+			t.Errorf("Text = %q, want unresolvable scenario error message", textContent.Text)
 		}
 	})
 
 	t.Run("unsupported tool", func(t *testing.T) {
+		t.Setenv("GKE_MCP_MOCK_SKILL", "my-skill")
+		t.Setenv("GKE_MCP_MOCK_CASE", "my_test_case")
 		args := map[string]any{
-			"cluster_name": "cluster-my-skill--my-test-case",
+			"query": "error_log",
 		}
-		res, _, err := handleClusterEncodedMock(ctx, "unsupported_tool", args, cfg)
+		res, _, err := handleMockToolCall(ctx, "unsupported_tool", args, cfg)
 		if err != nil {
-			t.Fatalf("handleClusterEncodedMock failed: %v", err)
+			t.Fatalf("handleMockToolCall failed: %v", err)
 		}
 
 		textContent := res.Content[0].(*mcp.TextContent)
 		if !strings.Contains(textContent.Text, "no mock implementation available") {
 			t.Errorf("Text = %q, want unsupported tool message", textContent.Text)
+		}
+	})
+
+	t.Run("nil config resolution using env variables fallback", func(t *testing.T) {
+		t.Setenv("GKE_MCP_MOCK_SKILL", "my-skill")
+		t.Setenv("GKE_MCP_MOCK_CASE", "my_test_case")
+		args := map[string]any{
+			"query": "error_log",
+		}
+		res, _, err := handleMockToolCall(ctx, "query_logs", args, nil)
+		if err != nil {
+			t.Fatalf("handleMockToolCall failed: %v", err)
+		}
+
+		textContent := res.Content[0].(*mcp.TextContent)
+		if textContent.Text != "Found synthetic error log" {
+			t.Errorf("Text = %q, want %q", textContent.Text, "Found synthetic error log")
 		}
 	})
 }
@@ -421,6 +317,8 @@ func TestRegisterTool_MockModeToggle(t *testing.T) {
 
 		t.Setenv("GKE_MCP_MOCK", "true")
 		t.Setenv("GKE_MCP_MOCK_DATA_DIR", tempDir)
+		t.Setenv("GKE_MCP_MOCK_SKILL", "my-skill")
+		t.Setenv("GKE_MCP_MOCK_CASE", "my_case")
 		cfg := config.New("test", false)
 
 		server := mcp.NewServer(&mcp.Implementation{Name: "test-server", Version: "1.0.0"}, nil)
@@ -444,7 +342,7 @@ func TestRegisterTool_MockModeToggle(t *testing.T) {
 		res, err := session.CallTool(ctx, &mcp.CallToolParams{
 			Name: "query_logs",
 			Arguments: map[string]any{
-				"cluster_name": "cluster-my-skill--my-case",
+				"cluster_name": "tpu-prod",
 				"query":        "error",
 			},
 		})
