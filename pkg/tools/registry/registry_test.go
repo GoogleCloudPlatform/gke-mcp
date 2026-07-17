@@ -112,7 +112,7 @@ func TestHandleMockToolCall_EndToEnd(t *testing.T) {
 	// Set up temporary mock_data directory structure
 	tempDir := t.TempDir()
 	skillDir := filepath.Join(tempDir, "my-skill")
-	if err := os.MkdirAll(skillDir, 0755); err != nil {
+	if err := os.MkdirAll(skillDir, 0750); err != nil {
 		t.Fatalf("failed to create skill dir: %v", err)
 	}
 
@@ -125,7 +125,7 @@ func TestHandleMockToolCall_EndToEnd(t *testing.T) {
 		]
 	}`
 	mockFilePath := filepath.Join(skillDir, "my_test_case.json")
-	if err := os.WriteFile(mockFilePath, []byte(caseMockContent), 0644); err != nil {
+	if err := os.WriteFile(mockFilePath, []byte(caseMockContent), 0600); err != nil {
 		t.Fatalf("failed to write mock file: %v", err)
 	}
 
@@ -233,12 +233,12 @@ func TestHandleMockToolCall_EndToEnd(t *testing.T) {
 func TestRegisterTool_MockModeToggle(t *testing.T) {
 	tempDir := t.TempDir()
 	skillDir := filepath.Join(tempDir, "my-skill")
-	if err := os.MkdirAll(skillDir, 0755); err != nil {
+	if err := os.MkdirAll(skillDir, 0750); err != nil {
 		t.Fatalf("failed to create skill dir: %v", err)
 	}
 	if err := os.WriteFile(filepath.Join(skillDir, "my_case.json"), []byte(`{
 		"query_logs": [{"query_contains": "error", "response": "mock response"}]
-	}`), 0644); err != nil {
+	}`), 0600); err != nil {
 		t.Fatalf("failed to write mock file: %v", err)
 	}
 
@@ -280,7 +280,7 @@ func TestRegisterTool_MockModeToggle(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to connect client: %v", err)
 		}
-		defer session.Close()
+		defer func() { _ = session.Close() }()
 
 		res, err := session.CallTool(ctx, &mcp.CallToolParams{
 			Name: "query_logs",
@@ -337,7 +337,7 @@ func TestRegisterTool_MockModeToggle(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to connect client: %v", err)
 		}
-		defer session.Close()
+		defer func() { _ = session.Close() }()
 
 		res, err := session.CallTool(ctx, &mcp.CallToolParams{
 			Name: "query_logs",
@@ -388,7 +388,7 @@ func TestRegisterTool_MockModeToggle(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to connect client: %v", err)
 		}
-		defer session.Close()
+		defer func() { _ = session.Close() }()
 
 		res, err := session.CallTool(ctx, &mcp.CallToolParams{
 			Name: "query_logs",

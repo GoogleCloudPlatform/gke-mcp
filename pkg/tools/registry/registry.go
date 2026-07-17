@@ -24,8 +24,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 var (
@@ -113,6 +113,7 @@ func handleMockToolCall(ctx context.Context, toolName string, args any, c *confi
 
 	// Load mock_data/<skill>/<caseName>.json
 	mockPath := filepath.Join(mockDir, skill, caseName+".json")
+	// #nosec G304
 	mockBytes, err := os.ReadFile(mockPath)
 	if err != nil {
 		return &mcp.CallToolResult{

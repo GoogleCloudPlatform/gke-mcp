@@ -123,7 +123,6 @@ func (c *Config) MockCase() string {
 	return BuildMockCase
 }
 
-
 // New constructs a Config populated from gcloud and build version.
 func New(version string, enableDeleteTools bool) *Config {
 	provider := os.Getenv("GKE_MCP_PROVIDER")
