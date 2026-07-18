@@ -1,0 +1,30 @@
+{
+  "query_logs": [
+    {
+      "query_contains": "gpu-node",
+      "response": "No log entries found."
+    },
+    {
+      "query_contains": "ml-training-cluster",
+      "response": "No log entries found."
+    }
+  ],
+  "k8s_resources": [
+    {
+      "resource_type": "node",
+      "response": "apiVersion: v1\nkind: List\nitems:\n- apiVersion: v1\n  kind: Node\n  metadata:\n    name: gpu-node-1\n    labels:\n      cloud.google.com/gke-nodepool: gpu-pool\n- apiVersion: v1\n  kind: Node\n  metadata:\n    name: gpu-node-2\n    labels:\n      cloud.google.com/gke-nodepool: gpu-pool"
+    }
+  ],
+  "prometheus": [
+    {
+      "query_contains": "interruption",
+      "response": {
+        "status": "success",
+        "data": {
+          "resultType": "vector",
+          "result": []
+        }
+      }
+    }
+  ]
+}

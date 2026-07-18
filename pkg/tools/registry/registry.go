@@ -24,8 +24,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 var (
@@ -38,8 +38,14 @@ type queryLogMockRule struct {
 	Response      string `json:"response,omitempty"`
 }
 
+type prometheusMockRule struct {
+	QueryContains string          `json:"query_contains,omitempty"`
+	Response      json.RawMessage `json:"response,omitempty"`
+}
+
 type caseMockData struct {
-	QueryLogs []queryLogMockRule `json:"query_logs,omitempty"`
+	QueryLogs  []queryLogMockRule   `json:"query_logs,omitempty"`
+	Prometheus []prometheusMockRule `json:"prometheus,omitempty"`
 }
 
 // RegisterTool wraps mcp.AddTool to intercept and mock tool execution in MockMode.
@@ -130,6 +136,16 @@ func handleMockToolCall(ctx context.Context, toolName string, args any, c *confi
 		return res, nil, err
 	}
 
+	if toolName == "query_prometheus" {
+		argsMap, err := extractArgsMap(args)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to parse arguments: %w", err)
+		}
+		query, _ := argsMap["query"].(string)
+		res, err := resolveQueryPrometheusMock(mockBytes, query)
+		return res, nil, err
+	}
+
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{&mcp.TextContent{Text: fmt.Sprintf("no mock implementation available for tool %s", toolName)}},
 	}, nil, nil
@@ -160,6 +176,32 @@ func resolveQueryLogsMock(mockDataBytes []byte, query string) (*mcp.CallToolResu
 			return &mcp.CallToolResult{
 				Content: []mcp.Content{
 					&mcp.TextContent{Text: rule.Response},
+				},
+			}, nil
+		}
+	}
+
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: fmt.Sprintf("no mock rule matched for query: %s", query)},
+		},
+	}, nil
+}
+
+// resolveQueryPrometheusMock handles simulated output for the query_prometheus tool.
+//
+// It parses the case-wide JSON data and evaluates prometheus rules sequentially against the PromQL query string.
+func resolveQueryPrometheusMock(mockDataBytes []byte, query string) (*mcp.CallToolResult, error) {
+	var data caseMockData
+	if err := json.Unmarshal(mockDataBytes, &data); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal mock data: %w", err)
+	}
+
+	for _, rule := range data.Prometheus {
+		if rule.QueryContains != "" && strings.Contains(query, rule.QueryContains) {
+			return &mcp.CallToolResult{
+				Content: []mcp.Content{
+					&mcp.TextContent{Text: string(rule.Response)},
 				},
 			}, nil
 		}

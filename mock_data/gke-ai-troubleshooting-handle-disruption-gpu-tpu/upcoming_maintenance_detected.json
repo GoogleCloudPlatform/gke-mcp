@@ -1,0 +1,15 @@
+{
+  "query_logs": [
+    {
+      "query_contains": "gpu-node-3",
+      "response": "No log entries found."
+    }
+  ],
+  "k8s_resources": [
+    {
+      "resource_type": "node",
+      "name": "gpu-node-3",
+      "response": "apiVersion: v1\nkind: Node\nmetadata:\n  name: gpu-node-3\n  labels:\n    cloud.google.com/scheduled-maintenance-time: \"1781524800\"\nspec:\n  unschedulable: false\nstatus:\n  conditions:\n  - type: Ready\n    status: \"True\""
+    }
+  ]
+}
