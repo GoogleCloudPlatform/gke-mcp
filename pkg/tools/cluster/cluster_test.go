@@ -22,10 +22,10 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	fakediscovery "k8s.io/client-go/discovery/fake"
-	dynamicfake "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/discovery"
+	fakediscovery "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/dynamic"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/rest"
@@ -349,10 +349,10 @@ func TestVerifyClusterUnused(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			scheme := runtime.NewScheme()
 			gvrToKind := map[schema.GroupVersionResource]string{
-				{Group: "", Version: "v1", Resource: "services"}:                 "ServiceList",
-				{Group: "", Version: "v1", Resource: "persistentvolumeclaims"}: "PersistentVolumeClaimList",
-				{Group: "", Version: "v1", Resource: "pods"}:                    "PodList",
-				{Group: "networking.k8s.io", Version: "v1", Resource: "ingresses"}: "IngressList",
+				{Group: "", Version: "v1", Resource: "services"}:                          "ServiceList",
+				{Group: "", Version: "v1", Resource: "persistentvolumeclaims"}:            "PersistentVolumeClaimList",
+				{Group: "", Version: "v1", Resource: "pods"}:                              "PodList",
+				{Group: "networking.k8s.io", Version: "v1", Resource: "ingresses"}:        "IngressList",
 				{Group: "gateway.networking.k8s.io", Version: "v1", Resource: "gateways"}: "GatewayList",
 			}
 			fakeDynamicClient := dynamicfake.NewSimpleDynamicClientWithCustomListKinds(scheme, gvrToKind, tt.objects...)

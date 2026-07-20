@@ -709,7 +709,7 @@ func isResourceTypeNotFoundError(err error) bool {
 		return true
 	}
 	errStr := err.Error()
-	return strings.Contains(errStr, "failed to resolve resource") || strings.Contains(errStr, "the server doesn't have a resource type")
+	return strings.Contains(errStr, "the server doesn't have a resource type")
 }
 
 func prefixStrings(fields []string, prefix string) []string {
