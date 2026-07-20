@@ -15,7 +15,20 @@
 package cluster
 
 import (
+	"context"
 	"testing"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	fakediscovery "k8s.io/client-go/discovery/fake"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/rest"
 )
 
 func TestListClustersArgs_Fields(t *testing.T) {
@@ -183,6 +196,7 @@ func TestDeleteClusterArgs_Fields(t *testing.T) {
 	args.ProjectID = "test-project"
 	args.Location = "us-central1"
 	args.ClusterName = "my-cluster"
+	args.DeletionPolicy = "FORCE"
 
 	if args.ProjectID != "test-project" {
 		t.Errorf("ProjectID = %s, want test-project", args.ProjectID)
@@ -192,5 +206,187 @@ func TestDeleteClusterArgs_Fields(t *testing.T) {
 	}
 	if args.ClusterName != "my-cluster" {
 		t.Errorf("ClusterName = %s, want my-cluster", args.ClusterName)
+	}
+	if args.DeletionPolicy != "FORCE" {
+		t.Errorf("DeletionPolicy = %s, want FORCE", args.DeletionPolicy)
+	}
+}
+
+type mockK8sProvider struct {
+	dynamicClient   dynamic.Interface
+	discoveryClient discovery.DiscoveryInterface
+	err             error
+}
+
+func (m *mockK8sProvider) RESTConfig(_ context.Context, _ string) (*rest.Config, error) {
+	return nil, m.err
+}
+
+func (m *mockK8sProvider) DynamicClient(_ context.Context, _ string) (dynamic.Interface, error) {
+	return m.dynamicClient, m.err
+}
+
+func (m *mockK8sProvider) DynamicClientWithHeaders(_ context.Context, _ string, _, _ string) (dynamic.Interface, error) {
+	return m.dynamicClient, m.err
+}
+
+func (m *mockK8sProvider) DiscoveryClient(_ context.Context, _ string) (discovery.DiscoveryInterface, error) {
+	return m.discoveryClient, m.err
+}
+
+func (m *mockK8sProvider) KubernetesClient(_ context.Context, _ string) (kubernetes.Interface, error) {
+	return nil, m.err
+}
+
+func TestVerifyClusterUnused(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		name    string
+		objects []runtime.Object
+		wantErr bool
+	}{
+		{
+			name: "failed_due_to_load_balancer",
+			objects: []runtime.Object{
+				&unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "v1",
+						"kind":       "Service",
+						"metadata": map[string]interface{}{
+							"name":      "lb-svc",
+							"namespace": "default",
+						},
+						"spec": map[string]interface{}{
+							"type": "LoadBalancer",
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "failed_due_to_bound_pvc",
+			objects: []runtime.Object{
+				&unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "v1",
+						"kind":       "PersistentVolumeClaim",
+						"metadata": map[string]interface{}{
+							"name":      "my-pvc",
+							"namespace": "default",
+						},
+						"status": map[string]interface{}{
+							"phase": "Bound",
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "failed_due_to_running_pod",
+			objects: []runtime.Object{
+				&unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "v1",
+						"kind":       "Pod",
+						"metadata": map[string]interface{}{
+							"name":      "app-pod",
+							"namespace": "default",
+						},
+						"status": map[string]interface{}{
+							"phase": "Running",
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "failed_due_to_active_ingress",
+			objects: []runtime.Object{
+				&unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "networking.k8s.io/v1",
+						"kind":       "Ingress",
+						"metadata": map[string]interface{}{
+							"name":      "my-ingress",
+							"namespace": "default",
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "succeeds_with_kube_system_pod",
+			objects: []runtime.Object{
+				&unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "v1",
+						"kind":       "Pod",
+						"metadata": map[string]interface{}{
+							"name":      "sys-pod",
+							"namespace": "kube-system",
+						},
+						"status": map[string]interface{}{
+							"phase": "Running",
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name:    "succeeds_when_unused",
+			objects: []runtime.Object{},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			scheme := runtime.NewScheme()
+			gvrToKind := map[schema.GroupVersionResource]string{
+				{Group: "", Version: "v1", Resource: "services"}:                 "ServiceList",
+				{Group: "", Version: "v1", Resource: "persistentvolumeclaims"}: "PersistentVolumeClaimList",
+				{Group: "", Version: "v1", Resource: "pods"}:                    "PodList",
+				{Group: "networking.k8s.io", Version: "v1", Resource: "ingresses"}: "IngressList",
+				{Group: "gateway.networking.k8s.io", Version: "v1", Resource: "gateways"}: "GatewayList",
+			}
+			fakeDynamicClient := dynamicfake.NewSimpleDynamicClientWithCustomListKinds(scheme, gvrToKind, tt.objects...)
+
+			fakeClientset := fake.NewSimpleClientset()
+			fakeDiscovery := fakeClientset.Discovery().(*fakediscovery.FakeDiscovery)
+			fakeDiscovery.Resources = []*metav1.APIResourceList{
+				{
+					GroupVersion: "v1",
+					APIResources: []metav1.APIResource{
+						{Name: "pods", Namespaced: true, Kind: "Pod"},
+						{Name: "services", Namespaced: true, Kind: "Service"},
+						{Name: "persistentvolumeclaims", Namespaced: true, Kind: "PersistentVolumeClaim"},
+					},
+				},
+				{
+					GroupVersion: "networking.k8s.io/v1",
+					APIResources: []metav1.APIResource{
+						{Name: "ingresses", Namespaced: true, Kind: "Ingress"},
+					},
+				},
+			}
+
+			h := &handlers{
+				k8sProvider: &mockK8sProvider{
+					dynamicClient:   fakeDynamicClient,
+					discoveryClient: fakeDiscovery,
+				},
+			}
+
+			err := h.verifyClusterUnused(ctx, "projects/my-project/locations/us-central1/clusters/my-cluster")
+			if (err != nil) != tt.wantErr {
+				t.Errorf("verifyClusterUnused() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
 	}
 }

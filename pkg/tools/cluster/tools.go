@@ -21,6 +21,7 @@ import (
 
 	container "cloud.google.com/go/container/apiv1"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/k8s"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"google.golang.org/api/option"
 )
@@ -34,8 +35,9 @@ func Install(ctx context.Context, s *mcp.Server, c *config.Config) error {
 	}
 
 	h := &handlers{
-		c:        c,
-		cmClient: cmClient,
+		c:           c,
+		cmClient:    cmClient,
+		k8sProvider: k8s.NewClientProvider(),
 	}
 
 	mcp.AddTool(s, &mcp.Tool{

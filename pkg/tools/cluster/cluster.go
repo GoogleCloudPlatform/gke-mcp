@@ -31,10 +31,16 @@ import (
 	container "cloud.google.com/go/container/apiv1"
 	containerpb "cloud.google.com/go/container/apiv1/containerpb"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/k8s"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/params"
 	"github.com/googleapis/gax-go/v2/callctx"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"google.golang.org/protobuf/encoding/protojson"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/clientcmd"
 	k8sClientApi "k8s.io/client-go/tools/clientcmd/api"
 )
@@ -82,8 +88,9 @@ var (
 )
 
 type handlers struct {
-	c        *config.Config
-	cmClient *container.ClusterManagerClient
+	c           *config.Config
+	cmClient    *container.ClusterManagerClient
+	k8sProvider k8s.Provider
 }
 
 type listClustersArgs struct {
@@ -108,6 +115,7 @@ type updateClusterArgs struct {
 
 type deleteClusterArgs struct {
 	params.Cluster
+	DeletionPolicy string `json:"deletionPolicy,omitempty" jsonschema:"Optional. The deletion policy to apply to the request. Options: 'VERIFY_UNUSED' (default: checks for active compute, external exposure, and persistent data before deletion), 'FORCE' (immediately deletes the cluster without safety checks)."`
 }
 
 // getKubeconfigArgs defines arguments for getting a GKE cluster's kubeconfig.
@@ -541,6 +549,12 @@ func (h *handlers) updateCluster(ctx context.Context, _ *mcp.CallToolRequest, ar
 }
 
 func (h *handlers) deleteCluster(ctx context.Context, _ *mcp.CallToolRequest, args *deleteClusterArgs) (*mcp.CallToolResult, any, error) {
+	if !strings.EqualFold(args.DeletionPolicy, "FORCE") {
+		if err := h.verifyClusterUnused(ctx, args.ClusterPath()); err != nil {
+			return nil, nil, fmt.Errorf("cluster deletion blocked by safety check: %w", err)
+		}
+	}
+
 	req := &containerpb.DeleteClusterRequest{
 		Name: args.ClusterPath(),
 	}
@@ -554,6 +568,148 @@ func (h *handlers) deleteCluster(ctx context.Context, _ *mcp.CallToolRequest, ar
 			&mcp.TextContent{Text: protojson.Format(resp)},
 		},
 	}, nil, nil
+}
+
+func (h *handlers) verifyClusterUnused(ctx context.Context, clusterPath string) error {
+	discoveryClient, err := h.k8sProvider.DiscoveryClient(ctx, clusterPath)
+	if err != nil {
+		return fmt.Errorf("get discovery client: %w", err)
+	}
+
+	dc, err := h.k8sProvider.DynamicClient(ctx, clusterPath)
+	if err != nil {
+		return fmt.Errorf("get dynamic client: %w", err)
+	}
+
+	// 1. External Exposure
+	// Presence of >=1 Service of type LoadBalancer, OR any Ingress, Gateway, or MultiClusterIngress.
+	if gvr, _, _, err := k8s.ResolveGVR(ctx, discoveryClient, "Service"); err == nil {
+		ri := dc.Resource(gvr)
+		var limit int64 = 100
+		var continueToken string
+		for {
+			list, err := ri.List(ctx, metav1.ListOptions{Limit: limit, Continue: continueToken})
+			if err != nil {
+				return fmt.Errorf("list services: %w", err)
+			}
+			for _, item := range list.Items {
+				svcType, found, err := unstructured.NestedString(item.Object, "spec", "type")
+				if err == nil && found && svcType == "LoadBalancer" {
+					return fmt.Errorf("external exposure: service %s/%s is of type LoadBalancer", item.GetNamespace(), item.GetName())
+				}
+			}
+			continueToken = list.GetContinue()
+			if continueToken == "" {
+				break
+			}
+		}
+	} else if !isResourceTypeNotFoundError(err) {
+		return err
+	}
+
+	if err := h.checkAnyResourceExists(ctx, discoveryClient, dc, "Ingress"); err != nil {
+		return err
+	}
+
+	if err := h.checkAnyResourceExists(ctx, discoveryClient, dc, "Gateway"); err != nil {
+		return err
+	}
+
+	if err := h.checkAnyResourceExists(ctx, discoveryClient, dc, "MultiClusterIngress"); err != nil {
+		return err
+	}
+
+	// 2. Persistent Data
+	// Presence of >=1 PVC in Bound state in any namespace.
+	if gvr, _, _, err := k8s.ResolveGVR(ctx, discoveryClient, "PersistentVolumeClaim"); err == nil {
+		ri := dc.Resource(gvr)
+		var limit int64 = 100
+		var continueToken string
+		for {
+			list, err := ri.List(ctx, metav1.ListOptions{Limit: limit, Continue: continueToken})
+			if err != nil {
+				return fmt.Errorf("list pvc: %w", err)
+			}
+			for _, item := range list.Items {
+				phase, found, err := unstructured.NestedString(item.Object, "status", "phase")
+				if err == nil && found && phase == "Bound" {
+					return fmt.Errorf("persistent data: pvc %s/%s is in bound state", item.GetNamespace(), item.GetName())
+				}
+			}
+			continueToken = list.GetContinue()
+			if continueToken == "" {
+				break
+			}
+		}
+	} else if !isResourceTypeNotFoundError(err) {
+		return err
+	}
+
+	// 3. Active Compute
+	// Presence of >=1 Pod in Running or Pending state in any user namespace (excluding kube-system or gke-* prefixed).
+	if gvr, _, _, err := k8s.ResolveGVR(ctx, discoveryClient, "Pod"); err == nil {
+		ri := dc.Resource(gvr)
+		var limit int64 = 100
+		var continueToken string
+		for {
+			list, err := ri.List(ctx, metav1.ListOptions{Limit: limit, Continue: continueToken})
+			if err != nil {
+				return fmt.Errorf("list pods: %w", err)
+			}
+			for _, item := range list.Items {
+				ns := item.GetNamespace()
+				if ns == "kube-system" || strings.HasPrefix(ns, "gke-") {
+					continue
+				}
+				phase, found, err := unstructured.NestedString(item.Object, "status", "phase")
+				if err == nil && found && (phase == "Running" || phase == "Pending") {
+					return fmt.Errorf("active compute: pod %s/%s is in %s state", ns, item.GetName(), phase)
+				}
+			}
+			continueToken = list.GetContinue()
+			if continueToken == "" {
+				break
+			}
+		}
+	} else if !isResourceTypeNotFoundError(err) {
+		return err
+	}
+
+	return nil
+}
+
+func (h *handlers) checkAnyResourceExists(ctx context.Context, discoveryClient discovery.DiscoveryInterface, dc dynamic.Interface, kind string) error {
+	gvr, _, _, err := k8s.ResolveGVR(ctx, discoveryClient, kind)
+	if err != nil {
+		if isResourceTypeNotFoundError(err) {
+			return nil // If the cluster doesn't support the resource type, it's not active
+		}
+		return fmt.Errorf("resolve %s resource: %w", kind, err)
+	}
+
+	ri := dc.Resource(gvr)
+	list, err := ri.List(ctx, metav1.ListOptions{Limit: 1})
+	if err != nil {
+		return fmt.Errorf("list %s resources: %w", kind, err)
+	}
+
+	if len(list.Items) > 0 {
+		item := list.Items[0]
+		return fmt.Errorf("external exposure: found active %s resource %s/%s", kind, item.GetNamespace(), item.GetName())
+	}
+
+	return nil
+}
+
+func isResourceTypeNotFoundError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if meta.IsNoMatchError(err) {
+		return true
+	}
+	errStr := err.Error()
+	return strings.Contains(errStr, "failed to resolve resource") || strings.Contains(errStr, "the server doesn't have a resource type")
 }
 
 func prefixStrings(fields []string, prefix string) []string {
