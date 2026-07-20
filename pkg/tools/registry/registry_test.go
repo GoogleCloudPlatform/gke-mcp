@@ -21,9 +21,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/modelcontextprotocol/go-sdk/mcp"
-
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 func TestExtractArgsMap(t *testing.T) {
@@ -50,26 +49,38 @@ func TestExtractArgsMap(t *testing.T) {
 	}
 }
 
-func TestResolveQueryLogsMock(t *testing.T) {
-	mockJSON := `{
-		"query_logs": [
-			{
-				"query_contains": "vbar_control_agent",
-				"response": "I0702 OOM detected in vbar_control_agent"
-			},
-			{
-				"query_contains": "device_plugin",
-				"response": "Device plugin healthy"
-			}
-		]
-	}`
+func TestExtractQueryArg(t *testing.T) {
+	type dummyArgs struct {
+		Query string `json:"query"`
+	}
+
+	args := dummyArgs{
+		Query: "resource.type=k8s_cluster",
+	}
+
+	query, err := extractQueryArg(args)
+	if err != nil {
+		t.Fatalf("extractQueryArg failed: %v", err)
+	}
+	if query != "resource.type=k8s_cluster" {
+		t.Errorf("extractQueryArg() = %q, want %q", query, "resource.type=k8s_cluster")
+	}
+}
+
+func TestMatchQueryRules(t *testing.T) {
+	rules := []queryMockRule{
+		{
+			QueryContains: "vbar_control_agent",
+			Response:      "I0702 OOM detected in vbar_control_agent",
+		},
+		{
+			QueryContains: "device_plugin",
+			Response:      "Device plugin healthy",
+		},
+	}
 
 	t.Run("matching query rule", func(t *testing.T) {
-		res, err := resolveQueryLogsMock([]byte(mockJSON), `resource.labels.cluster_name="c" AND "vbar_control_agent"`)
-		if err != nil {
-			t.Fatalf("resolveQueryLogsMock failed: %v", err)
-		}
-
+		res := matchQueryRules(rules, `resource.labels.cluster_name="c" AND "vbar_control_agent"`)
 		if len(res.Content) == 0 {
 			t.Fatal("expected content in CallToolResult")
 		}
@@ -85,11 +96,7 @@ func TestResolveQueryLogsMock(t *testing.T) {
 	})
 
 	t.Run("unmatched query rule", func(t *testing.T) {
-		res, err := resolveQueryLogsMock([]byte(mockJSON), `resource.type="k8s_node" AND "unknown_log"`)
-		if err != nil {
-			t.Fatalf("resolveQueryLogsMock failed: %v", err)
-		}
-
+		res := matchQueryRules(rules, `resource.type="k8s_node" AND "unknown_log"`)
 		textContent, ok := res.Content[0].(*mcp.TextContent)
 		if !ok {
 			t.Fatalf("expected *mcp.TextContent, got %T", res.Content[0])
@@ -97,13 +104,6 @@ func TestResolveQueryLogsMock(t *testing.T) {
 
 		if !strings.Contains(textContent.Text, "no mock rule matched for query") {
 			t.Errorf("textContent.Text = %q, want unmatched error string", textContent.Text)
-		}
-	})
-
-	t.Run("invalid json", func(t *testing.T) {
-		_, err := resolveQueryLogsMock([]byte(`invalid json`), `query`)
-		if err == nil {
-			t.Error("expected error for invalid json, got nil")
 		}
 	})
 }
@@ -116,7 +116,7 @@ func TestHandleMockToolCall_EndToEnd(t *testing.T) {
 		t.Fatalf("failed to create skill dir: %v", err)
 	}
 
-	caseMockContent := `{
+	caseMock := `{
 		"query_logs": [
 			{
 				"query_contains": "error_log",
@@ -125,7 +125,7 @@ func TestHandleMockToolCall_EndToEnd(t *testing.T) {
 		]
 	}`
 	mockFilePath := filepath.Join(skillDir, "my_test_case.json")
-	if err := os.WriteFile(mockFilePath, []byte(caseMockContent), 0600); err != nil {
+	if err := os.WriteFile(mockFilePath, []byte(caseMock), 0600); err != nil {
 		t.Fatalf("failed to write mock file: %v", err)
 	}
 
@@ -208,7 +208,7 @@ func TestHandleMockToolCall_EndToEnd(t *testing.T) {
 
 		textContent := res.Content[0].(*mcp.TextContent)
 		if !strings.Contains(textContent.Text, "no mock implementation available") {
-			t.Errorf("Text = %q, want unsupported tool message", textContent.Text)
+			t.Errorf("Text = %q, want unsupported tool error message", textContent.Text)
 		}
 	})
 
@@ -226,6 +226,59 @@ func TestHandleMockToolCall_EndToEnd(t *testing.T) {
 		textContent := res.Content[0].(*mcp.TextContent)
 		if textContent.Text != "Found synthetic error log" {
 			t.Errorf("Text = %q, want %q", textContent.Text, "Found synthetic error log")
+		}
+	})
+
+	t.Run("monitoring_time_series_chart mock tool call", func(t *testing.T) {
+		t.Setenv("GKE_MCP_MOCK_SKILL", "my-skill")
+		chartMock := `{
+			"monitoring_time_series_chart": [
+				{
+					"query_contains": "kube_jobset_restarts",
+					"response": "JobSet restarts detected: 2.0"
+				}
+			]
+		}`
+		if err := os.WriteFile(filepath.Join(skillDir, "chart_case.json"), []byte(chartMock), 0600); err != nil {
+			t.Fatalf("failed to write chart mock file: %v", err)
+		}
+		t.Setenv("GKE_MCP_MOCK_CASE", "chart_case")
+
+		args := map[string]any{
+			"query": "fetch k8s_container | metric 'prometheus.googleapis.com/kube_jobset_restarts/gauge'",
+		}
+		res, _, err := handleMockToolCall(ctx, "monitoring_time_series_chart", args, cfg)
+		if err != nil {
+			t.Fatalf("handleMockToolCall failed for monitoring_time_series_chart: %v", err)
+		}
+
+		textContent := res.Content[0].(*mcp.TextContent)
+		if textContent.Text != "JobSet restarts detected: 2.0" {
+			t.Errorf("Text = %q, want %q", textContent.Text, "JobSet restarts detected: 2.0")
+		}
+	})
+
+	t.Run("mql_validator mock tool call", func(t *testing.T) {
+		t.Setenv("GKE_MCP_MOCK_SKILL", "my-skill")
+		t.Setenv("GKE_MCP_MOCK_CASE", "my_test_case")
+
+		args := map[string]any{
+			"query": "fetch k8s_pod",
+		}
+		res, _, err := handleMockToolCall(ctx, "mql_validator", args, cfg)
+		if err != nil {
+			t.Fatalf("handleMockToolCall failed for mql_validator: %v", err)
+		}
+
+		if len(res.Content) == 0 {
+			t.Fatalf("expected non-empty Content")
+		}
+		textContent, ok := res.Content[0].(*mcp.TextContent)
+		if !ok {
+			t.Fatalf("expected *mcp.TextContent, got %T", res.Content[0])
+		}
+		if textContent.Text != "fetch k8s_pod" {
+			t.Errorf("Text = %q, want %q", textContent.Text, "fetch k8s_pod")
 		}
 	})
 }
@@ -411,6 +464,68 @@ func TestRegisterTool_MockModeToggle(t *testing.T) {
 		textContent := res.Content[0].(*mcp.TextContent)
 		if textContent.Text != "prod response" {
 			t.Errorf("got text %q, want %q", textContent.Text, "prod response")
+		}
+	})
+
+	t.Run("mql_validator intercepts tool call in mock mode", func(t *testing.T) {
+		mqlTool := &mcp.Tool{
+			Name:        "mql_validator",
+			Description: "validate MQL query",
+		}
+		prodHandlerCalled := false
+		prodHandler := func(_ context.Context, _ *mcp.CallToolRequest, _ dummyArgs) (*mcp.CallToolResult, any, error) {
+			prodHandlerCalled = true
+			return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: "prod validator"}}}, nil, nil
+		}
+
+		t.Setenv("GKE_MCP_MOCK", "true")
+		t.Setenv("GKE_MCP_MOCK_DATA_DIR", tempDir)
+		t.Setenv("GKE_MCP_MOCK_SKILL", "my-skill")
+		t.Setenv("GKE_MCP_MOCK_CASE", "my_case")
+		cfg := config.New("test", false)
+
+		server := mcp.NewServer(&mcp.Implementation{Name: "test-server", Version: "1.0.0"}, nil)
+		RegisterTool(server, cfg, mqlTool, prodHandler)
+
+		clientTransport, serverTransport := mcp.NewInMemoryTransports()
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		go func() {
+			_ = server.Run(ctx, serverTransport)
+		}()
+
+		client := mcp.NewClient(&mcp.Implementation{Name: "test-client", Version: "1.0.0"}, nil)
+		session, err := client.Connect(ctx, clientTransport, nil)
+		if err != nil {
+			t.Fatalf("failed to connect client: %v", err)
+		}
+		defer func() { _ = session.Close() }()
+
+		res, err := session.CallTool(ctx, &mcp.CallToolParams{
+			Name: "mql_validator",
+			Arguments: map[string]any{
+				"cluster_name": "c",
+				"query":        "fetch k8s_pod",
+			},
+		})
+		if err != nil {
+			t.Fatalf("CallTool failed: %v", err)
+		}
+
+		if prodHandlerCalled {
+			t.Errorf("expected prodHandlerCalled to be false in mock mode for mql_validator")
+		}
+
+		if len(res.Content) == 0 {
+			t.Fatalf("expected non-empty Content")
+		}
+		textContent, ok := res.Content[0].(*mcp.TextContent)
+		if !ok {
+			t.Fatalf("expected *mcp.TextContent, got %T", res.Content[0])
+		}
+		if textContent.Text != "fetch k8s_pod" {
+			t.Errorf("Text = %q, want %q", textContent.Text, "fetch k8s_pod")
 		}
 	})
 }

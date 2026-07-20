@@ -33,13 +33,14 @@ var (
 	safeNameRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 )
 
-type queryLogMockRule struct {
+type queryMockRule struct {
 	QueryContains string `json:"query_contains,omitempty"`
 	Response      string `json:"response,omitempty"`
 }
 
 type caseMockData struct {
-	QueryLogs []queryLogMockRule `json:"query_logs,omitempty"`
+	QueryLogs                  []queryMockRule `json:"query_logs,omitempty"`
+	MonitoringTimeSeriesCharts []queryMockRule `json:"monitoring_time_series_chart,omitempty"`
 }
 
 // RegisterTool wraps mcp.AddTool to intercept and mock tool execution in MockMode.
@@ -120,19 +121,52 @@ func handleMockToolCall(_ context.Context, toolName string, args any, c *config.
 		}, nil, nil
 	}
 
-	if toolName == "query_logs" {
-		argsMap, err := extractArgsMap(args)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to parse arguments: %w", err)
-		}
-		query, _ := argsMap["query"].(string)
-		res, err := resolveQueryLogsMock(mockBytes, query)
-		return res, nil, err
+	var data caseMockData
+	if err := json.Unmarshal(mockBytes, &data); err != nil {
+		return nil, nil, fmt.Errorf("failed to unmarshal mock data: %w", err)
 	}
 
-	return &mcp.CallToolResult{
-		Content: []mcp.Content{&mcp.TextContent{Text: fmt.Sprintf("no mock implementation available for tool %s", toolName)}},
-	}, nil, nil
+	switch toolName {
+	case "query_logs":
+		query, err := extractQueryArg(args)
+		if err != nil {
+			return nil, nil, err
+		}
+		return matchQueryRules(data.QueryLogs, query), nil, nil
+
+	case "monitoring_time_series_chart":
+		query, err := extractQueryArg(args)
+		if err != nil {
+			return nil, nil, err
+		}
+		return matchQueryRules(data.MonitoringTimeSeriesCharts, query), nil, nil
+
+	case "mql_validator":
+		query, err := extractQueryArg(args)
+		if err != nil {
+			return nil, nil, err
+		}
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{Text: query},
+			},
+		}, nil, nil
+
+	default:
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{&mcp.TextContent{Text: fmt.Sprintf("no mock implementation available for tool %s", toolName)}},
+		}, nil, nil
+	}
+}
+
+// extractQueryArg extracts the "query" string parameter from generic tool arguments.
+func extractQueryArg(args any) (string, error) {
+	argsMap, err := extractArgsMap(args)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse arguments: %w", err)
+	}
+	query, _ := argsMap["query"].(string)
+	return query, nil
 }
 
 // extractArgsMap deserializes generic tool arguments into a standard map[string]any.
@@ -146,22 +180,15 @@ func extractArgsMap(args any) (map[string]any, error) {
 	return res, err
 }
 
-// resolveQueryLogsMock handles simulated output for the query_logs tool.
-//
-// It parses the case-wide JSON data and evaluates query log rules sequentially against the LQL query string.
-func resolveQueryLogsMock(mockDataBytes []byte, query string) (*mcp.CallToolResult, error) {
-	var data caseMockData
-	if err := json.Unmarshal(mockDataBytes, &data); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal mock data: %w", err)
-	}
-
-	for _, rule := range data.QueryLogs {
+// matchQueryRules evaluates mock rules sequentially against the query string.
+func matchQueryRules(rules []queryMockRule, query string) *mcp.CallToolResult {
+	for _, rule := range rules {
 		if rule.QueryContains != "" && strings.Contains(query, rule.QueryContains) {
 			return &mcp.CallToolResult{
 				Content: []mcp.Content{
 					&mcp.TextContent{Text: rule.Response},
 				},
-			}, nil
+			}
 		}
 	}
 
@@ -169,5 +196,5 @@ func resolveQueryLogsMock(mockDataBytes []byte, query string) (*mcp.CallToolResu
 		Content: []mcp.Content{
 			&mcp.TextContent{Text: fmt.Sprintf("no mock rule matched for query: %s", query)},
 		},
-	}, nil
+	}
 }

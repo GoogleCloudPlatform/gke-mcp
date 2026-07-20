@@ -2,20 +2,52 @@
   "monitoring_time_series_chart": [
     {
       "query_contains": "kube_jobset_restarts",
-      "response": "fetch k8s_container | metric 'prometheus.googleapis.com/kube_jobset_restarts/gauge' | filter (jobset == 'training-job')\nTimestamp: 2026-05-20T08:14:00Z Value: 2.0"
+      "response": "fetch k8s_container | metric 'prometheus.googleapis.com/kube_jobset_restarts/gauge' | filter (jobset == 'training-job')\nTimestamp: 2026-05-20T08:14:00Z Value: 2.0 (Restarts occurred)"
+    },
+    {
+      "query_contains": "restart_count",
+      "response": "fetch k8s_container | metric 'kubernetes.io/container/restart_count'\nTimestamp: 2026-05-20T08:14:00Z Value: 2.0 (Restarts occurred)"
     },
     {
       "query_contains": "interruption_count",
-      "response": "fetch k8s_node | metric 'kubernetes.io/node_pool/interruption_count'\nTimestamp: 2026-05-20T08:14:00Z Value: 0.0"
+      "response": "fetch k8s_node | metric 'kubernetes.io/node_pool/interruption_count'\nTimestamp: 2026-05-20T08:14:00Z Value: 0.0 (No nodepool interruptions)"
+    },
+    {
+      "query_contains": "status_condition",
+      "response": "fetch k8s_node | metric 'kubernetes.io/node/status_condition'\nAll nodes Ready=True (Healthy nodes, no node failure)"
+    },
+    {
+      "query_contains": "total_cores",
+      "response": "fetch k8s_node | metric 'kubernetes.io/node/cpu/total_cores'\nAll nodes Ready=True (Healthy nodes, no node failure)"
+    },
+    {
+      "query_contains": "gce_topology_host",
+      "response": "fetch k8s_node | metric 'kubernetes.io/node/cpu/total_cores'\nAll nodes Ready=True (Healthy nodes, no node failure)"
     },
     {
       "query_contains": "unschedulable",
       "response": "fetch k8s_pod | metric 'kubernetes.io/pod/status/unschedulable' | filter (resource.label.namespace == 'default')\nTimestamp: 2026-05-20T08:14:00Z Value: 8.0 (8 pods pending/unschedulable due to Insufficient cpu/memory)"
+    },
+    {
+      "query_contains": "phase",
+      "response": "fetch k8s_pod | metric 'kubernetes.io/pod/status/phase'\nTimestamp: 2026-05-20T08:14:00Z Phase: Pending Value: 8.0 (8 pods pending/unschedulable due to Insufficient cpu/memory)"
+    },
+    {
+      "query_contains": "pending",
+      "response": "fetch k8s_pod | metric 'kubernetes.io/pod/status/phase'\nTimestamp: 2026-05-20T08:14:00Z Phase: Pending Value: 8.0 (8 pods pending/unschedulable due to Insufficient cpu/memory)"
     }
   ],
   "query_logs": [
     {
       "query_contains": "FailedScheduling",
+      "response": "2026-05-20T08:12:00Z 0/10 nodes are available: 10 Insufficient cpu."
+    },
+    {
+      "query_contains": "k8s_pod",
+      "response": "2026-05-20T08:12:00Z 0/10 nodes are available: 10 Insufficient cpu."
+    },
+    {
+      "query_contains": "unschedulable",
       "response": "2026-05-20T08:12:00Z 0/10 nodes are available: 10 Insufficient cpu."
     }
   ]

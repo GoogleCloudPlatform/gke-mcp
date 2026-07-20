@@ -44,6 +44,5 @@
       "query_contains": "used_bytes",
       "response": "fetch k8s_container | metric 'kubernetes.io/container/memory/used_bytes'\nTimestamp: 2026-05-20T08:14:00Z Value: 0.0 (No active container memory usage discovered)"
     }
-  ],
-  "query_logs": []
+  ]
 }
