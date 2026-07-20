@@ -254,7 +254,7 @@ func TestRegisterTool_MockModeToggle(t *testing.T) {
 
 	t.Run("production mode delegates to prod handler", func(t *testing.T) {
 		prodHandlerCalled := false
-		prodHandler := func(ctx context.Context, req *mcp.CallToolRequest, args dummyArgs) (*mcp.CallToolResult, any, error) {
+		prodHandler := func(_ context.Context, _ *mcp.CallToolRequest, _ dummyArgs) (*mcp.CallToolResult, any, error) {
 			prodHandlerCalled = true
 			return &mcp.CallToolResult{
 				Content: []mcp.Content{&mcp.TextContent{Text: "prod response"}},
@@ -308,7 +308,7 @@ func TestRegisterTool_MockModeToggle(t *testing.T) {
 
 	t.Run("mock mode intercepts call", func(t *testing.T) {
 		prodHandlerCalled := false
-		prodHandler := func(ctx context.Context, req *mcp.CallToolRequest, args dummyArgs) (*mcp.CallToolResult, any, error) {
+		prodHandler := func(_ context.Context, _ *mcp.CallToolRequest, _ dummyArgs) (*mcp.CallToolResult, any, error) {
 			prodHandlerCalled = true
 			return &mcp.CallToolResult{
 				Content: []mcp.Content{&mcp.TextContent{Text: "prod response"}},
@@ -365,7 +365,7 @@ func TestRegisterTool_MockModeToggle(t *testing.T) {
 
 	t.Run("nil config safely delegates to prod handler", func(t *testing.T) {
 		prodHandlerCalled := false
-		prodHandler := func(ctx context.Context, req *mcp.CallToolRequest, args dummyArgs) (*mcp.CallToolResult, any, error) {
+		prodHandler := func(_ context.Context, _ *mcp.CallToolRequest, _ dummyArgs) (*mcp.CallToolResult, any, error) {
 			prodHandlerCalled = true
 			return &mcp.CallToolResult{
 				Content: []mcp.Content{&mcp.TextContent{Text: "prod response"}},

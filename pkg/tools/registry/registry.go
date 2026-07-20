@@ -76,7 +76,7 @@ func RegisterTool[In, Out any](
 //
 // If the scenario coordinates cannot be resolved or the mock data file is missing,
 // it returns a structured failure indicating missing mock details.
-func handleMockToolCall(ctx context.Context, toolName string, args any, c *config.Config) (*mcp.CallToolResult, any, error) {
+func handleMockToolCall(_ context.Context, toolName string, args any, c *config.Config) (*mcp.CallToolResult, any, error) {
 	var envSkill, envCaseName, mockDir string
 
 	if c != nil {
@@ -113,7 +113,7 @@ func handleMockToolCall(ctx context.Context, toolName string, args any, c *confi
 
 	// Load mock_data/<skill>/<caseName>.json
 	mockPath := filepath.Join(mockDir, skill, caseName+".json")
-	// #nosec G304
+	// #nosec G304, G703
 	mockBytes, err := os.ReadFile(mockPath)
 	if err != nil {
 		return &mcp.CallToolResult{
