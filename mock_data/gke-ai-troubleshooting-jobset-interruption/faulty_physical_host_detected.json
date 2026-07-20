@@ -1,0 +1,26 @@
+{
+  "monitoring_time_series_chart": [
+    {
+      "query_contains": "kube_jobset_restarts",
+      "response": "fetch k8s_container | metric 'prometheus.googleapis.com/kube_jobset_restarts/gauge' | filter (jobset == 'training-job')\nTimestamp: 2026-05-20T08:14:00Z Value: 5.0"
+    },
+    {
+      "query_contains": "interruption_count",
+      "response": "fetch k8s_node | metric 'kubernetes.io/node_pool/interruption_count'\nTimestamp: 2026-05-20T08:14:00Z Value: 0.0"
+    },
+    {
+      "query_contains": "gce_topology_host",
+      "response": "fetch k8s_node | metric 'kubernetes.io/node/cpu/total_cores' | group_by [metadata.user.gce_topology_host, node_name]\nHost: physical-host-rack-42 | Nodes: gke-node-a1 (Unready), gke-node-a2 (Unready)\nHost: physical-host-rack-99 | Nodes: gke-node-b1 (Ready)"
+    },
+    {
+      "query_contains": "status",
+      "response": "fetch k8s_node | metric 'kubernetes.io/node/status'\nNode gke-node-a1: Ready=False (NodeNotReady)\nNode gke-node-a2: Ready=False (NodeNotReady)"
+    }
+  ],
+  "query_logs": [
+    {
+      "query_contains": "NodeNotReady",
+      "response": "2026-05-20T08:10:00Z node gke-node-a1 status is NodeNotReady\n2026-05-20T08:10:05Z node gke-node-a2 status is NodeNotReady"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "monitoring_time_series_chart": [
+    {
+      "query_contains": "kube_jobset_restarts",
+      "response": "fetch k8s_container | metric 'prometheus.googleapis.com/kube_jobset_restarts/gauge' | filter (jobset == 'training-job')\nTimestamp: 2026-05-20T08:14:00Z Value: 1.0"
+    },
+    {
+      "query_contains": "interruption_count",
+      "response": "fetch k8s_node | metric 'kubernetes.io/node_pool/interruption_count'\nTimestamp: 2026-05-20T08:14:00Z Value: 0.0"
+    },
+    {
+      "query_contains": "gce_topology_host",
+      "response": "fetch k8s_node | metric 'kubernetes.io/node/cpu/total_cores' | group_by [metadata.user.gce_topology_host, node_name]\nHost: physical-host-rack-11 | Nodes: gke-node-x1 (Unready)\nHost: physical-host-rack-22 | Nodes: gke-node-x2 (Ready)\nHost: physical-host-rack-33 | Nodes: gke-node-x3 (Ready)"
+    }
+  ],
+  "query_logs": [
+    {
+      "query_contains": "NodeNotReady",
+      "response": "2026-05-20T08:10:00Z node gke-node-x1 status is NodeNotReady"
+    }
+  ]
+}

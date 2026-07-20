@@ -1,0 +1,22 @@
+{
+  "monitoring_time_series_chart": [
+    {
+      "query_contains": "kube_jobset_restarts",
+      "response": "fetch k8s_container | metric 'prometheus.googleapis.com/kube_jobset_restarts/gauge' | filter (jobset == 'training-job')\nTimestamp: 2026-05-20T08:14:00Z Value: 2.0"
+    },
+    {
+      "query_contains": "interruption_count",
+      "response": "fetch k8s_node | metric 'kubernetes.io/node_pool/interruption_count'\nTimestamp: 2026-05-20T08:14:00Z Value: 0.0"
+    },
+    {
+      "query_contains": "unschedulable",
+      "response": "fetch k8s_pod | metric 'kubernetes.io/pod/status/unschedulable' | filter (resource.label.namespace == 'default')\nTimestamp: 2026-05-20T08:14:00Z Value: 8.0 (8 pods pending/unschedulable due to Insufficient cpu/memory)"
+    }
+  ],
+  "query_logs": [
+    {
+      "query_contains": "FailedScheduling",
+      "response": "2026-05-20T08:12:00Z 0/10 nodes are available: 10 Insufficient cpu."
+    }
+  ]
+}

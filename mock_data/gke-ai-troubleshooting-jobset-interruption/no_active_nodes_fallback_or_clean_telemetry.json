@@ -1,0 +1,49 @@
+{
+  "monitoring_time_series_chart": [
+    {
+      "query_contains": "kube_jobset_restarts",
+      "response": "fetch k8s_container | metric 'prometheus.googleapis.com/kube_jobset_restarts/gauge' | filter (jobset == 'training-job')\nTimestamp: 2026-05-20T08:14:00Z Value: 2.0 (Restarts occurred)"
+    },
+    {
+      "query_contains": "restart_count",
+      "response": "fetch k8s_container | metric 'kubernetes.io/container/restart_count'\nTimestamp: 2026-05-20T08:14:00Z Value: 2.0 (Restarts occurred)"
+    },
+    {
+      "query_contains": "interruption_count",
+      "response": "fetch k8s_node_pool | metric 'kubernetes.io/node_pool/interruption_count'\nTimestamp: 2026-05-20T08:14:00Z Value: 0.0 (No nodepool interruptions)"
+    },
+    {
+      "query_contains": "status_condition",
+      "response": "fetch k8s_node | metric 'kubernetes.io/node/status_condition'\nNo active or assigned nodes discovered for workload 'training-job'."
+    },
+    {
+      "query_contains": "total_cores",
+      "response": "fetch k8s_node | metric 'kubernetes.io/node/cpu/total_cores'\nNo active nodes/nodepools discovered."
+    },
+    {
+      "query_contains": "gce_topology_host",
+      "response": "fetch k8s_node | metric 'kubernetes.io/node/cpu/total_cores'\nNo active nodes/nodepools discovered."
+    },
+    {
+      "query_contains": "unschedulable",
+      "response": "fetch k8s_pod | metric 'kubernetes.io/pod/status/unschedulable'\nTimestamp: 2026-05-20T08:14:00Z Value: 0.0 (Pending/unschedulable pods count is 0)"
+    },
+    {
+      "query_contains": "phase",
+      "response": "fetch k8s_pod | metric 'kubernetes.io/pod/status/phase'\nTimestamp: 2026-05-20T08:14:00Z Phase: Pending Value: 0.0, Phase: Running Value: 0.0 (Pending pods count is 0)"
+    },
+    {
+      "query_contains": "pending",
+      "response": "fetch k8s_pod | metric 'kubernetes.io/pod/status/phase'\nTimestamp: 2026-05-20T08:14:00Z Phase: Pending Value: 0.0 (Pending pods count is 0)"
+    },
+    {
+      "query_contains": "core_usage_time",
+      "response": "fetch k8s_container | metric 'kubernetes.io/container/cpu/core_usage_time'\nTimestamp: 2026-05-20T08:14:00Z Value: 0.0 (No active container CPU usage discovered)"
+    },
+    {
+      "query_contains": "used_bytes",
+      "response": "fetch k8s_container | metric 'kubernetes.io/container/memory/used_bytes'\nTimestamp: 2026-05-20T08:14:00Z Value: 0.0 (No active container memory usage discovered)"
+    }
+  ],
+  "query_logs": []
+}
