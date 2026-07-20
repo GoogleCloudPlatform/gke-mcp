@@ -162,6 +162,73 @@ func TestResolveQueryPrometheusMock(t *testing.T) {
 	})
 }
 
+func TestResolveK8sResourceMock(t *testing.T) {
+	mockJSON := `{
+		"k8s_resources": [
+			{
+				"resource_type": "node",
+				"name": "gpu-node-3",
+				"response": "apiVersion: v1\nkind: Node\nmetadata:\n  name: gpu-node-3"
+			},
+			{
+				"resource_type": "ingress",
+				"response": "apiVersion: networking.k8s.io/v1\nkind: Ingress"
+			}
+		]
+	}`
+
+	t.Run("matching node resource exact", func(t *testing.T) {
+		res, err := resolveK8sResourceMock([]byte(mockJSON), "node", "gpu-node-3")
+		if err != nil {
+			t.Fatalf("resolveK8sResourceMock failed: %v", err)
+		}
+		textContent := res.Content[0].(*mcp.TextContent)
+		if !strings.Contains(textContent.Text, "gpu-node-3") {
+			t.Errorf("textContent.Text = %q, want matching node yaml", textContent.Text)
+		}
+	})
+
+	t.Run("matching plural nodes with s expansion", func(t *testing.T) {
+		res, err := resolveK8sResourceMock([]byte(mockJSON), "nodes", "gpu-node-3")
+		if err != nil {
+			t.Fatalf("resolveK8sResourceMock failed: %v", err)
+		}
+		textContent := res.Content[0].(*mcp.TextContent)
+		if !strings.Contains(textContent.Text, "gpu-node-3") {
+			t.Errorf("textContent.Text = %q, want matching node yaml with plural query", textContent.Text)
+		}
+	})
+
+	t.Run("matching plural ingresses with es expansion", func(t *testing.T) {
+		res, err := resolveK8sResourceMock([]byte(mockJSON), "ingresses", "my-ingress")
+		if err != nil {
+			t.Fatalf("resolveK8sResourceMock failed: %v", err)
+		}
+		textContent := res.Content[0].(*mcp.TextContent)
+		if !strings.Contains(textContent.Text, "kind: Ingress") {
+			t.Errorf("textContent.Text = %q, want matching ingress yaml with es plural query", textContent.Text)
+		}
+	})
+
+	t.Run("unmatched resource", func(t *testing.T) {
+		res, err := resolveK8sResourceMock([]byte(mockJSON), "pod", "my-pod")
+		if err != nil {
+			t.Fatalf("resolveK8sResourceMock failed: %v", err)
+		}
+		textContent := res.Content[0].(*mcp.TextContent)
+		if !strings.Contains(textContent.Text, "no mock rule matched") {
+			t.Errorf("textContent.Text = %q, want unmatched error string", textContent.Text)
+		}
+	})
+
+	t.Run("invalid json", func(t *testing.T) {
+		_, err := resolveK8sResourceMock([]byte(`invalid json`), "node", "node-1")
+		if err == nil {
+			t.Error("expected error for invalid json, got nil")
+		}
+	})
+}
+
 func TestHandleMockToolCall_EndToEnd(t *testing.T) {
 	// Set up temporary mock_data directory structure
 	tempDir := t.TempDir()
