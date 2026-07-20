@@ -551,7 +551,7 @@ func (h *handlers) updateCluster(ctx context.Context, _ *mcp.CallToolRequest, ar
 func (h *handlers) deleteCluster(ctx context.Context, _ *mcp.CallToolRequest, args *deleteClusterArgs) (*mcp.CallToolResult, any, error) {
 	if !strings.EqualFold(args.DeletionPolicy, "FORCE") {
 		if err := h.verifyClusterUnused(ctx, args.ClusterPath()); err != nil {
-			return nil, nil, fmt.Errorf("cluster deletion blocked by safety check: %w", err)
+			return nil, nil, fmt.Errorf("cluster deletion blocked by safety check: %w. Ensure local kubeconfig is updated (via get_kubeconfig) or set deletionPolicy='FORCE' to override", err)
 		}
 	}
 
