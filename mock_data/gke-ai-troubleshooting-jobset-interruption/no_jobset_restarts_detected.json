@@ -1,0 +1,12 @@
+{
+  "monitoring_time_series_chart": [
+    {
+      "query_contains": "kube_jobset_restarts",
+      "response": "fetch k8s_container | metric 'prometheus.googleapis.com/kube_jobset_restarts/gauge' | filter (jobset == 'training-job')\nTimestamp: 2026-05-20T08:14:00Z Value: 0.0 (No restarts detected)"
+    },
+    {
+      "query_contains": "restart_count",
+      "response": "fetch k8s_container | metric 'kubernetes.io/container/restart_count'\nTimestamp: 2026-05-20T08:14:00Z Value: 0.0 (No restarts detected)"
+    }
+  ]
+}
