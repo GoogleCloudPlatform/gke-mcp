@@ -172,7 +172,7 @@ func startMCPServer(ctx context.Context, opts startOptions) {
 			},
 			InitializedHandler: func(ctx context.Context, req *mcp.InitializedRequest) {
 				params := req.Session.InitializeParams()
-				if supportsMCPApps(params.Capabilities) {
+				if !c.MockMode() && supportsMCPApps(params.Capabilities) {
 					log.Println("Verified: Client host supports MCP Apps. Registering apps...")
 					if err := apps.InstallApps(ctx, s, c); err != nil {
 						log.Printf("Failed to install apps: %v\n", err)
@@ -207,6 +207,13 @@ func startMCPServer(ctx context.Context, opts startOptions) {
 
 	if err := tools.Install(ctx, s, c); err != nil {
 		log.Fatalf("Failed to install tools: %v\n", err)
+	}
+
+	if c.MockMode() {
+		log.Println("MockMode active: Installing apps tools synchronously during server startup...")
+		if err := apps.InstallApps(ctx, s, c); err != nil {
+			log.Fatalf("Failed to install apps tools in MockMode: %v\n", err)
+		}
 	}
 
 	// start server in the right mode

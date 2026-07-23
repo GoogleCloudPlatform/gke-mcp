@@ -17,6 +17,8 @@ package monitoring
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -24,18 +26,28 @@ import (
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
 	monitoringpb "cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/registry"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"google.golang.org/api/iterator"
+	monitoringv1 "google.golang.org/api/monitoring/v1"
 	"google.golang.org/api/option"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type handlers struct {
-	c *config.Config
+	c        *config.Config
+	endpoint string
 }
 
 type listMonitoredResourceDescriptorsArgs struct {
 	ProjectID string `json:"project_id,omitempty" jsonschema:"GCP project ID. Use the default if the user doesn't provide it."`
+}
+
+type queryPrometheusArgs struct {
+	ProjectID string `json:"project_id" jsonschema:"Required. GCP project ID."`
+	Query     string `json:"query" jsonschema:"Required. PromQL query string."`
+	Time      string `json:"time,omitempty" jsonschema:"Optional. Evaluation time (RFC3339 or unix timestamp)."`
+	Timeout   string `json:"timeout,omitempty" jsonschema:"Optional. Query timeout (e.g., '10s')."`
 }
 
 // Install registers monitoring tools with the MCP server.
@@ -51,6 +63,14 @@ func Install(_ context.Context, s *mcp.Server, c *config.Config) error {
 			ReadOnlyHint: true,
 		},
 	}, h.listMRDescriptor)
+
+	registry.RegisterTool(s, c, &mcp.Tool{
+		Name:        "query_prometheus",
+		Description: "Query Cloud Monitoring metrics using PromQL (instant query). Returns Prometheus-compatible JSON response.",
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
+	}, h.queryPrometheus)
 
 	return nil
 }
@@ -90,6 +110,70 @@ func (h *handlers) listMRDescriptor(ctx context.Context, _ *mcp.CallToolRequest,
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
 			&mcp.TextContent{Text: builder.String()},
+		},
+	}, nil, nil
+}
+
+func (h *handlers) queryPrometheus(ctx context.Context, _ *mcp.CallToolRequest, args *queryPrometheusArgs) (*mcp.CallToolResult, any, error) {
+	if args.ProjectID == "" {
+		return nil, nil, fmt.Errorf("project_id argument cannot be empty")
+	}
+	if args.Query == "" {
+		return nil, nil, fmt.Errorf("query argument cannot be empty")
+	}
+
+	opts := []option.ClientOption{
+		option.WithUserAgent(h.c.UserAgent()),
+	}
+	if h.endpoint != "" {
+		opts = append(opts, option.WithEndpoint(h.endpoint), option.WithoutAuthentication())
+	}
+
+	svc, err := monitoringv1.NewService(ctx, opts...)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create monitoring service: %w", err)
+	}
+
+	req := &monitoringv1.QueryInstantRequest{
+		Query:   args.Query,
+		Time:    args.Time,
+		Timeout: args.Timeout,
+	}
+
+	resp, err := svc.Projects.Location.Prometheus.Api.V1.Query("projects/"+args.ProjectID, "global", req).Context(ctx).Do()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to query prometheus metrics: %w", err)
+	}
+
+	if resp != nil && resp.Data != nil {
+		if str, ok := resp.Data.(string); ok {
+			decoded, err := base64.StdEncoding.DecodeString(str)
+			if err == nil {
+				return &mcp.CallToolResult{
+					Content: []mcp.Content{
+						&mcp.TextContent{Text: string(decoded)},
+					},
+				}, nil, nil
+			}
+			return &mcp.CallToolResult{
+				Content: []mcp.Content{
+					&mcp.TextContent{Text: str},
+				},
+			}, nil, nil
+		}
+		bytes, err := json.Marshal(resp.Data)
+		if err == nil {
+			return &mcp.CallToolResult{
+				Content: []mcp.Content{
+					&mcp.TextContent{Text: string(bytes)},
+				},
+			}, nil, nil
+		}
+	}
+
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: "{}"},
 		},
 	}, nil, nil
 }

@@ -41,7 +41,7 @@ jobs:
       contents: "read"
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version-file: "go.mod"
       - name: "Run dev/ci/presubmits/go-build.sh"
@@ -55,7 +55,7 @@ jobs:
       contents: "read"
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version-file: "go.mod"
       - name: "Run dev/ci/presubmits/go-test.sh"
@@ -69,7 +69,7 @@ jobs:
       contents: "read"
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - name: "Install UI dependencies"
@@ -86,7 +86,7 @@ jobs:
       contents: "read"
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version-file: "go.mod"
       - name: "Run dev/ci/presubmits/go-vet.sh"
@@ -101,7 +101,7 @@ jobs:
       checks: "write" # For annotations on PRs
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version-file: "go.mod"
       - name: "Install golangci-lint"
@@ -118,7 +118,7 @@ jobs:
       contents: "read"
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version-file: "go.mod"
       - name: "Install UI dependencies"
@@ -135,7 +135,7 @@ jobs:
       contents: "read"
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version-file: "go.mod"
       - name: "Run dev/ci/presubmits/verify-gomod.sh"
@@ -149,7 +149,7 @@ jobs:
       contents: "read"
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - name: "Install UI dependencies"
