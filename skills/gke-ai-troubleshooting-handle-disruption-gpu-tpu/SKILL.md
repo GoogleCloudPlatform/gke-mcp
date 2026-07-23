@@ -7,11 +7,13 @@ description: Diagnose and predict node disruption during Compute Engine host mai
 
 ## 🔍 Diagnostic Workflow
 
-### Step 0: Context Acquisition
+### Step 0: Context Acquisition & Execution Trigger
 
-- **Mandatory**: `project_id`, `location`, `cluster_name`, `timestamp`.
-- **Optional**: `node_name`, `workload_name`, `workload_namespace`, `nodepool_name`.
-- **Execution Rule**: If all mandatory context parameters (`project_id`, `location`, `cluster_name`, `timestamp`) are provided in the user's initial prompt, proceed directly to execute the diagnostic steps (Step 1 - Step 3) using available tools immediately. DO NOT ask the user for confirmation or pause for parameter verification. If any mandatory parameter is missing, ask the user to provide it and stop before calling tools.
+- **Mandatory Context**: `project_id`, `location`, `cluster_name`, `timestamp`.
+- **Optional Context**: `node_name`, `workload_name`, `workload_namespace`, `nodepool_name`.
+- **CRITICAL EXECUTION DIRECTIVE (STRICTLY ENFORCED)**:
+  - **IF ALL 4 MANDATORY PARAMETERS ARE PRESENT**: DO NOT ask the user for confirmation, DO NOT echo parameters back asking for verification, and DO NOT output a text-only plan waiting for user input. YOU MUST IMMEDIATELY INVOKE DIAGNOSTIC TOOLS (`get_k8s_resource`, `query_prometheus`, `query_logs`) IN YOUR VERY FIRST TURN.
+  - **IF ANY MANDATORY PARAMETER IS MISSING**: Stop immediately and ask the user to provide ONLY the missing mandatory parameters.
 
 ### Step 1: [Low Risk] Check for Upcoming Scheduled Maintenance
 
@@ -37,13 +39,13 @@ description: Diagnose and predict node disruption during Compute Engine host mai
   ```
 - **Interpretation**: If `kubernetes_io:node_interruption_count` shows values > 0 for `interruption_reason="HW/SW Maintenance"`, it indicates the underlying Compute Engine VM was interrupted due to scheduled host maintenance.
 
-### Step 3: [Low Risk] Investigation via Cloud Logging
+### Step 3: [Low Risk] Investigation via Cloud Logging & Node Status
 
-- **Action**: Call `query_logs` or check node status/taints to filter GKE logs for active ongoing node maintenance.
-- **Guidance**: Look for instances where `cloud.google.com/active-node-maintenance` is set to `ONGOING`. You can also check if GKE has applied the `cloud.google.com/impending-node-termination:NoSchedule` taint to restrict new workloads from being scheduled.
-- **Interpretation**:
-  - `cloud.google.com/active-node-maintenance` set to `ONGOING` means workloads are actively being stopped by GKE due to host maintenance.
-  - `cloud.google.com/impending-node-termination:NoSchedule` taint means GKE has cordoned the node to prevent new Pods from being scheduled on the terminating node. DO NOT recommend tolerating this taint.
+- **Action**: Call `query_logs` or `describe_k8s_resource` to filter GKE logs and check node status/taints for active ongoing node maintenance.
+- **Active Ongoing Maintenance Detection**:
+  - Look for `cloud.google.com/active-node-maintenance` set to `ONGOING` or the `cloud.google.com/impending-node-termination:NoSchedule` taint on the node.
+  - **Explicit Conclusion Required**: If `active-node-maintenance` is `ONGOING` or the `impending-node-termination:NoSchedule` taint is present, explicitly inform the user: *"GKE is actively stopping workloads due to ongoing Compute Engine host maintenance."*
+  - **Mandatory Taint Warning**: Explicitly advise the user **NOT to tolerate** the `cloud.google.com/impending-node-termination:NoSchedule` taint, as the node will be terminated by GKE regardless.
 
 ### Step 4: Conclusion and Resolution
 
