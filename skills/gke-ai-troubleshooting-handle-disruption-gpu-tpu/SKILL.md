@@ -24,10 +24,16 @@ description: Diagnose and predict node disruption during Compute Engine host mai
 
 ### Step 2: [Low Risk] Investigation via Cloud Monitoring (PromQL)
 
-- **Action**: Call `query_prometheus` tool to query Cloud Monitoring PromQL metrics for the cluster.
-- **Example Queries**:
-  - `kubernetes_io:node_interruption_count` (filter for `interruption_reason="HW/SW Maintenance"`)
-  - `kubernetes_io:node_pool_interruption_count`
+- **Action**: Call `query_prometheus` tool to query Cloud Monitoring PromQL metrics for the cluster. If `query_prometheus` is unavailable or fails due to missing permissions, provide the PromQL queries below to the user for manual verification in Google Cloud Console.
+- **Example PromQL Queries**:
+  ```promql
+  # Fetch host maintenance events for nodes
+  sum by (interruption_type,interruption_reason)( sum_over_time( kubernetes_io:node_interruption_count{monitored_resource="k8s_node", interruption_reason="HW/SW Maintenance"}[${__interval}]))
+  ```
+  ```promql
+  # See the interruption count aggregated by node pool
+  sum by (node_pool_name,interruption_type,interruption_reason)( sum_over_time( kubernetes_io:node_pool_interruption_count{monitored_resource="k8s_node_pool", interruption_reason="HW/SW Maintenance", node_pool_name="<nodepool_name>" }[${__interval}]))
+  ```
 - **Interpretation**: If `kubernetes_io:node_interruption_count` shows values > 0 for `interruption_reason="HW/SW Maintenance"`, it indicates the underlying Compute Engine VM was interrupted due to scheduled host maintenance.
 
 ### Step 3: [Low Risk] Investigation via Cloud Logging
