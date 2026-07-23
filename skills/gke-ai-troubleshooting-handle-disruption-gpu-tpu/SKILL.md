@@ -25,6 +25,7 @@ description: Diagnose and predict node disruption during Compute Engine host mai
 ### Step 2: [Low Risk] Investigation via Cloud Monitoring (PromQL)
 
 - **Action**: Call `query_prometheus` tool to query Cloud Monitoring PromQL metrics for the cluster. If `query_prometheus` is unavailable or fails due to missing permissions, provide the PromQL queries below to the user for manual verification in Google Cloud Console.
+- **For Past Disruptions**: When investigating past disruptions (e.g., historical timestamps or past interruptions), immediately pass the `timestamp` parameter to `query_prometheus` to check `kubernetes_io:node_interruption_count{monitored_resource="k8s_node", interruption_reason="HW/SW Maintenance"}` around that specific time. If metric value > 0, conclude that Compute Engine host maintenance WAS confirmed as the cause of the past disruption.
 - **Example PromQL Queries**:
   ```promql
   # Fetch host maintenance events for nodes
