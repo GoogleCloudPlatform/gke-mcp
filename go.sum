@@ -277,8 +277,8 @@ golang.org/x/tools v0.47.0/go.mod h1:dFHnyTvFWY212G+h7ZY4Vsp/K3U4/7W9TyVaAul8uCA
 golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 gonum.org/v1/gonum v0.17.0 h1:VbpOemQlsSMrYmn7T2OUvQ4dqxQXU+ouZFQsZOx50z4=
 gonum.org/v1/gonum v0.17.0/go.mod h1:El3tOrEuMpv2UdMrbNlKEh9vd86bmQ6vqIcDwxEOc1E=
-google.golang.org/adk v1.5.0 h1:tS3HY6jwmMbN58+/5K0F+MVKqiAqnWYSgRwXPRxQnWE=
-google.golang.org/adk v1.5.0/go.mod h1:kmzzFxl787QWuKxdab74upPCeoM6u8BDSmQa/VvmQ7w=
+google.golang.org/adk v1.5.1 h1:Ssw1pqDj0oPJ8OOTlFYZpYIlQehBX84EBQSf7yEbe6Q=
+google.golang.org/adk v1.5.1/go.mod h1:kmzzFxl787QWuKxdab74upPCeoM6u8BDSmQa/VvmQ7w=
 google.golang.org/api v0.290.0 h1:eMw0Xo+IfbbMlKmW7aHvpyQRv9RCXuWx/vs8AD+0x9A=
 google.golang.org/api v0.290.0/go.mod h1:weJZ3lldHFYI0DBFNKpJelUDNnusTt5YaOEgxvt8ci8=
 google.golang.org/genai v1.64.0 h1:Yb+Y3tL8EIh6LFBibC7xUgxAFb98l34y7byOcBBYNho=
