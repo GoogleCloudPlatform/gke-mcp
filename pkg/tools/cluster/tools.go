@@ -22,6 +22,7 @@ import (
 	container "cloud.google.com/go/container/apiv1"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/k8s"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/registry"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"google.golang.org/api/option"
 )
@@ -68,7 +69,7 @@ This is similar to running "gcloud container clusters create-auto" or "gcloud co
 		},
 	}, h.createCluster)
 
-	mcp.AddTool(s, &mcp.Tool{
+	registry.RegisterTool(s, h.c, &mcp.Tool{
 		Name:        "get_kubeconfig",
 		Description: "Get the kubeconfig for a GKE cluster by calling the GKE API and extracting necessary details (clusterCaCertificate and endpoint). This tool appends/updates the kubeconfig in ~/.kube/config.",
 		Annotations: &mcp.ToolAnnotations{

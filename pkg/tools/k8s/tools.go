@@ -19,6 +19,7 @@ import (
 	"context"
 
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/registry"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -34,7 +35,7 @@ func Install(_ context.Context, s *mcp.Server, c *config.Config) error {
 		provider: NewClientProvider(),
 	}
 
-	mcp.AddTool(s, &mcp.Tool{
+	registry.RegisterTool(s, h.c, &mcp.Tool{
 		Name:        "get_k8s_resource",
 		Description: "Gets one or more Kubernetes resources from a cluster. Resources can be filtered by type, name, namespace, and label selectors. Returns the resources in YAML format. This is similar to running `kubectl get`.",
 		Annotations: &mcp.ToolAnnotations{

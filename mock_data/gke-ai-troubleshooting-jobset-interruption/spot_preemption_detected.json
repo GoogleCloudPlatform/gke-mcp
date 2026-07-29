@@ -1,0 +1,30 @@
+{
+  "monitoring_time_series_chart": [
+    {
+      "query_contains": "kube_jobset_restarts",
+      "response": "fetch k8s_container | metric 'prometheus.googleapis.com/kube_jobset_restarts/gauge' | filter (jobset == 'training-job')\nTimestamp: 2026-05-20T08:14:00Z Value: 3.0 (Restarts occurred)"
+    },
+    {
+      "query_contains": "restart_count",
+      "response": "fetch k8s_container | metric 'kubernetes.io/container/restart_count'\nTimestamp: 2026-05-20T08:14:00Z Value: 3.0 (Restarts occurred)"
+    },
+    {
+      "query_contains": "interruption_count",
+      "response": "fetch k8s_node | metric 'kubernetes.io/node_pool/interruption_count' | filter (node_pool == 'spot-pool-1')\nTimestamp: 2026-05-20T08:12:00Z Value: 4.0 (Preemption/Maintenance event detected on Spot VM pool)"
+    }
+  ],
+  "query_logs": [
+    {
+      "query_contains": "interruption",
+      "response": "2026-05-20T08:12:05Z GCE instance spot-node-1 received preemption notice."
+    },
+    {
+      "query_contains": "preemption",
+      "response": "2026-05-20T08:12:05Z GCE instance spot-node-1 received Spot VM preemption event."
+    },
+    {
+      "query_contains": "gke_nodepool",
+      "response": "2026-05-20T08:12:05Z spot-pool-1 scale-down due to Spot VM preemption."
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "query_logs": [
+    {
+      "query_contains": "gpu-node-7",
+      "response": "2026-06-15T12:00:02Z INFO kubelet Node gpu-node-7 status changed. Labels: cloud.google.com/active-node-maintenance=ONGOING. Taints: [cloud.google.com/impending-node-termination:NoSchedule]"
+    },
+    {
+      "query_contains": "active-node-maintenance",
+      "response": "2026-06-15T12:00:02Z INFO kubelet Node gpu-node-7 status changed. Labels: cloud.google.com/active-node-maintenance=ONGOING."
+    },
+    {
+      "query_contains": "impending-node-termination",
+      "response": "2026-06-15T12:00:02Z INFO kubelet Node gpu-node-7 status changed. Taints: [cloud.google.com/impending-node-termination:NoSchedule]"
+    }
+  ]
+}

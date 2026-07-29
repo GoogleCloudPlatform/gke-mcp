@@ -33,13 +33,27 @@ var (
 	safeNameRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 )
 
-type queryLogMockRule struct {
+type queryMockRule struct {
 	QueryContains string `json:"query_contains,omitempty"`
 	Response      string `json:"response,omitempty"`
 }
 
+type prometheusMockRule struct {
+	QueryContains string          `json:"query_contains,omitempty"`
+	Response      json.RawMessage `json:"response,omitempty"`
+}
+
+type k8sResourceMockRule struct {
+	ResourceType string `json:"resource_type,omitempty"`
+	Name         string `json:"name,omitempty"`
+	Response     string `json:"response,omitempty"`
+}
+
 type caseMockData struct {
-	QueryLogs []queryLogMockRule `json:"query_logs,omitempty"`
+	QueryLogs                  []queryMockRule       `json:"query_logs,omitempty"`
+	MonitoringTimeSeriesCharts []queryMockRule       `json:"monitoring_time_series_chart,omitempty"`
+	Prometheus                 []prometheusMockRule  `json:"prometheus,omitempty"`
+	K8sResources               []k8sResourceMockRule `json:"k8s_resources,omitempty"`
 }
 
 // RegisterTool wraps mcp.AddTool to intercept and mock tool execution in MockMode.
@@ -120,19 +134,77 @@ func handleMockToolCall(_ context.Context, toolName string, args any, c *config.
 		}, nil, nil
 	}
 
-	if toolName == "query_logs" {
+	var data caseMockData
+	if err := json.Unmarshal(mockBytes, &data); err != nil {
+		return nil, nil, fmt.Errorf("failed to unmarshal mock data: %w", err)
+	}
+
+	switch toolName {
+	case "query_logs":
+		query, err := extractQueryArg(args)
+		if err != nil {
+			return nil, nil, err
+		}
+		return matchQueryRules(data.QueryLogs, query), nil, nil
+
+	case "monitoring_time_series_chart":
+		query, err := extractQueryArg(args)
+		if err != nil {
+			return nil, nil, err
+		}
+		return matchQueryRules(data.MonitoringTimeSeriesCharts, query), nil, nil
+
+	case "mql_validator":
+		query, err := extractQueryArg(args)
+		if err != nil {
+			return nil, nil, err
+		}
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{Text: query},
+			},
+		}, nil, nil
+
+	case "query_prometheus":
+		query, err := extractQueryArg(args)
+		if err != nil {
+			return nil, nil, err
+		}
+		res, err := resolveQueryPrometheusMock(mockBytes, query)
+		return res, nil, err
+
+	case "get_k8s_resource":
 		argsMap, err := extractArgsMap(args)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to parse arguments: %w", err)
 		}
-		query, _ := argsMap["query"].(string)
-		res, err := resolveQueryLogsMock(mockBytes, query)
+		resourceType, _ := argsMap["resourceType"].(string)
+		name, _ := argsMap["name"].(string)
+		res, err := resolveK8sResourceMock(mockBytes, resourceType, name)
 		return res, nil, err
-	}
 
-	return &mcp.CallToolResult{
-		Content: []mcp.Content{&mcp.TextContent{Text: fmt.Sprintf("no mock implementation available for tool %s", toolName)}},
-	}, nil, nil
+	case "get_kubeconfig":
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{Text: "mock kubeconfig successfully retrieved for target cluster"},
+			},
+		}, nil, nil
+
+	default:
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{&mcp.TextContent{Text: fmt.Sprintf("no mock implementation available for tool %s", toolName)}},
+		}, nil, nil
+	}
+}
+
+// extractQueryArg extracts the "query" string parameter from generic tool arguments.
+func extractQueryArg(args any) (string, error) {
+	argsMap, err := extractArgsMap(args)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse arguments: %w", err)
+	}
+	query, _ := argsMap["query"].(string)
+	return query, nil
 }
 
 // extractArgsMap deserializes generic tool arguments into a standard map[string]any.
@@ -146,17 +218,72 @@ func extractArgsMap(args any) (map[string]any, error) {
 	return res, err
 }
 
-// resolveQueryLogsMock handles simulated output for the query_logs tool.
+// matchQueryRules evaluates mock rules sequentially against the query string.
+func matchQueryRules(rules []queryMockRule, query string) *mcp.CallToolResult {
+	for _, rule := range rules {
+		if rule.QueryContains != "" && strings.Contains(query, rule.QueryContains) {
+			return &mcp.CallToolResult{
+				Content: []mcp.Content{
+					&mcp.TextContent{Text: rule.Response},
+				},
+			}
+		}
+	}
+
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: fmt.Sprintf("no mock rule matched for query: %s", query)},
+		},
+	}
+}
+
+// resolveQueryPrometheusMock handles simulated output for the query_prometheus tool.
 //
-// It parses the case-wide JSON data and evaluates query log rules sequentially against the LQL query string.
-func resolveQueryLogsMock(mockDataBytes []byte, query string) (*mcp.CallToolResult, error) {
+// It parses the case-wide JSON data and evaluates prometheus rules sequentially against the PromQL query string.
+func resolveQueryPrometheusMock(mockDataBytes []byte, query string) (*mcp.CallToolResult, error) {
 	var data caseMockData
 	if err := json.Unmarshal(mockDataBytes, &data); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal mock data: %w", err)
 	}
 
-	for _, rule := range data.QueryLogs {
+	for _, rule := range data.Prometheus {
 		if rule.QueryContains != "" && strings.Contains(query, rule.QueryContains) {
+			return &mcp.CallToolResult{
+				Content: []mcp.Content{
+					&mcp.TextContent{Text: string(rule.Response)},
+				},
+			}, nil
+		}
+	}
+
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: fmt.Sprintf("no mock rule matched for query: %s", query)},
+		},
+	}, nil
+}
+
+// resolveK8sResourceMock handles simulated output for the get_k8s_resource tool.
+//
+// It evaluates K8s resource rules sequentially against the resourceType and name arguments,
+// utilizing bidirectional expansion matching (+ "s", + "es") for robust singular/plural handling.
+func resolveK8sResourceMock(mockDataBytes []byte, resourceType, name string) (*mcp.CallToolResult, error) {
+	var data caseMockData
+	if err := json.Unmarshal(mockDataBytes, &data); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal mock data: %w", err)
+	}
+
+	for _, rule := range data.K8sResources {
+		resourceMatches := rule.ResourceType == "" ||
+			strings.EqualFold(rule.ResourceType, resourceType) ||
+			strings.EqualFold(rule.ResourceType+"s", resourceType) ||
+			strings.EqualFold(rule.ResourceType, resourceType+"s") ||
+			strings.EqualFold(rule.ResourceType+"es", resourceType) ||
+			strings.EqualFold(rule.ResourceType, resourceType+"es")
+
+		nameMatches := rule.Name == "" || strings.EqualFold(rule.Name, name)
+
+		if resourceMatches && nameMatches {
 			return &mcp.CallToolResult{
 				Content: []mcp.Content{
 					&mcp.TextContent{Text: rule.Response},
@@ -167,7 +294,7 @@ func resolveQueryLogsMock(mockDataBytes []byte, query string) (*mcp.CallToolResu
 
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
-			&mcp.TextContent{Text: fmt.Sprintf("no mock rule matched for query: %s", query)},
+			&mcp.TextContent{Text: fmt.Sprintf("no mock rule matched for resource_type: %s, name: %s", resourceType, name)},
 		},
 	}, nil
 }

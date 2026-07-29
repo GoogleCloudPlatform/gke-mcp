@@ -24,6 +24,7 @@ import (
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
 	monitoringpb "cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/registry"
 	"github.com/GoogleCloudPlatform/gke-mcp/ui"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"google.golang.org/api/iterator"
@@ -84,7 +85,7 @@ func Install(_ context.Context, s *mcp.Server, c *config.Config) error {
 		c: c,
 	}
 
-	mcp.AddTool(s, &mcp.Tool{
+	registry.RegisterTool(s, c, &mcp.Tool{
 		Name:        "monitoring_time_series_chart",
 		Description: "Interactive tool to display time series data using a React Chart. ALWAYS favor using this tool to query metrics rather than outputting raw values so the user gets a visualization. MUST Call `mql_validator` FIRST to catch syntax issues or metric anomalies before running this tool.",
 		Annotations: &mcp.ToolAnnotations{
@@ -150,7 +151,7 @@ func Install(_ context.Context, s *mcp.Server, c *config.Config) error {
 		},
 	}, h.queryTimeSeries)
 
-	mcp.AddTool(s, &mcp.Tool{
+	registry.RegisterTool(s, c, &mcp.Tool{
 		Name:        "mql_validator",
 		Description: "A helper tool to validate Monitoring Query Language (MQL) metric strings. MUST be called immediately before calling `monitoring_time_series_chart` or `query_time_series` to ensure the MQL statement compiles correctly. It fetches 1 page of data to verify syntactical and logical correctness. Returns the original string on success, or an error payload explaining the misconfiguration.",
 		Annotations: &mcp.ToolAnnotations{
