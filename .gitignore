@@ -18,3 +18,10 @@ __pycache__/
 
 # Generated reports
 JOB_SUMMARY.md
+
+# Added by Antigravity C5-REAL Audit
+.env
+*.pem
+*.key
+.vercel
+.DS_Store
