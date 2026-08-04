@@ -1,0 +1,19 @@
+name: Reporte de Falsación Popperiana (Bug)
+description: Refuta una hipótesis operativa del sistema (Bug Report determinista)
+title: "[FALSACIÓN]: "
+labels: ["falsacion", "c5-real"]
+body:
+  - type: textarea
+    id: hipotesis
+    attributes:
+      label: Hipótesis Falsada
+      description: ¿Qué comportamiento se esperaba que mantuviera la Inercia de Exergía?
+    validations:
+      required: true
+  - type: textarea
+    id: contraejemplo
+    attributes:
+      label: Contraejemplo Empírico (Steps to reproduce)
+      description: Secuencia exacta para replicar la fuga termodinámica.
+    validations:
+      required: true

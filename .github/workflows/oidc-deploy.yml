@@ -1,0 +1,17 @@
+name: Zero-Trust OIDC Deploy
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure Cloud Provider OIDC
+        run: echo "Intercambiar JWT por STS token aquí (ej. aws-actions/configure-aws-credentials)"

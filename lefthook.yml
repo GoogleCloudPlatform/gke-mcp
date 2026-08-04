@@ -1,0 +1,8 @@
+# C5-REAL Lefthook Pre-commit Configuration (Shift-Left)
+pre-commit:
+  parallel: true
+  commands:
+    secrets:
+      glob: "*"
+      run: detect-secrets-hook --baseline .secrets.baseline {staged_files}
+      fallback: echo "ALERTA: detect-secrets no instalado. Previniendo fuga entrópica por defecto."
