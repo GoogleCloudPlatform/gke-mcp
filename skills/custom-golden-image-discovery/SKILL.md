@@ -20,6 +20,7 @@ If a user doesn't know their exact configuration, use the following **Context Cl
 | **Has Accelerators**       | Mention of "GPU", "accelerator", "Nvidia", "TPU", or any specific hardware models (e.g., T4, A100, H100, L4) -> true. | **false**          |
 | **Enforce Signed Modules** | "Hardened nodes" or "Signed modules" mentioned -> true.                                                               | **false**          |
 | **Cgroup Mode**            | Almost all GKE 1.26+ clusters use V2. Only V1 if explicitly legacy.                                                   | **CGROUP_MODE_V2** |
+| **TPU**                    | Mention of "TPU" -> true.                                                                                             | **false**          |
 
 ## Discovery Workflow
 
