@@ -4,8 +4,7 @@
 
 This repository contains the GKE MCP server and Gemini CLI extension. The main
 server is written in Go. Web UI assets live under `ui/` and are built into
-checked-in single-file HTML bundles under `ui/dist/apps/`. Reusable AI skills
-live under `skills/`, each with its own `SKILL.md`.
+checked-in single-file HTML bundles under `ui/dist/apps/`.
 
 ## Repository Layout
 
@@ -13,7 +12,6 @@ live under `skills/`, each with its own `SKILL.md`.
 - `ui/`: Vite/React TypeScript apps and shared UI code.
 - `ui/apps/*/index.html`: source app HTML entrypoints.
 - `ui/dist/apps/*/index.html`: generated, checked-in UI bundles embedded by Go.
-- `skills/*/SKILL.md`: Gemini/Codex skill definitions and instructions.
 - `dev/tasks/`: local maintenance tasks that may update files.
 - `dev/ci/presubmits/`: CI-equivalent verification scripts.
 
@@ -68,18 +66,6 @@ updated `ui/dist/apps/*/index.html` files in the same change.
 - Run `npm --prefix ui run lint` after TypeScript or React changes.
 - Run `npm --prefix ui run test` for UI logic changes.
 - Regenerate `ui/dist` after UI source or build configuration changes.
-
-## Skills Guidelines
-
-- Each directory under `skills/` must contain a `SKILL.md`.
-- `SKILL.md` files must start with frontmatter containing non-empty `name` and
-  `description` fields.
-- The frontmatter `name` must match the skill directory name.
-- Validate skills with:
-
-```sh
-./dev/ci/presubmits/validate-skills.sh
-```
 
 ## Pull Request Hygiene
 

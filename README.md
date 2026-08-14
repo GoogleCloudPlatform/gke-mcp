@@ -161,57 +161,6 @@ To connect Gemini CLI to the `gke-mcp` HTTP server, you need to configure the CL
 
 This configuration tells Gemini CLI how to reach the gke-mcp server running on your local machine at port 8080.
 
-## Skills
-
-Skills provide specialized capabilities and workflows to your AI agent.
-
-### Available Skills
-
-- `custom-golden-image-discovery`: Discover golden base images for GKE custom nodes.
-- `gke-ai-troubleshooting-skill-creation-guide`: Guide for building high-quality GKE troubleshooting skills.
-- `gke-ai-troubleshooting-tpu-connection-failure-vbar-oom`: Diagnose and prevent TPU connection failures and OOMs.
-- `gke-app-onboarding`: Workflows for containerizing and deploying applications to GKE.
-- `gke-backup-dr`: Configure Backup for GKE and disaster recovery.
-- `gke-cluster-creator`: Create GKE clusters using predefined templates.
-- `gke-cluster-lifecycle`: Manage lifecycle and upgrades of GKE clusters.
-- `gke-compute-class-creator`: Create GKE ComputeClass resources.
-- `gke-cost-analysis`: Answer questions about GKE-related costs.
-- `gke-cost-optimization`: Optimize costs for GKE clusters.
-- `gke-inference-quickstart`: Deploy optimized AI/ML inference workloads on GKE.
-- `gke-multi-tenancy`: Implement multi-tenancy and governance in GKE.
-- `gke-networking-edge`: Configure edge networking, ingress, and security on GKE.
-- `gke-observability`: Set up and audit observability on GKE.
-- `gke-productionize`: Prepare applications and clusters for production.
-- `gke-reliability`: Ensure high availability and reliability of GKE workloads.
-- `gke-storage`: Manage storage in GKE clusters.
-- `gke-workload-scaling`: Scale GKE workloads using HPA and VPA.
-- `gke-workload-security`: Audit and harden the security of GKE workloads.
-
-### Installing Skills
-
-There are several ways to install these skills:
-
-1. **Automatic Detection**: When you install the MCP server as a
-   [Gemini CLI Extension](#use-as-a-gemini-cli-extension), the CLI automatically
-   detects and enables all skills located in the `skills/` folder.
-
-2. **Standalone Individual Skill**: Install a specific skill without the full
-   MCP extension:
-
-   ```sh
-   gemini skills install https://github.com/GoogleCloudPlatform/gke-mcp --path skills/<skill-name>
-   ```
-
-   Replace `<skill-name>` with the name of a skill from the `skills/` directory
-   (e.g., `gke-cost-analysis`).
-
-3. **Standalone Bulk Link**: To enable all skills at once without installing
-   the full MCP extension:
-   ```sh
-   git clone https://github.com/GoogleCloudPlatform/gke-mcp.git
-   gemini skills link ./gke-mcp/skills
-   ```
-
 ## Development
 
 To compile the binary and update the `gemini-cli` extension with your local changes, follow these steps:
