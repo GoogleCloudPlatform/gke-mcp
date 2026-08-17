@@ -5,7 +5,7 @@ go 1.26.2
 require (
 	cloud.google.com/go/container v1.53.1
 	cloud.google.com/go/gkerecommender v1.0.0
-	cloud.google.com/go/logging v1.19.0
+	cloud.google.com/go/logging v1.19.1
 	cloud.google.com/go/monitoring v1.30.0
 	cloud.google.com/go/recommender v1.19.0
 	github.com/PuerkitoBio/goquery v1.12.0
