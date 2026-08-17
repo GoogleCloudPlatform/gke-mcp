@@ -15,7 +15,7 @@ require (
 	github.com/modelcontextprotocol/go-sdk v1.7.0
 	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.10.2
-	google.golang.org/adk v1.5.1
+	google.golang.org/adk v1.6.0
 	google.golang.org/api v0.292.0
 	google.golang.org/genai v1.67.0
 	google.golang.org/genproto v0.0.0-20260414002931-afd174a4e478
