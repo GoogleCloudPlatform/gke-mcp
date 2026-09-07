@@ -16,7 +16,7 @@ require (
 	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.10.2
 	google.golang.org/adk v1.6.0
-	google.golang.org/api v0.294.0
+	google.golang.org/api v0.297.0
 	google.golang.org/genai v1.70.0
 	google.golang.org/genproto v0.0.0-20260715232425-e75dac1f907d
 	google.golang.org/protobuf v1.36.12
