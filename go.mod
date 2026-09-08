@@ -11,7 +11,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.13.0
 	github.com/anthropics/anthropic-sdk-go v1.68.0
 	github.com/google/go-cmp v0.7.0
-	github.com/googleapis/gax-go/v2 v2.24.0
+	github.com/googleapis/gax-go/v2 v2.24.1
 	github.com/modelcontextprotocol/go-sdk v1.7.0
 	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.10.2
