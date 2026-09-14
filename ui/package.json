@@ -12,8 +12,8 @@
   "devDependencies": {
     "@eslint-react/eslint-plugin": "^5.19.0",
     "@eslint/js": "^10.0.1",
+    "@modelcontextprotocol/client": "^2.0.0",
     "@modelcontextprotocol/ext-apps": "^2.0.0",
-    "@modelcontextprotocol/sdk": "^1.30.0",
     "@types/node": "^26.5.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
