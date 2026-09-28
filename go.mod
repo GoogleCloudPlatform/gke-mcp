@@ -3,11 +3,11 @@ module github.com/GoogleCloudPlatform/gke-mcp
 go 1.26.2
 
 require (
-	cloud.google.com/go/container v1.54.0
-	cloud.google.com/go/gkerecommender v1.0.0
-	cloud.google.com/go/logging v1.19.1
-	cloud.google.com/go/monitoring v1.30.0
-	cloud.google.com/go/recommender v1.19.0
+	cloud.google.com/go/container v1.55.0
+	cloud.google.com/go/gkerecommender v1.1.0
+	cloud.google.com/go/logging v1.20.0
+	cloud.google.com/go/monitoring v1.31.0
+	cloud.google.com/go/recommender v1.20.0
 	github.com/PuerkitoBio/goquery v1.13.0
 	github.com/anthropics/anthropic-sdk-go v1.73.0
 	github.com/google/go-cmp v0.7.0
