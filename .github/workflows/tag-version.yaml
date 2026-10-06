@@ -15,7 +15,7 @@ jobs:
       actions: write
       contents: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
           fetch-depth: "0"
@@ -25,12 +25,13 @@ jobs:
         run: echo "CUSTOM_TAG=v$(jq -r '.version' gemini-extension.json)" >> "$GITHUB_OUTPUT"
 
       - name: Bump version and push tag
-        uses: anothrNick/github-tag-action@1.75.0
+        uses: anothrNick/github-tag-action@4ed44965e0db8dab2b466a16da04aec3cc312fd8 # 1.75.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CUSTOM_TAG: ${{ steps.get_version.outputs.CUSTOM_TAG }}
 
       - name: Trigger release workflow
-        run: gh workflow run release -r  ${{ steps.get_version.outputs.CUSTOM_TAG }}
+        run: gh workflow run release -r "${CUSTOM_TAG}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CUSTOM_TAG: ${{ steps.get_version.outputs.CUSTOM_TAG }}
