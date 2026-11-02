@@ -17,7 +17,7 @@ require (
 	github.com/spf13/cobra v1.10.2
 	google.golang.org/adk v1.9.0
 	google.golang.org/api v0.308.0
-	google.golang.org/genai v1.76.0
+	google.golang.org/genai v1.77.0
 	google.golang.org/genproto v0.0.0-20261012220534-4341edf3f941
 	google.golang.org/protobuf v1.36.12
 	k8s.io/api v0.37.1
