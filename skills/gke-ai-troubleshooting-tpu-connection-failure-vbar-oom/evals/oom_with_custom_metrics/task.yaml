@@ -1,0 +1,16 @@
+name: "oom_with_custom_metrics"
+
+prompt: >
+  My TPU v6e training JobSet 'megatron-175b' failed on node 'tpu-node-4' in cluster
+  'tpu-prod-cluster' (project: 'ai-training-corp'). The workload crashed around
+  2026-07-02T14:00:00Z. We also have a custom Prometheus sidecar scraping TPU host metrics
+  every 3 seconds using libtpu.sdk.tpumonitoring. Can you investigate why it crashed?
+
+expected_output: |
+  The agent must:
+  - Calculate the exact query window from start time 2026-07-02T13:30:00Z to end time 2026-07-02T14:30:00Z.
+  - Use the 'query_logs' tool to search serial console logs of node 'tpu-node-4' in project 'ai-training-corp' for `vbar_control_agent` OOM signatures.
+  - Use the 'query_logs' tool to search `tpu-device-plugin` container logs in cluster 'tpu-prod-cluster' for checksum mismatch signatures.
+  - Attribute the root cause to the race condition between frequent custom metrics collection (every 3s) and TPU device resets.
+  - Advise temporarily disabling the custom Prometheus metrics scraper as a temporary mitigation.
+  - Advise awaiting the GKE resiliency update for `vbar_control_agent` in a future release.
