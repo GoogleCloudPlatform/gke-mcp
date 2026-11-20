@@ -17,7 +17,9 @@ package cluster
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -28,6 +30,7 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"unicode"
 
 	container "cloud.google.com/go/container/apiv1"
 	containerpb "cloud.google.com/go/container/apiv1/containerpb"
@@ -297,14 +300,14 @@ func (h *handlers) getNodeSosReport(ctx context.Context, _ *mcp.CallToolRequest,
 		return nil, nil, fmt.Errorf("failed to get current working directory: %w", err)
 	}
 
-	destDir, createdTemp, err := resolveSosDestinationDir(cwd, args.Destination)
+	destDir, cleanupRoot, err := resolveSosDestinationDir(cwd, args.Destination)
 	if err != nil {
 		return nil, nil, err
 	}
-	if createdTemp {
+	if cleanupRoot != "" {
 		defer func() {
 			if retErr != nil {
-				_ = os.RemoveAll(destDir)
+				_ = os.RemoveAll(cleanupRoot)
 			}
 		}()
 	}
@@ -352,41 +355,69 @@ func (h *handlers) getNodeSosReport(ctx context.Context, _ *mcp.CallToolRequest,
 	return h.getNodeSosReportWithSSH(sshCtx, args.Node, destDir)
 }
 
-func resolveSosDestinationDir(baseDir, rawDest string) (string, bool, error) {
+func resolveSosDestinationDir(baseDir, rawDest string) (string, string, error) {
 	if rawDest == "" {
 		dir, err := os.MkdirTemp("", "gke-sos-report-*")
 		if err != nil {
-			return "", false, fmt.Errorf("failed to create temporary destination directory: %w", err)
+			return "", "", fmt.Errorf("failed to create temporary destination directory: %w", err)
 		}
-		return dir, true, nil
+		return dir, dir, nil
 	}
 	if strings.TrimSpace(rawDest) == "" {
-		return "", false, fmt.Errorf("destination argument cannot be whitespace")
+		return "", "", fmt.Errorf("destination argument cannot be whitespace")
 	}
-	if strings.ContainsRune(rawDest, 0) {
-		return "", false, fmt.Errorf("destination contains invalid NUL byte")
+	for _, r := range rawDest {
+		if unicode.IsControl(r) {
+			return "", "", fmt.Errorf("destination contains invalid control character")
+		}
 	}
 	// Reject values that could be interpreted as command options or escape
 	// the MCP server's working directory.
 	if strings.HasPrefix(rawDest, "-") || !filepath.IsLocal(rawDest) {
-		return "", false, fmt.Errorf("destination must be a relative path under the current directory: %q", rawDest)
+		return "", "", fmt.Errorf("destination must be a relative path under the current directory: %q", rawDest)
 	}
 
 	cleanDest := filepath.Clean(rawDest)
 	if strings.HasPrefix(cleanDest, "-") || !filepath.IsLocal(cleanDest) {
-		return "", false, fmt.Errorf("destination must be a relative path under the current directory: %q", rawDest)
+		return "", "", fmt.Errorf("destination must be a relative path under the current directory: %q", rawDest)
 	}
 
 	if err := ensureWithinBaseDir(baseDir, cleanDest, rawDest); err != nil {
-		return "", false, err
+		return "", "", err
 	}
 
 	destDir := filepath.Join(baseDir, cleanDest)
+	cleanupRoot, err := firstMissingPath(baseDir, destDir)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to inspect destination %q: %w", rawDest, err)
+	}
 	// #nosec G301,G703 -- cleanDest is validated as a local relative path under baseDir without validation-time symlink escapes.
 	if err := os.MkdirAll(destDir, 0o750); err != nil {
-		return "", false, fmt.Errorf("failed to create destination directory %s: %w", destDir, err)
+		return "", "", fmt.Errorf("failed to create destination directory %s: %w", destDir, err)
 	}
-	return destDir, false, nil
+	return destDir, cleanupRoot, nil
+}
+
+func firstMissingPath(baseDir, targetDir string) (string, error) {
+	cleanBase := filepath.Clean(baseDir)
+	cur := filepath.Clean(targetDir)
+	var firstMissing string
+	for cur != cleanBase {
+		_, err := os.Lstat(cur)
+		if err == nil {
+			return firstMissing, nil
+		}
+		if !errors.Is(err, os.ErrNotExist) {
+			return "", err
+		}
+		firstMissing = cur
+		parent := filepath.Dir(cur)
+		if parent == cur {
+			break
+		}
+		cur = parent
+	}
+	return firstMissing, nil
 }
 
 // ensureWithinBaseDir checks that the deepest existing path component does not
@@ -506,8 +537,8 @@ func (h *handlers) getNodeSosReportWithPod(ctx context.Context, node, destDir st
 	// The path might be reported as /host/tmp/... or /tmp/... depending on how sos report was invoked.
 	// We also handle both .tar.xz and .tar.gz extensions.
 	re := regexp.MustCompile(`(/host)?` + regexp.QuoteMeta(remoteTmpDir) + `/[a-zA-Z0-9._-]+\.tar\.(xz|gz)`)
-	match := re.FindString(output)
-	if match == "" || strings.Contains(match, "..") {
+	match := findSafeSosReportPath(re, output)
+	if match == "" {
 		return nil, nil, fmt.Errorf("could not find sos report filename in output: %s", output)
 	}
 
@@ -517,11 +548,13 @@ func (h *handlers) getNodeSosReportWithPod(ctx context.Context, node, destDir st
 	if !strings.HasPrefix(remotePath, "/host") {
 		remotePath = "/host" + remotePath
 	}
-	localFilename := fmt.Sprintf("sosreport-%s-%s.tar.xz", node, time.Now().Format("2006-01-02-15-04-05"))
+	localFilename, err := generateSosReportFilename(node)
+	if err != nil {
+		return nil, nil, err
+	}
 	localPath := filepath.Clean(filepath.Join(destDir, localFilename))
 	// 5. Copy the file from the pod to the destination directory
-	// #nosec G304,G703 -- destDir is validated within cwd or created via os.MkdirTemp, and localFilename is built from validated node name and timestamp.
-	f, err := os.OpenFile(localPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
+	f, err := openSosOutputFile(localPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create local file %s: %w", localPath, err)
 	}
@@ -581,8 +614,8 @@ func (h *handlers) getNodeSosReportWithSSH(ctx context.Context, node, destDir st
 
 	// 3. Parse output for filename
 	// Matches /var/sosreport-*.tar.xz
-	match := sshSosReportRe.FindString(output)
-	if match == "" || strings.Contains(match, "..") {
+	match := findSafeSosReportPath(sshSosReportRe, output)
+	if match == "" {
 		return nil, nil, fmt.Errorf("could not find sos report filename in ssh output: %s", output)
 	}
 	remotePath := match
@@ -597,12 +630,21 @@ func (h *handlers) getNodeSosReportWithSSH(ctx context.Context, node, destDir st
 
 	// 5. SCP the file
 	// gcloud compute scp --zone "ZONE" -- "NODE_NAME:REMOTE_PATH" LOCAL_DESTINATION
-	localFilename := fmt.Sprintf("sosreport-%s-%s.tar.xz", node, time.Now().Format("2006-01-02-15-04-05"))
+	localFilename, err := generateSosReportFilename(node)
+	if err != nil {
+		return nil, nil, err
+	}
 	localPath := filepath.Clean(filepath.Join(destDir, localFilename))
 	// #nosec G204 -- zone, node, remotePath, and destDir are validated, and positional args are preceded by "--".
 	scpCmd := execCommand(ctx, "gcloud", "compute", "scp", "--zone", zone, "--", fmt.Sprintf("%s:%s", node, remotePath), localPath)
 	if out, err := scpCmd.CombinedOutput(); err != nil {
+		_ = os.Remove(localPath) // Best-effort cleanup
 		return nil, nil, fmt.Errorf("failed to scp file: %s, %w", string(out), err)
+	}
+	// #nosec G703 -- localPath is constructed inside destDir using a validated node name and random suffix.
+	if err := os.Chmod(localPath, 0o600); err != nil {
+		_ = os.Remove(localPath) // Best-effort cleanup
+		return nil, nil, fmt.Errorf("failed to set permissions on local file %s: %w", localPath, err)
 	}
 
 	// 6. Cleanup remote files on host
@@ -615,6 +657,28 @@ func (h *handlers) getNodeSosReportWithSSH(ctx context.Context, node, destDir st
 			&mcp.TextContent{Text: fmt.Sprintf("SOS report successfully generated (via SSH) and downloaded to: %s", localPath)},
 		},
 	}, nil, nil
+}
+
+func generateSosReportFilename(node string) (string, error) {
+	var b [4]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return "", fmt.Errorf("failed to generate unique filename suffix: %w", err)
+	}
+	return fmt.Sprintf("sosreport-%s-%s-%s.tar.xz", node, time.Now().Format("2006-01-02-15-04-05"), hex.EncodeToString(b[:])), nil
+}
+
+func openSosOutputFile(localPath string) (*os.File, error) {
+	// #nosec G304,G703 -- localPath is constructed inside a validated destination directory using a validated node name and random suffix.
+	return os.OpenFile(localPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
+}
+
+func findSafeSosReportPath(re *regexp.Regexp, output string) string {
+	for _, m := range re.FindAllString(output, -1) {
+		if !strings.Contains(m, "..") {
+			return m
+		}
+	}
+	return ""
 }
 
 func (h *handlers) updateCluster(ctx context.Context, _ *mcp.CallToolRequest, args *updateClusterArgs) (*mcp.CallToolResult, any, error) {

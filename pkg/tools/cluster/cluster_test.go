@@ -407,12 +407,12 @@ func TestResolveSosDestinationDir(t *testing.T) {
 		tmpRoot := t.TempDir()
 		t.Setenv("TMPDIR", tmpRoot)
 
-		got, createdTemp, err := resolveSosDestinationDir(baseDir, "")
+		got, cleanupRoot, err := resolveSosDestinationDir(baseDir, "")
 		if err != nil {
 			t.Fatalf("resolveSosDestinationDir(\"\") unexpected error: %v", err)
 		}
-		if !createdTemp {
-			t.Errorf("createdTemp = false, want true")
+		if cleanupRoot != got {
+			t.Errorf("cleanupRoot = %q, want %q", cleanupRoot, got)
 		}
 		rel, err := filepath.Rel(tmpRoot, got)
 		if err != nil || !filepath.IsLocal(rel) || rel == "." {
@@ -421,6 +421,33 @@ func TestResolveSosDestinationDir(t *testing.T) {
 		info, err := os.Stat(got)
 		if err != nil || !info.IsDir() {
 			t.Errorf("expected temp dir %q to exist as directory, err = %v", got, err)
+		}
+		if perm := info.Mode().Perm(); perm != 0o700 {
+			t.Errorf("temp dir perm = %o, want 0700", perm)
+		}
+	})
+
+	t.Run("cleanupRoot tracks only newly created prefix", func(t *testing.T) {
+		existingDir := filepath.Join(baseDir, "already-here")
+		if err := os.Mkdir(existingDir, 0o750); err != nil {
+			t.Fatalf("Mkdir(%q) failed: %v", existingDir, err)
+		}
+
+		got, cleanupRoot, err := resolveSosDestinationDir(baseDir, "already-here")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got != existingDir || cleanupRoot != "" {
+			t.Errorf("got (%q, %q), want (%q, \"\")", got, cleanupRoot, existingDir)
+		}
+
+		got, cleanupRoot, err = resolveSosDestinationDir(baseDir, filepath.Join("already-here", "new-child", "grandchild"))
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		wantCleanup := filepath.Join(existingDir, "new-child")
+		if cleanupRoot != wantCleanup {
+			t.Errorf("cleanupRoot = %q, want %q (got=%q)", cleanupRoot, wantCleanup, got)
 		}
 	})
 
@@ -463,7 +490,17 @@ func TestResolveSosDestinationDir(t *testing.T) {
 		{
 			name:    "nul byte",
 			rawDest: "foo\x00bar",
-			wantErr: "invalid NUL byte",
+			wantErr: "invalid control character",
+		},
+		{
+			name:    "newline control char",
+			rawDest: "a\nb",
+			wantErr: "invalid control character",
+		},
+		{
+			name:    "carriage return control char",
+			rawDest: "a\rb",
+			wantErr: "invalid control character",
 		},
 		{
 			name:    "leading single dash",
@@ -514,7 +551,7 @@ func TestResolveSosDestinationDir(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got, createdTemp, err := resolveSosDestinationDir(baseDir, tc.rawDest)
+			got, cleanupRoot, err := resolveSosDestinationDir(baseDir, tc.rawDest)
 			if tc.wantErr != "" {
 				if err == nil {
 					t.Fatalf("resolveSosDestinationDir(%q) error = nil, want substring %q", tc.rawDest, tc.wantErr)
@@ -527,15 +564,22 @@ func TestResolveSosDestinationDir(t *testing.T) {
 			if err != nil {
 				t.Fatalf("resolveSosDestinationDir(%q) unexpected error: %v", tc.rawDest, err)
 			}
-			if createdTemp {
-				t.Errorf("createdTemp = true, want false")
-			}
 			want := filepath.Join(baseDir, tc.wantRel)
 			if got != want {
 				t.Errorf("resolveSosDestinationDir(%q) = %q, want %q", tc.rawDest, got, want)
 			}
-			if info, statErr := os.Stat(got); statErr != nil || !info.IsDir() {
+			if tc.rawDest == "." || tc.rawDest == "./" {
+				if cleanupRoot != "" {
+					t.Errorf("cleanupRoot = %q, want \"\" for %q", cleanupRoot, tc.rawDest)
+				}
+			} else if cleanupRoot == "" {
+				t.Errorf("cleanupRoot = \"\", expected non-empty for new dir %q", tc.rawDest)
+			}
+			info, statErr := os.Stat(got)
+			if statErr != nil || !info.IsDir() {
 				t.Errorf("expected directory %q to exist, statErr = %v", got, statErr)
+			} else if tc.rawDest != "." && tc.rawDest != "./" && (info.Mode().Perm()&0o027) != 0 {
+				t.Errorf("directory %q permissions = %o, want no group-write or other permissions", got, info.Mode().Perm())
 			}
 		})
 	}
@@ -639,6 +683,10 @@ func TestSosHelperProcess(_ *testing.T) {
 		}
 		if len(cmdArgs) >= 3 && cmdArgs[0] == "exec" {
 			if slices.Contains(cmdArgs, "cat") {
+				if scenario == "pod-cat-fail" {
+					_, _ = fmt.Fprint(os.Stderr, "simulated cat failure")
+					os.Exit(1)
+				}
 				_, _ = fmt.Fprint(os.Stdout, "fake-pod-sos-archive")
 				os.Exit(0)
 			}
@@ -648,9 +696,14 @@ func TestSosHelperProcess(_ *testing.T) {
 					idx := strings.Index(a, "/tmp/sos-")
 					if idx >= 0 {
 						tmpDir := strings.Fields(a[idx:])[0]
-						if scenario == "pod-bad-remote" {
+						switch scenario {
+						case "pod-bad-remote":
 							_, _ = fmt.Fprintf(os.Stdout, "Your sosreport has been generated and saved in: %s/;id;.tar.xz\n", tmpDir)
-						} else {
+						case "pod-dotdot-only":
+							_, _ = fmt.Fprintf(os.Stdout, "Your sosreport has been generated and saved in: %s/sosreport-a..b.tar.xz\n", tmpDir)
+						case "pod-dotdot-then-valid":
+							_, _ = fmt.Fprintf(os.Stdout, "ignore %s/sosreport-a..b.tar.xz\nsaved in: %s/sosreport-gke-node-1-2026-01-01-abc.tar.xz\n", tmpDir, tmpDir)
+						default:
 							_, _ = fmt.Fprintf(os.Stdout, "Your sosreport has been generated and saved in: %s/sosreport-gke-node-1-2026-01-01-abc.tar.xz\n", tmpDir)
 						}
 					}
@@ -675,14 +728,33 @@ func TestSosHelperProcess(_ *testing.T) {
 				os.Exit(0)
 			case "ssh":
 				if slices.Contains(cmdArgs, "sudo sos report --all-logs --batch --tmp-dir=/var") {
-					if scenario == "ssh-bad-remote" {
+					switch scenario {
+					case "ssh-bad-remote":
 						_, _ = fmt.Fprintln(os.Stdout, "saved in /var/sosreport-;id;.tar.xz")
-					} else {
+					case "ssh-dotdot-only":
+						_, _ = fmt.Fprintln(os.Stdout, "saved in /var/sosreport-a..b.tar.xz")
+					case "ssh-dotdot-then-valid":
+						_, _ = fmt.Fprintln(os.Stdout, "ignore /var/sosreport-a..b.tar.xz\nsaved in /var/sosreport-gke-node-1-2026-01-01-abc.tar.xz")
+					default:
 						_, _ = fmt.Fprintln(os.Stdout, "saved in /var/sosreport-gke-node-1-2026-01-01-abc.tar.xz")
 					}
 				}
 				os.Exit(0)
 			case "scp":
+				dst := cmdArgs[len(cmdArgs)-1]
+				if !filepath.IsAbs(dst) {
+					os.Exit(2)
+				}
+				// #nosec G304,G306,G703 -- test helper writes to the validated temp path passed to scp.
+				if err := os.WriteFile(dst, []byte("fake-ssh-sos-archive"), 0o644); err != nil {
+					_, _ = fmt.Fprintf(os.Stderr, "helper write failed: %v\n", err)
+					os.Exit(2)
+				}
+				// #nosec G302,G703 -- test helper intentionally sets 0644 to verify SSH handler tightens mode to 0600.
+				if err := os.Chmod(dst, 0o644); err != nil {
+					_, _ = fmt.Fprintf(os.Stderr, "helper chmod failed: %v\n", err)
+					os.Exit(2)
+				}
 				os.Exit(0)
 			}
 		}
@@ -734,6 +806,7 @@ func TestGetNodeSosReport(t *testing.T) {
 			"./-foo",
 			"   ",
 			"bad\x00dir",
+			"bad\ndir",
 		} {
 			var cmds []recordedCmd
 			stubClusterExecCommand(t, "pod-ok", &cmds)
@@ -790,24 +863,104 @@ func TestGetNodeSosReport(t *testing.T) {
 		}
 	})
 
-	t.Run("pod path downloads report to validated directory with restrictive permissions", func(t *testing.T) {
+	t.Run("omitted destination succeeds and preserves temp report", func(t *testing.T) {
+		tmpRoot := t.TempDir()
+		t.Setenv("TMPDIR", tmpRoot)
+
 		var cmds []recordedCmd
 		stubClusterExecCommand(t, "pod-ok", &cmds)
 
 		res, _, err := h.getNodeSosReport(context.Background(), &mcp.CallToolRequest{}, &getNodeSosReportArgs{
+			Node:   "gke-node-1",
+			Method: "pod",
+		})
+		if err != nil {
+			t.Fatalf("getNodeSosReport() unexpected error: %v", err)
+		}
+		text, ok := res.Content[0].(*mcp.TextContent)
+		if !ok {
+			t.Fatalf("unexpected content type %T", res.Content[0])
+		}
+		const prefix = "SOS report successfully generated and downloaded to: "
+		if !strings.HasPrefix(text.Text, prefix) {
+			t.Fatalf("unexpected response %q", text.Text)
+		}
+		savedPath := strings.TrimPrefix(text.Text, prefix)
+		rel, relErr := filepath.Rel(tmpRoot, savedPath)
+		if relErr != nil || !filepath.IsLocal(rel) {
+			t.Errorf("savedPath %q is not inside TMPDIR %q", savedPath, tmpRoot)
+		}
+		// #nosec G304 -- savedPath was verified above to reside within t.TempDir() TMPDIR.
+		data, readErr := os.ReadFile(savedPath)
+		if readErr != nil {
+			t.Fatalf("expected downloaded report at %q to exist, err = %v", savedPath, readErr)
+		}
+		if string(data) != "fake-pod-sos-archive" {
+			t.Errorf("unexpected file contents %q", data)
+		}
+	})
+
+	t.Run("explicit nested destination cleaned up on failure while existing dirs preserved", func(t *testing.T) {
+		var cmds []recordedCmd
+		stubClusterExecCommand(t, "all-fail", &cmds)
+
+		_, _, err := h.getNodeSosReport(context.Background(), &mcp.CallToolRequest{}, &getNodeSosReportArgs{
+			Node:        "gke-node-1",
+			Destination: filepath.Join("left", "behind", "tree"),
+		})
+		if err == nil {
+			t.Fatal("expected error when commands fail, got nil")
+		}
+		if _, statErr := os.Lstat(filepath.Join(cwd, "left")); !errors.Is(statErr, os.ErrNotExist) {
+			t.Errorf("expected newly created tree under %q to be removed, statErr = %v", filepath.Join(cwd, "left"), statErr)
+		}
+
+		existing := filepath.Join(cwd, "already-exists")
+		if mkErr := os.Mkdir(existing, 0o750); mkErr != nil {
+			t.Fatalf("Mkdir failed: %v", mkErr)
+		}
+		keepFile := filepath.Join(existing, "keep.txt")
+		if wfErr := os.WriteFile(keepFile, []byte("keep"), 0o600); wfErr != nil {
+			t.Fatalf("WriteFile failed: %v", wfErr)
+		}
+		_, _, err = h.getNodeSosReport(context.Background(), &mcp.CallToolRequest{}, &getNodeSosReportArgs{
+			Node:        "gke-node-1",
+			Destination: "already-exists",
+		})
+		if err == nil {
+			t.Fatal("expected error when commands fail, got nil")
+		}
+		if _, statErr := os.Stat(keepFile); statErr != nil {
+			t.Errorf("expected pre-existing directory file %q to be preserved, statErr = %v", keepFile, statErr)
+		}
+	})
+
+	t.Run("pod path downloads report to validated directory with restrictive permissions and unique names", func(t *testing.T) {
+		var cmds []recordedCmd
+		stubClusterExecCommand(t, "pod-ok", &cmds)
+
+		res1, _, err := h.getNodeSosReport(context.Background(), &mcp.CallToolRequest{}, &getNodeSosReportArgs{
 			Node:        "gke-node-1",
 			Destination: "sos-pod-out",
 			Method:      "pod",
 		})
 		if err != nil {
-			t.Fatalf("getNodeSosReport() unexpected error: %v", err)
+			t.Fatalf("first getNodeSosReport() unexpected error: %v", err)
 		}
-		if len(res.Content) != 1 {
-			t.Fatalf("len(Content) = %d, want 1", len(res.Content))
+		res2, _, err := h.getNodeSosReport(context.Background(), &mcp.CallToolRequest{}, &getNodeSosReportArgs{
+			Node:        "gke-node-1",
+			Destination: "sos-pod-out",
+			Method:      "pod",
+		})
+		if err != nil {
+			t.Fatalf("second getNodeSosReport() unexpected error: %v", err)
 		}
-		text, ok := res.Content[0].(*mcp.TextContent)
+		if len(res1.Content) != 1 || len(res2.Content) != 1 {
+			t.Fatalf("unexpected content counts: %d, %d", len(res1.Content), len(res2.Content))
+		}
+		text, ok := res1.Content[0].(*mcp.TextContent)
 		if !ok {
-			t.Fatalf("unexpected content type %T", res.Content[0])
+			t.Fatalf("unexpected content type %T", res1.Content[0])
 		}
 		wantDir := filepath.Join(cwd, "sos-pod-out")
 		if !strings.Contains(text.Text, wantDir) {
@@ -815,8 +968,8 @@ func TestGetNodeSosReport(t *testing.T) {
 		}
 
 		entries, err := os.ReadDir(wantDir)
-		if err != nil || len(entries) != 1 {
-			t.Fatalf("expected 1 file in %q, got %d (err=%v)", wantDir, len(entries), err)
+		if err != nil || len(entries) != 2 {
+			t.Fatalf("expected 2 distinct files in %q, got %d (err=%v)", wantDir, len(entries), err)
 		}
 		info, err := entries[0].Info()
 		if err != nil {
@@ -840,26 +993,55 @@ func TestGetNodeSosReport(t *testing.T) {
 		}
 	})
 
-	t.Run("pod path rejects shell metacharacters in remote filename", func(t *testing.T) {
+	t.Run("pod path cleans up partial file when cat fails", func(t *testing.T) {
 		var cmds []recordedCmd
-		stubClusterExecCommand(t, "pod-bad-remote", &cmds)
+		stubClusterExecCommand(t, "pod-cat-fail", &cmds)
 
 		_, _, err := h.getNodeSosReport(context.Background(), &mcp.CallToolRequest{}, &getNodeSosReportArgs{
 			Node:        "gke-node-1",
-			Destination: "sos-pod-bad",
+			Destination: "sos-pod-cat-fail",
 			Method:      "pod",
 		})
-		if err == nil || !strings.Contains(err.Error(), "could not find sos report filename") {
-			t.Fatalf("expected filename parse error, got: %v", err)
+		if err == nil || !strings.Contains(err.Error(), "failed to copy sos report from pod") {
+			t.Fatalf("expected cat failure, got: %v", err)
 		}
-		for _, c := range cmds {
-			if slices.Contains(c.Args, "cat") {
-				t.Errorf("kubectl cat should not run on invalid remote filename: %v", c.Args)
-			}
+		if _, statErr := os.Lstat(filepath.Join(cwd, "sos-pod-cat-fail")); !errors.Is(statErr, os.ErrNotExist) {
+			t.Errorf("expected newly created destination to be cleaned up on cat failure, statErr = %v", statErr)
 		}
 	})
 
-	t.Run("ssh path passes end-of-options separator and resolved destination to gcloud scp", func(t *testing.T) {
+	t.Run("pod path rejects shell metacharacters and dotdot in remote filename and skips earlier dotdot", func(t *testing.T) {
+		for _, scenario := range []string{"pod-bad-remote", "pod-dotdot-only"} {
+			var cmds []recordedCmd
+			stubClusterExecCommand(t, scenario, &cmds)
+
+			_, _, err := h.getNodeSosReport(context.Background(), &mcp.CallToolRequest{}, &getNodeSosReportArgs{
+				Node:        "gke-node-1",
+				Destination: "sos-pod-bad",
+				Method:      "pod",
+			})
+			if err == nil || !strings.Contains(err.Error(), "could not find sos report filename") {
+				t.Fatalf("scenario %s: expected filename parse error, got: %v", scenario, err)
+			}
+			for _, c := range cmds {
+				if slices.Contains(c.Args, "cat") {
+					t.Errorf("scenario %s: kubectl cat should not run on invalid remote filename: %v", scenario, c.Args)
+				}
+			}
+		}
+
+		var cmds []recordedCmd
+		stubClusterExecCommand(t, "pod-dotdot-then-valid", &cmds)
+		if _, _, err := h.getNodeSosReport(context.Background(), &mcp.CallToolRequest{}, &getNodeSosReportArgs{
+			Node:        "gke-node-1",
+			Destination: "sos-pod-skip-dotdot",
+			Method:      "pod",
+		}); err != nil {
+			t.Fatalf("pod-dotdot-then-valid unexpected error: %v", err)
+		}
+	})
+
+	t.Run("ssh path passes end-of-options separator and enforces 0600 permissions", func(t *testing.T) {
 		var cmds []recordedCmd
 		stubClusterExecCommand(t, "ssh-ok", &cmds)
 
@@ -875,6 +1057,18 @@ func TestGetNodeSosReport(t *testing.T) {
 		text, ok := res.Content[0].(*mcp.TextContent)
 		if !ok || !strings.Contains(text.Text, wantDir) {
 			t.Errorf("response %#v missing destination dir %q", res.Content[0], wantDir)
+		}
+
+		entries, err := os.ReadDir(wantDir)
+		if err != nil || len(entries) != 1 {
+			t.Fatalf("expected 1 file in %q, got %d (err=%v)", wantDir, len(entries), err)
+		}
+		info, err := entries[0].Info()
+		if err != nil {
+			t.Fatalf("Info() failed: %v", err)
+		}
+		if perm := info.Mode().Perm(); perm != 0o600 {
+			t.Errorf("ssh downloaded file permissions = %o, want 0600", perm)
 		}
 
 		var sawSCP bool
@@ -900,6 +1094,52 @@ func TestGetNodeSosReport(t *testing.T) {
 		}
 	})
 
+	t.Run("ssh path rejects shell metacharacters and dotdot in remote filename and skips earlier dotdot", func(t *testing.T) {
+		for _, scenario := range []string{"ssh-bad-remote", "ssh-dotdot-only"} {
+			var cmds []recordedCmd
+			stubClusterExecCommand(t, scenario, &cmds)
+
+			_, _, err := h.getNodeSosReport(context.Background(), &mcp.CallToolRequest{}, &getNodeSosReportArgs{
+				Node:        "gke-node-1",
+				Destination: "sos-ssh-bad-remote",
+				Method:      "ssh",
+			})
+			if err == nil || !strings.Contains(err.Error(), "could not find sos report filename") {
+				t.Fatalf("scenario %s: expected filename parse error, got: %v", scenario, err)
+			}
+			for _, c := range cmds {
+				if c.Name == "gcloud" && len(c.Args) >= 2 && c.Args[1] == "scp" {
+					t.Errorf("scenario %s: gcloud scp should not be called on invalid remote filename: %v", scenario, c.Args)
+				}
+			}
+		}
+
+		var cmds []recordedCmd
+		stubClusterExecCommand(t, "ssh-dotdot-then-valid", &cmds)
+		if _, _, err := h.getNodeSosReport(context.Background(), &mcp.CallToolRequest{}, &getNodeSosReportArgs{
+			Node:        "gke-node-1",
+			Destination: "sos-ssh-skip-dotdot",
+			Method:      "ssh",
+		}); err != nil {
+			t.Fatalf("ssh-dotdot-then-valid unexpected error: %v", err)
+		}
+	})
+
+	t.Run("openSosOutputFile rejects pre-existing file with O_EXCL", func(t *testing.T) {
+		target := filepath.Join(cwd, "already-present.tar.xz")
+		if err := os.WriteFile(target, []byte("existing"), 0o600); err != nil {
+			t.Fatalf("WriteFile failed: %v", err)
+		}
+		f, err := openSosOutputFile(target)
+		if err == nil {
+			_ = f.Close()
+			t.Fatal("expected error opening pre-existing file with O_EXCL, got nil")
+		}
+		if !errors.Is(err, os.ErrExist) {
+			t.Errorf("expected os.ErrExist, got %v", err)
+		}
+	})
+
 	t.Run("ssh path rejects invalid zone output before ssh", func(t *testing.T) {
 		for _, scenario := range []string{"ssh-bad-zone-flag", "ssh-bad-zone-multiline"} {
 			var cmds []recordedCmd
@@ -917,25 +1157,6 @@ func TestGetNodeSosReport(t *testing.T) {
 				if c.Name == "gcloud" && len(c.Args) >= 2 && c.Args[1] == "ssh" {
 					t.Errorf("scenario %s: gcloud ssh should not be called on invalid zone: %v", scenario, c.Args)
 				}
-			}
-		}
-	})
-
-	t.Run("ssh path rejects shell metacharacters in remote filename", func(t *testing.T) {
-		var cmds []recordedCmd
-		stubClusterExecCommand(t, "ssh-bad-remote", &cmds)
-
-		_, _, err := h.getNodeSosReport(context.Background(), &mcp.CallToolRequest{}, &getNodeSosReportArgs{
-			Node:        "gke-node-1",
-			Destination: "sos-ssh-bad-remote",
-			Method:      "ssh",
-		})
-		if err == nil || !strings.Contains(err.Error(), "could not find sos report filename") {
-			t.Fatalf("expected filename parse error, got: %v", err)
-		}
-		for _, c := range cmds {
-			if c.Name == "gcloud" && len(c.Args) >= 2 && c.Args[1] == "scp" {
-				t.Errorf("gcloud scp should not be called on invalid remote filename: %v", c.Args)
 			}
 		}
 	})
