@@ -17,8 +17,11 @@ package cluster
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -27,12 +30,10 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"unicode"
 
 	container "cloud.google.com/go/container/apiv1"
 	containerpb "cloud.google.com/go/container/apiv1/containerpb"
-	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
-	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/k8s"
-	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/params"
 	"github.com/googleapis/gax-go/v2/callctx"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -43,9 +44,18 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/clientcmd"
 	k8sClientApi "k8s.io/client-go/tools/clientcmd/api"
+
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/config"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/k8s"
+	"github.com/GoogleCloudPlatform/gke-mcp/pkg/tools/params"
 )
 
 var (
+	execCommand    = exec.CommandContext
+	validNodeRe    = regexp.MustCompile(`^[a-z0-9][a-z0-9\-\.]*[a-z0-9]$`)
+	validZoneRe    = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*[a-z0-9]$`)
+	sshSosReportRe = regexp.MustCompile(`/var/sosreport-[a-zA-Z0-9._-]+\.tar\.xz`)
+
 	commonClustersFieldMasks = []string{
 		// go/keep-sorted start
 		"autopilot",
@@ -126,7 +136,7 @@ type getKubeconfigArgs struct {
 type getNodeSosReportArgs struct {
 	params.Cluster
 	Node           string `json:"node" jsonschema:"Required. GKE node name to collect SOS report from."`
-	Destination    string `json:"destination,omitempty" jsonschema:"Local directory to download the SOS report to. Defaults to /tmp/sos-report if not specified."`
+	Destination    string `json:"destination,omitempty" jsonschema:"Relative path within the MCP server's current working directory to download the SOS report to. If omitted, downloads into a newly created temporary directory."`
 	Method         string `json:"method,omitempty" jsonschema:"Method to get sos report. Can be 'pod', 'ssh' or 'any'. Defaults to 'any'. When the node is unhealthy from api server, use ssh only."`
 	TimeoutSeconds int    `json:"timeout,omitempty" jsonschema:"Timeout in seconds for the report collection (applies to both pod and ssh methods). Defaults to 180 (3 minutes)."`
 }
@@ -276,69 +286,179 @@ func (h *handlers) getKubeconfig(ctx context.Context, _ *mcp.CallToolRequest, ar
 	}, nil, nil
 }
 
-func (h *handlers) getNodeSosReport(ctx context.Context, _ *mcp.CallToolRequest, args *getNodeSosReportArgs) (*mcp.CallToolResult, any, error) {
-	if args.Node == "" {
+func (h *handlers) getNodeSosReport(ctx context.Context, _ *mcp.CallToolRequest, args *getNodeSosReportArgs) (res *mcp.CallToolResult, _ any, retErr error) {
+	if args == nil || args.Node == "" {
 		return nil, nil, fmt.Errorf("node argument cannot be empty")
 	}
 	// Basic validation for node name to prevent command injection
-	if match, _ := regexp.MatchString(`^[a-z0-9][a-z0-9\-\.]*[a-z0-9]$`, args.Node); !match {
+	if !validNodeRe.MatchString(args.Node) {
 		return nil, nil, fmt.Errorf("invalid node name: %s", args.Node)
 	}
 
-	if args.Destination == "" {
-		args.Destination = "/tmp/sos-report"
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get current working directory: %w", err)
 	}
-	if args.Method == "" {
-		args.Method = "any"
+
+	destDir, cleanupRoot, err := resolveSosDestinationDir(cwd, args.Destination)
+	if err != nil {
+		return nil, nil, err
 	}
-	if args.TimeoutSeconds <= 0 {
-		args.TimeoutSeconds = 180 // Default to 3 minutes
+	if cleanupRoot != "" {
+		defer func() {
+			if retErr != nil {
+				_ = os.RemoveAll(cleanupRoot)
+			}
+		}()
+	}
+
+	method := args.Method
+	if method == "" {
+		method = "any"
+	}
+	timeoutSeconds := args.TimeoutSeconds
+	if timeoutSeconds <= 0 {
+		timeoutSeconds = 180 // Default to 3 minutes
 	}
 
 	// Check if node is healthy
 	isHealthy := false
-	// #nosec G204
-	cmd := exec.CommandContext(ctx, "kubectl", "get", "node", args.Node, "-o", "jsonpath='{.status.conditions[?(@.type==\"Ready\")].status}'")
+	// #nosec G204 -- args.Node is validated against validNodeRe.
+	cmd := execCommand(ctx, "kubectl", "get", "node", args.Node, "-o", "jsonpath='{.status.conditions[?(@.type==\"Ready\")].status}'")
 	out, err := cmd.Output()
 	if err == nil && strings.Contains(string(out), "True") {
 		isHealthy = true
 	}
 
 	if !isHealthy {
-		args.Method = "ssh"
+		method = "ssh"
 	}
 
-	if err := os.MkdirAll(args.Destination, 0750); err != nil {
-		return nil, nil, fmt.Errorf("failed to create destination directory %s: %w", args.Destination, err)
-	}
-
-	if args.Method == "pod" || args.Method == "any" {
+	if method == "pod" || method == "any" {
 		// 1. Try Pod-based approach with timeout
-		podCtx, podCancel := context.WithTimeout(ctx, time.Duration(args.TimeoutSeconds)*time.Second)
+		podCtx, podCancel := context.WithTimeout(ctx, time.Duration(timeoutSeconds)*time.Second)
 		defer podCancel()
 
-		res, _, err := h.getNodeSosReportWithPod(podCtx, args)
+		res, _, err := h.getNodeSosReportWithPod(podCtx, args.Node, destDir)
 		if err == nil {
 			return res, nil, nil
 		}
-		if args.Method == "pod" {
+		if method == "pod" {
 			return nil, nil, fmt.Errorf("failed to get sos report with pod: %w", err)
 		}
 		// If method is any and pod failed (e.g. timeout), fall through to ssh
 	}
 
 	// 2. Fallback or direct SSH approach with timeout
-	sshCtx, sshCancel := context.WithTimeout(ctx, time.Duration(args.TimeoutSeconds)*time.Second)
+	sshCtx, sshCancel := context.WithTimeout(ctx, time.Duration(timeoutSeconds)*time.Second)
 	defer sshCancel()
-	return h.getNodeSosReportWithSSH(sshCtx, args)
+	return h.getNodeSosReportWithSSH(sshCtx, args.Node, destDir)
 }
 
-func (h *handlers) getNodeSosReportWithPod(ctx context.Context, args *getNodeSosReportArgs) (*mcp.CallToolResult, any, error) {
+func resolveSosDestinationDir(baseDir, rawDest string) (string, string, error) {
+	if rawDest == "" {
+		dir, err := os.MkdirTemp("", "gke-sos-report-*")
+		if err != nil {
+			return "", "", fmt.Errorf("failed to create temporary destination directory: %w", err)
+		}
+		return dir, dir, nil
+	}
+	if strings.TrimSpace(rawDest) == "" {
+		return "", "", fmt.Errorf("destination argument cannot be whitespace")
+	}
+	for _, r := range rawDest {
+		if unicode.IsControl(r) {
+			return "", "", fmt.Errorf("destination contains invalid control character")
+		}
+	}
+	// Reject values that could be interpreted as command options or escape
+	// the MCP server's working directory.
+	if strings.HasPrefix(rawDest, "-") || !filepath.IsLocal(rawDest) {
+		return "", "", fmt.Errorf("destination must be a relative path under the current directory: %q", rawDest)
+	}
+
+	cleanDest := filepath.Clean(rawDest)
+	if strings.HasPrefix(cleanDest, "-") || !filepath.IsLocal(cleanDest) {
+		return "", "", fmt.Errorf("destination must be a relative path under the current directory: %q", rawDest)
+	}
+
+	if err := ensureWithinBaseDir(baseDir, cleanDest, rawDest); err != nil {
+		return "", "", err
+	}
+
+	destDir := filepath.Join(baseDir, cleanDest)
+	cleanupRoot, err := firstMissingPath(baseDir, destDir)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to inspect destination %q: %w", rawDest, err)
+	}
+	// #nosec G301,G703 -- cleanDest is validated as a local relative path under baseDir without validation-time symlink escapes.
+	if err := os.MkdirAll(destDir, 0o750); err != nil {
+		return "", "", fmt.Errorf("failed to create destination directory %s: %w", destDir, err)
+	}
+	return destDir, cleanupRoot, nil
+}
+
+func firstMissingPath(baseDir, targetDir string) (string, error) {
+	cleanBase := filepath.Clean(baseDir)
+	cur := filepath.Clean(targetDir)
+	var firstMissing string
+	for cur != cleanBase {
+		_, err := os.Lstat(cur)
+		if err == nil {
+			return firstMissing, nil
+		}
+		if !errors.Is(err, os.ErrNotExist) {
+			return "", err
+		}
+		firstMissing = cur
+		parent := filepath.Dir(cur)
+		if parent == cur {
+			break
+		}
+		cur = parent
+	}
+	return firstMissing, nil
+}
+
+// ensureWithinBaseDir checks that the deepest existing path component does not
+// escape baseDir via symlinks at validation time.
+func ensureWithinBaseDir(baseDir, relPath, rawDir string) error {
+	baseReal, err := filepath.EvalSymlinks(baseDir)
+	if err != nil {
+		return fmt.Errorf("failed to resolve working directory: %w", err)
+	}
+
+	cur := filepath.Join(baseReal, relPath)
+	for {
+		_, err := os.Lstat(cur)
+		if err == nil {
+			resolved, err := filepath.EvalSymlinks(cur)
+			if err != nil {
+				return fmt.Errorf("destination has an unresolvable path component %q: %w", rawDir, err)
+			}
+			rel, err := filepath.Rel(baseReal, resolved)
+			if err != nil || !filepath.IsLocal(rel) {
+				return fmt.Errorf("destination must resolve within the current directory: %q", rawDir)
+			}
+			return nil
+		}
+		if !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("failed to inspect destination %q: %w", rawDir, err)
+		}
+		parent := filepath.Dir(cur)
+		if parent == cur || cur == baseReal {
+			return fmt.Errorf("failed to inspect destination %q: base directory does not exist", rawDir)
+		}
+		cur = parent
+	}
+}
+
+func (h *handlers) getNodeSosReportWithPod(ctx context.Context, node, destDir string) (*mcp.CallToolResult, any, error) {
 	// 1. Prepare and run debug pod
 	podName := fmt.Sprintf("sos-debug-%d", time.Now().Unix())
 	overrides := map[string]interface{}{
 		"spec": map[string]interface{}{
-			"nodeName":    args.Node,
+			"nodeName":    node,
 			"hostNetwork": true,
 			"hostPID":     true,
 			"hostIPC":     true,
@@ -368,7 +488,7 @@ func (h *handlers) getNodeSosReportWithPod(ctx context.Context, args *getNodeSos
 				"runAsUser": 0,
 			},
 			"nodeSelector": map[string]interface{}{
-				"kubernetes.io/hostname": args.Node,
+				"kubernetes.io/hostname": node,
 			},
 		},
 	}
@@ -377,22 +497,22 @@ func (h *handlers) getNodeSosReportWithPod(ctx context.Context, args *getNodeSos
 		return nil, nil, fmt.Errorf("failed to marshal overrides: %w", err)
 	}
 
-	// #nosec G204
-	runCmd := exec.CommandContext(ctx, "kubectl", "run", podName, "--image=gke.gcr.io/debian-base", "--restart=Never", "--overrides="+string(overridesBytes))
+	// #nosec G204 -- podName uses current timestamp and node is validated against validNodeRe.
+	runCmd := execCommand(ctx, "kubectl", "run", podName, "--image=gke.gcr.io/debian-base", "--restart=Never", "--overrides="+string(overridesBytes))
 	if out, err := runCmd.CombinedOutput(); err != nil {
 		return nil, nil, fmt.Errorf("failed to create debug pod: %s, %w", string(out), err)
 	}
 
 	defer func() {
 		// Cleanup pod
-		// #nosec G204
-		delCmd := exec.Command("kubectl", "delete", "pod", podName, "--wait=false", "--grace-period=0", "--force")
+		// #nosec G204 -- podName uses server-generated timestamp.
+		delCmd := execCommand(context.Background(), "kubectl", "delete", "pod", podName, "--wait=false", "--grace-period=0", "--force")
 		_ = delCmd.Run() // Best-effort cleanup
 	}()
 
 	// 2. Wait for pod to be ready
-	// #nosec G204
-	waitCmd := exec.CommandContext(ctx, "kubectl", "wait", "--for=condition=Ready", "pod/"+podName, "--timeout=60s")
+	// #nosec G204 -- podName uses server-generated timestamp.
+	waitCmd := execCommand(ctx, "kubectl", "wait", "--for=condition=Ready", "pod/"+podName, "--timeout=60s")
 	if out, err := waitCmd.CombinedOutput(); err != nil {
 		return nil, nil, fmt.Errorf("debug pod did not become ready: %s, %w", string(out), err)
 	}
@@ -404,8 +524,8 @@ func (h *handlers) getNodeSosReportWithPod(ctx context.Context, args *getNodeSos
 	// Note: chroot /host allows us to use the host's sosreport command and filesystem
 	execScript := fmt.Sprintf("apt update && apt install -y sosreport && mkdir -p /host%s && sos report --sysroot=/host --all-logs --batch --tmp-dir=/host%s", remoteTmpDir, remoteTmpDir)
 
-	// #nosec G204
-	execCmd := exec.CommandContext(ctx, "kubectl", "exec", podName, "--", "sh", "-c", execScript)
+	// #nosec G204 -- podName and remoteTmpDir are server-generated.
+	execCmd := execCommand(ctx, "kubectl", "exec", podName, "--", "sh", "-c", execScript)
 	outBytes, err := execCmd.CombinedOutput()
 	output := string(outBytes)
 	if err != nil {
@@ -416,8 +536,8 @@ func (h *handlers) getNodeSosReportWithPod(ctx context.Context, args *getNodeSos
 	// The output usually contains: "Your sosreport has been generated and saved in: /path/to/file.tar.xz"
 	// The path might be reported as /host/tmp/... or /tmp/... depending on how sos report was invoked.
 	// We also handle both .tar.xz and .tar.gz extensions.
-	re := regexp.MustCompile(`(/host)?` + regexp.QuoteMeta(remoteTmpDir) + `/[^\s]+\.tar\.(xz|gz)`)
-	match := re.FindString(output)
+	re := regexp.MustCompile(`(/host)?` + regexp.QuoteMeta(remoteTmpDir) + `/[a-zA-Z0-9._-]+\.tar\.(xz|gz)`)
+	match := findSafeSosReportPath(re, output)
 	if match == "" {
 		return nil, nil, fmt.Errorf("could not find sos report filename in output: %s", output)
 	}
@@ -428,17 +548,19 @@ func (h *handlers) getNodeSosReportWithPod(ctx context.Context, args *getNodeSos
 	if !strings.HasPrefix(remotePath, "/host") {
 		remotePath = "/host" + remotePath
 	}
-	localFilename := fmt.Sprintf("sosreport-%s-%s.tar.xz", args.Node, time.Now().Format("2006-01-02-15-04-05"))
-	localPath := filepath.Join(args.Destination, localFilename)
-	localPath = filepath.Clean(localPath)
-	// 5. Copy the file from the pod to local current directory
-	f, err := os.Create(localPath)
+	localFilename, err := generateSosReportFilename(node)
+	if err != nil {
+		return nil, nil, err
+	}
+	localPath := filepath.Clean(filepath.Join(destDir, localFilename))
+	// 5. Copy the file from the pod to the destination directory
+	f, err := openSosOutputFile(localPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create local file %s: %w", localPath, err)
 	}
 
-	// #nosec G204
-	catCmd := exec.CommandContext(ctx, "kubectl", "exec", podName, "--", "cat", remotePath)
+	// #nosec G204 -- podName is server-generated and remotePath is matched against a restricted filename regex.
+	catCmd := execCommand(ctx, "kubectl", "exec", podName, "--", "cat", "--", remotePath)
 	catCmd.Stdout = f
 	var stderr bytes.Buffer
 	catCmd.Stderr = &stderr
@@ -452,8 +574,8 @@ func (h *handlers) getNodeSosReportWithPod(ctx context.Context, args *getNodeSos
 
 	// 6. Cleanup remote files on host (via pod)
 	cleanupScript := fmt.Sprintf("rm -rf %s", remoteTmpDir)
-	// #nosec G204
-	cleanCmd := exec.CommandContext(ctx, "kubectl", "exec", podName, "--", "sh", "-c", cleanupScript)
+	// #nosec G204 -- podName and remoteTmpDir are server-generated.
+	cleanCmd := execCommand(ctx, "kubectl", "exec", podName, "--", "sh", "-c", cleanupScript)
 	_ = cleanCmd.Run() // Best-effort cleanup
 
 	return &mcp.CallToolResult{
@@ -463,24 +585,27 @@ func (h *handlers) getNodeSosReportWithPod(ctx context.Context, args *getNodeSos
 	}, nil, nil
 }
 
-func (h *handlers) getNodeSosReportWithSSH(ctx context.Context, args *getNodeSosReportArgs) (*mcp.CallToolResult, any, error) {
+func (h *handlers) getNodeSosReportWithSSH(ctx context.Context, node, destDir string) (*mcp.CallToolResult, any, error) {
 	// 1. Find the zone of the VM
 	// gcloud compute instances list --filter="name=NODE_NAME" --format="value(zone)"
-	// #nosec G204
-	findZoneCmd := exec.CommandContext(ctx, "gcloud", "compute", "instances", "list", fmt.Sprintf("--filter=name=%s", args.Node), "--format=value(zone)")
+	// #nosec G204 -- node is validated against validNodeRe.
+	findZoneCmd := execCommand(ctx, "gcloud", "compute", "instances", "list", fmt.Sprintf("--filter=name=%s", node), "--format=value(zone)")
 	zoneOut, err := findZoneCmd.Output()
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to find zone for node %s using gcloud: %w", args.Node, err)
+		return nil, nil, fmt.Errorf("failed to find zone for node %s using gcloud: %w", node, err)
 	}
 	zone := strings.TrimSpace(string(zoneOut))
 	if zone == "" {
-		return nil, nil, fmt.Errorf("could not find zone for node %s", args.Node)
+		return nil, nil, fmt.Errorf("could not find zone for node %s", node)
+	}
+	if !validZoneRe.MatchString(zone) {
+		return nil, nil, fmt.Errorf("invalid zone %q for node %s", zone, node)
 	}
 
 	// 2. Generate SOS report via SSH
 	// gcloud compute ssh --zone "ZONE" "NODE_NAME" --command "sudo sos report --all-logs --batch --tmp-dir=/var"
-	// #nosec G204
-	sshCmd := exec.CommandContext(ctx, "gcloud", "compute", "ssh", "--zone", zone, args.Node, "--command", "sudo sos report --all-logs --batch --tmp-dir=/var")
+	// #nosec G204 -- zone and node are validated against validZoneRe and validNodeRe.
+	sshCmd := execCommand(ctx, "gcloud", "compute", "ssh", "--zone", zone, node, "--command", "sudo sos report --all-logs --batch --tmp-dir=/var")
 	outBytes, err := sshCmd.CombinedOutput()
 	output := string(outBytes)
 	if err != nil {
@@ -488,9 +613,8 @@ func (h *handlers) getNodeSosReportWithSSH(ctx context.Context, args *getNodeSos
 	}
 
 	// 3. Parse output for filename
-	// Matches /var/sosreport-.*.tar.xz
-	re := regexp.MustCompile(`/var/sosreport-[^\s]+\.tar\.xz`)
-	match := re.FindString(output)
+	// Matches /var/sosreport-*.tar.xz
+	match := findSafeSosReportPath(sshSosReportRe, output)
 	if match == "" {
 		return nil, nil, fmt.Errorf("could not find sos report filename in ssh output: %s", output)
 	}
@@ -498,25 +622,34 @@ func (h *handlers) getNodeSosReportWithSSH(ctx context.Context, args *getNodeSos
 
 	// 4. Change ownership of the file
 	// gcloud compute ssh ... --command "sudo chown $USER REMOTE_PATH"
-	// #nosec G204
-	chownCmd := exec.CommandContext(ctx, "gcloud", "compute", "ssh", "--zone", zone, args.Node, "--command", fmt.Sprintf("sudo chown $USER %s", remotePath))
+	// #nosec G204 -- zone, node, and remotePath are validated against strict regexes.
+	chownCmd := execCommand(ctx, "gcloud", "compute", "ssh", "--zone", zone, node, "--command", fmt.Sprintf("sudo chown $USER %s", remotePath))
 	if out, err := chownCmd.CombinedOutput(); err != nil {
 		return nil, nil, fmt.Errorf("failed to chown remote file: %s, %w", string(out), err)
 	}
 
 	// 5. SCP the file
-	// gcloud compute scp --zone "ZONE" "NODE_NAME:REMOTE_PATH" LOCAL_DESTINATION
-	localFilename := fmt.Sprintf("sosreport-%s-%s.tar.xz", args.Node, time.Now().Format("2006-01-02-15-04-05"))
-	localPath := filepath.Join(args.Destination, localFilename)
-	// #nosec G204
-	scpCmd := exec.CommandContext(ctx, "gcloud", "compute", "scp", "--zone", zone, fmt.Sprintf("%s:%s", args.Node, remotePath), localPath)
+	// gcloud compute scp --zone "ZONE" -- "NODE_NAME:REMOTE_PATH" LOCAL_DESTINATION
+	localFilename, err := generateSosReportFilename(node)
+	if err != nil {
+		return nil, nil, err
+	}
+	localPath := filepath.Clean(filepath.Join(destDir, localFilename))
+	// #nosec G204 -- zone, node, remotePath, and destDir are validated, and positional args are preceded by "--".
+	scpCmd := execCommand(ctx, "gcloud", "compute", "scp", "--zone", zone, "--", fmt.Sprintf("%s:%s", node, remotePath), localPath)
 	if out, err := scpCmd.CombinedOutput(); err != nil {
+		_ = os.Remove(localPath) // Best-effort cleanup
 		return nil, nil, fmt.Errorf("failed to scp file: %s, %w", string(out), err)
+	}
+	// #nosec G703 -- localPath is constructed inside destDir using a validated node name and random suffix.
+	if err := os.Chmod(localPath, 0o600); err != nil {
+		_ = os.Remove(localPath) // Best-effort cleanup
+		return nil, nil, fmt.Errorf("failed to set permissions on local file %s: %w", localPath, err)
 	}
 
 	// 6. Cleanup remote files on host
-	// #nosec G204
-	rmCmd := exec.CommandContext(ctx, "gcloud", "compute", "ssh", "--zone", zone, args.Node, "--command", fmt.Sprintf("sudo rm %s", remotePath))
+	// #nosec G204 -- zone, node, and remotePath are validated against strict regexes.
+	rmCmd := execCommand(ctx, "gcloud", "compute", "ssh", "--zone", zone, node, "--command", fmt.Sprintf("sudo rm %s", remotePath))
 	_ = rmCmd.Run() // Best-effort cleanup
 
 	return &mcp.CallToolResult{
@@ -524,6 +657,28 @@ func (h *handlers) getNodeSosReportWithSSH(ctx context.Context, args *getNodeSos
 			&mcp.TextContent{Text: fmt.Sprintf("SOS report successfully generated (via SSH) and downloaded to: %s", localPath)},
 		},
 	}, nil, nil
+}
+
+func generateSosReportFilename(node string) (string, error) {
+	var b [4]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return "", fmt.Errorf("failed to generate unique filename suffix: %w", err)
+	}
+	return fmt.Sprintf("sosreport-%s-%s-%s.tar.xz", node, time.Now().Format("2006-01-02-15-04-05"), hex.EncodeToString(b[:])), nil
+}
+
+func openSosOutputFile(localPath string) (*os.File, error) {
+	// #nosec G304,G703 -- localPath is constructed inside a validated destination directory using a validated node name and random suffix.
+	return os.OpenFile(localPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
+}
+
+func findSafeSosReportPath(re *regexp.Regexp, output string) string {
+	for _, m := range re.FindAllString(output, -1) {
+		if !strings.Contains(m, "..") {
+			return m
+		}
+	}
+	return ""
 }
 
 func (h *handlers) updateCluster(ctx context.Context, _ *mcp.CallToolRequest, args *updateClusterArgs) (*mcp.CallToolResult, any, error) {
