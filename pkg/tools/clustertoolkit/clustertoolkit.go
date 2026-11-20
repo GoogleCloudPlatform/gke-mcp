@@ -38,7 +38,7 @@ const (
 var execCommand = exec.CommandContext
 
 type clusterToolkitDownloadArgs struct {
-	DownloadDirectory string `json:"download_directory" jsonschema:"Relative path within the current working directory to download the git repo into. Use '.' for the current working directory."`
+	DownloadDirectory string `json:"download_directory" jsonschema:"Relative path within the MCP server's current working directory to download the git repo into. Use '.' for the server's current working directory."`
 }
 
 // Install registers Cluster Toolkit tools with the MCP server.
@@ -66,17 +66,33 @@ func clusterToolkitDownload(ctx context.Context, _ *mcp.CallToolRequest, args *c
 		return nil, nil, err
 	}
 
+	destPath := filepath.Join(cwd, downloadDir)
+	_, statErr := os.Lstat(destPath)
+	existedBefore := !errors.Is(statErr, os.ErrNotExist)
+
 	// #nosec G204 -- downloadDir is validated as a local relative path under cwd and preceded by "--".
 	cmd := execCommand(ctx, "git", "clone", clusterToolkitRepoURL, "--", downloadDir)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Printf("Failed to download Cluster Toolkit: %v %s", err, out)
+		if !existedBefore {
+			_ = os.RemoveAll(destPath)
+		}
+		outStr := strings.TrimSpace(string(out))
+		log.Printf("Failed to download Cluster Toolkit: %v %s", err, outStr)
+		if outStr != "" {
+			return nil, nil, fmt.Errorf("failed to download Cluster Toolkit: %w: %s", err, outStr)
+		}
 		return nil, nil, fmt.Errorf("failed to download Cluster Toolkit: %w", err)
+	}
+
+	msg := fmt.Sprintf("Downloaded Cluster Toolkit to %s", destPath)
+	if outStr := strings.TrimSpace(string(out)); outStr != "" {
+		msg = fmt.Sprintf("%s\n%s", msg, outStr)
 	}
 
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
-			&mcp.TextContent{Text: string(out)},
+			&mcp.TextContent{Text: msg},
 		},
 	}, nil, nil
 }
@@ -113,6 +129,8 @@ func resolveDownloadDir(baseDir, rawDir string) (string, error) {
 	return downloadDir, nil
 }
 
+// ensureWithinBaseDir checks that the deepest existing path component does not
+// escape baseDir via symlinks at validation time.
 func ensureWithinBaseDir(baseDir, relPath, rawDir string) error {
 	baseReal, err := filepath.EvalSymlinks(baseDir)
 	if err != nil {

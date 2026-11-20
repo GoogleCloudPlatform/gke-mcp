@@ -16,6 +16,8 @@ package clustertoolkit
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -252,6 +254,22 @@ func TestHelperProcess(_ *testing.T) {
 	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
 		return
 	}
+	if partialDir := os.Getenv("GO_HELPER_CREATE_DIR"); partialDir != "" {
+		if !filepath.IsLocal(partialDir) {
+			_, _ = fmt.Fprintf(os.Stderr, "invalid partial dir: %q\n", partialDir)
+			os.Exit(1)
+		}
+		// #nosec G703 -- test helper writes only inside the test's temp working directory.
+		if err := os.MkdirAll(partialDir, 0o750); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "mkdir failed: %v\n", err)
+			os.Exit(1)
+		}
+		// #nosec G703 -- test helper writes only inside the test's temp working directory.
+		if err := os.WriteFile(filepath.Join(partialDir, "partial.tmp"), []byte("partial"), 0o600); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "write failed: %v\n", err)
+			os.Exit(1)
+		}
+	}
 	if os.Getenv("GO_HELPER_FAIL") == "1" {
 		_, _ = fmt.Fprintln(os.Stderr, "simulated git failure")
 		os.Exit(1)
@@ -260,7 +278,7 @@ func TestHelperProcess(_ *testing.T) {
 	os.Exit(0)
 }
 
-func stubExecCommand(t *testing.T, fail bool, gotName *string, gotArgs *[]string) {
+func stubExecCommand(t *testing.T, fail bool, createPartial bool, gotName *string, gotArgs *[]string) {
 	t.Helper()
 	orig := execCommand
 	t.Cleanup(func() {
@@ -276,6 +294,9 @@ func stubExecCommand(t *testing.T, fail bool, gotName *string, gotArgs *[]string
 		if fail {
 			cmd.Env = append(cmd.Env, "GO_HELPER_FAIL=1")
 		}
+		if createPartial && len(args) > 0 {
+			cmd.Env = append(cmd.Env, "GO_HELPER_CREATE_DIR="+args[len(args)-1])
+		}
 		return cmd
 	}
 }
@@ -283,11 +304,15 @@ func stubExecCommand(t *testing.T, fail bool, gotName *string, gotArgs *[]string
 func TestClusterToolkitDownload(t *testing.T) {
 	workDir := t.TempDir()
 	t.Chdir(workDir)
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("os.Getwd() failed: %v", err)
+	}
 
-	t.Run("valid relative directory passes end-of-options separator", func(t *testing.T) {
+	t.Run("valid relative directory returns resolved path and passes end-of-options separator", func(t *testing.T) {
 		var gotName string
 		var gotArgs []string
-		stubExecCommand(t, false, &gotName, &gotArgs)
+		stubExecCommand(t, false, false, &gotName, &gotArgs)
 
 		res, _, err := clusterToolkitDownload(context.Background(), &mcp.CallToolRequest{}, &clusterToolkitDownloadArgs{
 			DownloadDirectory: "my-toolkit",
@@ -298,7 +323,8 @@ func TestClusterToolkitDownload(t *testing.T) {
 		if gotName != "git" {
 			t.Errorf("command = %q, want %q", gotName, "git")
 		}
-		wantArgs := []string{"clone", clusterToolkitRepoURL, "--", filepath.Join("my-toolkit", "cluster-toolkit")}
+		wantRel := filepath.Join("my-toolkit", "cluster-toolkit")
+		wantArgs := []string{"clone", clusterToolkitRepoURL, "--", wantRel}
 		if !slices.Equal(gotArgs, wantArgs) {
 			t.Errorf("args = %v, want %v", gotArgs, wantArgs)
 		}
@@ -306,15 +332,22 @@ func TestClusterToolkitDownload(t *testing.T) {
 			t.Fatalf("len(Content) = %d, want 1", len(res.Content))
 		}
 		text, ok := res.Content[0].(*mcp.TextContent)
-		if !ok || !strings.Contains(text.Text, "Cloning into") {
-			t.Errorf("unexpected response content: %#v", res.Content[0])
+		if !ok {
+			t.Fatalf("unexpected content type: %T", res.Content[0])
+		}
+		wantDest := filepath.Join(cwd, wantRel)
+		if !strings.Contains(text.Text, wantDest) {
+			t.Errorf("response %q missing resolved path %q", text.Text, wantDest)
+		}
+		if !strings.Contains(text.Text, "Cloning into") {
+			t.Errorf("response %q missing git output", text.Text)
 		}
 	})
 
 	t.Run("nil args rejected without invoking git", func(t *testing.T) {
 		var gotName string
 		var gotArgs []string
-		stubExecCommand(t, false, &gotName, &gotArgs)
+		stubExecCommand(t, false, false, &gotName, &gotArgs)
 
 		_, _, err := clusterToolkitDownload(context.Background(), &mcp.CallToolRequest{}, nil)
 		if err == nil {
@@ -334,7 +367,7 @@ func TestClusterToolkitDownload(t *testing.T) {
 		} {
 			var gotName string
 			var gotArgs []string
-			stubExecCommand(t, false, &gotName, &gotArgs)
+			stubExecCommand(t, false, false, &gotName, &gotArgs)
 
 			_, _, err := clusterToolkitDownload(context.Background(), &mcp.CallToolRequest{}, &clusterToolkitDownloadArgs{
 				DownloadDirectory: badDir,
@@ -348,19 +381,51 @@ func TestClusterToolkitDownload(t *testing.T) {
 		}
 	})
 
-	t.Run("git clone error is returned", func(t *testing.T) {
+	t.Run("git clone error includes output and cleans up partial directory", func(t *testing.T) {
 		var gotName string
 		var gotArgs []string
-		stubExecCommand(t, true, &gotName, &gotArgs)
+		stubExecCommand(t, true, true, &gotName, &gotArgs)
 
 		_, _, err := clusterToolkitDownload(context.Background(), &mcp.CallToolRequest{}, &clusterToolkitDownloadArgs{
-			DownloadDirectory: ".",
+			DownloadDirectory: "partial-parent",
 		})
 		if err == nil {
 			t.Fatal("expected error when git fails, got nil")
 		}
 		if !strings.Contains(err.Error(), "failed to download Cluster Toolkit") {
-			t.Errorf("unexpected error: %v", err)
+			t.Errorf("unexpected error prefix: %v", err)
+		}
+		if !strings.Contains(err.Error(), "simulated git failure") {
+			t.Errorf("error %q did not include git output", err.Error())
+		}
+		partialDest := filepath.Join(cwd, "partial-parent", "cluster-toolkit")
+		if _, statErr := os.Lstat(partialDest); !errors.Is(statErr, os.ErrNotExist) {
+			t.Errorf("expected partial directory %q to be cleaned up, statErr = %v", partialDest, statErr)
+		}
+	})
+
+	t.Run("existing destination is preserved when git clone fails", func(t *testing.T) {
+		existingDir := filepath.Join(cwd, "existing-parent", "cluster-toolkit")
+		if err := os.MkdirAll(existingDir, 0o750); err != nil {
+			t.Fatalf("MkdirAll(%q) failed: %v", existingDir, err)
+		}
+		sentinel := filepath.Join(existingDir, "keep.txt")
+		if err := os.WriteFile(sentinel, []byte("keep"), 0o600); err != nil {
+			t.Fatalf("WriteFile(%q) failed: %v", sentinel, err)
+		}
+
+		var gotName string
+		var gotArgs []string
+		stubExecCommand(t, true, false, &gotName, &gotArgs)
+
+		_, _, err := clusterToolkitDownload(context.Background(), &mcp.CallToolRequest{}, &clusterToolkitDownloadArgs{
+			DownloadDirectory: "existing-parent",
+		})
+		if err == nil {
+			t.Fatal("expected error when git fails, got nil")
+		}
+		if _, statErr := os.Stat(sentinel); statErr != nil {
+			t.Errorf("expected existing file %q to be preserved, got statErr = %v", sentinel, statErr)
 		}
 	})
 }
@@ -368,6 +433,10 @@ func TestClusterToolkitDownload(t *testing.T) {
 func TestClusterToolkitDownload_MCPDispatch(t *testing.T) {
 	workDir := t.TempDir()
 	t.Chdir(workDir)
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("os.Getwd() failed: %v", err)
+	}
 
 	server := mcp.NewServer(&mcp.Implementation{Name: "test-server", Version: "1.0.0"}, nil)
 	if err := Install(context.Background(), server, nil); err != nil {
@@ -389,13 +458,28 @@ func TestClusterToolkitDownload_MCPDispatch(t *testing.T) {
 	}
 	defer func() { _ = session.Close() }()
 
+	toolsRes, err := session.ListTools(ctx, &mcp.ListToolsParams{})
+	if err != nil {
+		t.Fatalf("ListTools() failed: %v", err)
+	}
+	if len(toolsRes.Tools) != 1 {
+		t.Fatalf("len(Tools) = %d, want 1", len(toolsRes.Tools))
+	}
+	schemaBytes, err := json.Marshal(toolsRes.Tools[0].InputSchema)
+	if err != nil {
+		t.Fatalf("json.Marshal(InputSchema) failed: %v", err)
+	}
+	if !strings.Contains(string(schemaBytes), "MCP server's current working directory") {
+		t.Errorf("InputSchema %s does not clarify MCP server's working directory", schemaBytes)
+	}
+
 	for _, badDir := range []string{
 		"/tmp/vulnhunt-pwned/cluster-toolkit",
 		"--template=/tmp/vh-tpl-cluster-toolkit",
 	} {
 		var gotName string
 		var gotArgs []string
-		stubExecCommand(t, false, &gotName, &gotArgs)
+		stubExecCommand(t, false, false, &gotName, &gotArgs)
 
 		res, err := session.CallTool(ctx, &mcp.CallToolParams{
 			Name: "cluster_toolkit_download",
@@ -416,7 +500,7 @@ func TestClusterToolkitDownload_MCPDispatch(t *testing.T) {
 
 	var gotName string
 	var gotArgs []string
-	stubExecCommand(t, false, &gotName, &gotArgs)
+	stubExecCommand(t, false, false, &gotName, &gotArgs)
 
 	res, err := session.CallTool(ctx, &mcp.CallToolParams{
 		Name: "cluster_toolkit_download",
@@ -430,8 +514,16 @@ func TestClusterToolkitDownload_MCPDispatch(t *testing.T) {
 	if res.IsError {
 		t.Fatalf("CallTool(my-toolkit) returned error result: %#v", res.Content)
 	}
-	wantArgs := []string{"clone", clusterToolkitRepoURL, "--", filepath.Join("my-toolkit", "cluster-toolkit")}
+	wantRel := filepath.Join("my-toolkit", "cluster-toolkit")
+	wantArgs := []string{"clone", clusterToolkitRepoURL, "--", wantRel}
 	if gotName != "git" || !slices.Equal(gotArgs, wantArgs) {
 		t.Errorf("got exec %q %v, want %q %v", gotName, gotArgs, "git", wantArgs)
+	}
+	if len(res.Content) != 1 {
+		t.Fatalf("len(Content) = %d, want 1", len(res.Content))
+	}
+	text, ok := res.Content[0].(*mcp.TextContent)
+	if !ok || !strings.Contains(text.Text, filepath.Join(cwd, wantRel)) {
+		t.Errorf("CallTool response %#v missing resolved destination path", res.Content[0])
 	}
 }
