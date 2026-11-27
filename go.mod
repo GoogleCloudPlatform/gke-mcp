@@ -1,6 +1,6 @@
 module github.com/GoogleCloudPlatform/gke-mcp
 
-go 1.26.2
+go 1.26.10
 
 require (
 	cloud.google.com/go/container v1.56.1
@@ -15,7 +15,7 @@ require (
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.10.2
-	google.golang.org/adk v1.9.0
+	google.golang.org/adk v1.10.0
 	google.golang.org/api v0.314.0
 	google.golang.org/genai v1.77.0
 	google.golang.org/genproto v0.0.0-20261012220534-4341edf3f941
